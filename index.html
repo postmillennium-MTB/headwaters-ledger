@@ -235,6 +235,30 @@
   .leg-sub{display:block;font-size:.72rem;color:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;margin-top:1px}
   .pie-note{font-size:.78rem;color:var(--ink-soft);margin-top:10px}
 
+  /* ESSAY CARD (home page) */
+  .essay-card{
+    display:block;margin-top:14px;background:var(--card);border:1px solid var(--line);
+    border-left:4px solid var(--canyon);border-radius:0 12px 12px 0;padding:15px 18px;
+    box-shadow:var(--shadow);text-decoration:none;color:var(--ink);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .essay-card:hover{transform:translateY(-2px);box-shadow:0 3px 8px rgba(28,54,68,.14), 0 8px 22px rgba(28,54,68,.10)}
+  .essay-card:focus-visible{outline:3px solid var(--river);outline-offset:2px}
+  .essay-card .etag{font-family:ui-monospace,Consolas,monospace;font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;color:var(--canyon);font-weight:700}
+  .essay-card h3{font-size:1.08rem;line-height:1.3;margin:5px 0 6px}
+  .essay-card p{font-size:.9rem;color:var(--ink-soft);margin:0}
+  .essay-card .read{display:inline-block;margin-top:9px;font-family:ui-monospace,Consolas,monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--canyon)}
+
+  /* ESSAY ARTICLE VIEW */
+  .essay{max-width:720px}
+  .essay .kicker{font-family:ui-monospace,Consolas,monospace;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin:2px 0 18px}
+  .essay h2{font-size:1.18rem;margin:28px 0 8px}
+  .essay p{margin:0 0 14px;font-size:.98rem}
+  .essay table{border-collapse:collapse;margin:6px 0 18px;width:100%;font-size:.88rem}
+  .essay th,.essay td{border:1px solid var(--line);padding:7px 10px;text-align:left}
+  .essay th{font-family:ui-monospace,Consolas,monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);background:var(--card)}
+  .essay .foot{border-top:1px dashed var(--line);margin-top:24px;padding-top:12px;font-size:.78rem;color:var(--ink-soft);font-style:italic}
+
   footer{margin-top:34px;border-top:2px solid var(--ink);padding-top:12px;font-size:.78rem;color:var(--ink-soft)}
   footer h4{font-family:ui-monospace,Consolas,monospace;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-bottom:6px}
   footer p{margin-bottom:6px}
@@ -256,6 +280,59 @@
     <a class="home-link" href="https://www.postmillenniumrenaissance.com">postmillenniumrenaissance.com &#8599;</a>
   </div>
   <div id="app"></div>
+
+  <template id="essayContent">
+    <h1>Too Heavy, <span class="flow">Too Cheap</span></h1>
+    <div class="kicker">Why America pipes oil and not water &middot; PMR Water Series</div>
+
+    <p>It&rsquo;s the question every water presentation eventually gets, usually from the sharpest person in the room: we built pipelines that move crude oil from Alberta to the Gulf of Mexico. The Mississippi floods on schedule. Phoenix does not have enough water. Why hasn&rsquo;t anyone connected these facts with a pipe?</p>
+
+    <p>It&rsquo;s a completely fair question, and the answer isn&rsquo;t &ldquo;nobody thought of it.&rdquo; Plenty of people thought of it. Some of them had budgets. The answer is that water fails the pipeline test in four separate ways &mdash; volume, value, physics, and politics &mdash; and any one of the four would be fatal on its own.</p>
+
+    <p>First, the honest concession: America absolutely pipes water. Colorado pushes roughly half a million acre-feet a year through tunnels bored under the Continental Divide to keep the Front Range drinking&dagger;. California&rsquo;s State Water Project moves water 700 miles from the wet north to the dry south. The Central Arizona Project lifts Colorado River water nearly 2,900 vertical feet across the desert to Phoenix and Tucson&dagger;. The engineering is proven. The question is why it stops at the regional scale &mdash; why nobody runs the pipe from the Mississippi to Lake Mead.</p>
+
+    <h2>The volume problem</h2>
+    <p>Start with the number that breaks the whole analogy. The United States burns through about 20 million barrels of petroleum a day &mdash; roughly 840 million gallons. It withdraws around 322 <em>billion</em> gallons of water a day&dagger;. Not consumption, to be fair &mdash; power plants return most of what they borrow &mdash; but even trimmed to true consumptive use, water demand runs hundreds of times larger than oil demand. Same pumps, same steel, nearly 400 times the cargo.</p>
+
+    <p>Here&rsquo;s what that means in hardware. The Keystone XL pipeline &mdash; the one that dominated national politics for a decade &mdash; was designed to carry about 830,000 barrels a day. Run it full-tilt for a year and it moves roughly 39,000 acre-feet&dagger;. The Central Arizona Project canal delivers about 1.5 <em>million</em> acre-feet a year. So one modest regional canal does the work of roughly <b>38 Keystone XLs</b>. And the CAP is a straw in the drink: to move the Colorado River&rsquo;s entire modern annual flow &mdash; the 12&ndash;13 MAF that seven states and Mexico fight over &mdash; you&rsquo;d need on the order of <b>300-plus Keystone XLs</b> running around the clock&dagger;.</p>
+
+    <p>Nobody builds three hundred of anything.</p>
+
+    <h2>The value problem</h2>
+    <p>Now look at what&rsquo;s inside the pipe.</p>
+
+    <table>
+      <tr><th></th><th>Crude oil</th><th>Raw western water</th></tr>
+      <tr><td>Rough value per gallon</td><td>~$1.70&dagger;</td><td>fractions of a cent&dagger;</td></tr>
+      <tr><td>Weight per gallon</td><td>~7.2 lbs</td><td>8.34 lbs</td></tr>
+      <tr><td>What the U.S. moves daily</td><td>~840M gallons</td><td>~322B gallons withdrawn&dagger;</td></tr>
+    </table>
+
+    <p>An acre-foot of agricultural water in much of the West trades for somewhere between $50 and a few hundred dollars&dagger; &mdash; call it hundredths of a penny per gallon. Crude runs a few thousand times that. And water is the <em>heavier</em> cargo. A water pipeline is the worst freight contract imaginable: pay more per pound to haul something worth a thousand times less, in quantities four hundred times larger. Oil pipelines pencil because the cargo pays its own way. Water can&rsquo;t cover its own shipping.</p>
+
+    <h2>The physics problem</h2>
+    <p>Water is only cheap while it&rsquo;s standing still. The moment you lift it, it becomes an electricity bill with a river attached.</p>
+
+    <p>The California State Water Project&rsquo;s Edmonston Pumping Plant heaves water 1,926 feet over the Tehachapi Mountains in a single lift &mdash; the highest of its kind in the world&dagger; &mdash; and the project as a whole is routinely cited as the largest single electricity user in California&dagger;. The Central Arizona Project&rsquo;s pumping load was, for decades, the main reason an entire coal-fired power plant existed&dagger;. Those are the <em>regional</em> projects, the success stories. A Mississippi-to-Southwest line would face the Rockies: a mile of vertical against 8.34 pounds per gallon, times billions of gallons, forever. Every serious study of even the modest versions &mdash; a Missouri River aqueduct to western Kansas, for instance &mdash; lands in the tens of billions to build with pumping bills that never, ever stop&dagger;.</p>
+
+    <h2>The politics problem</h2>
+    <p>Suppose you solved all of that. You still have to ask someone for their river, and the answer is already written down.</p>
+
+    <p>The Great Lakes hold roughly a fifth of the world&rsquo;s fresh surface water, and in 2008 the eight surrounding states &mdash; with Ontario and Qu&eacute;bec alongside &mdash; signed the Great Lakes Compact, which effectively bans large diversions out of the basin. It is one of the few things Michigan and Ohio agree on. Wet regions have watched the Colorado River&rsquo;s century of litigation and drawn the obvious lesson: once your water is in someone else&rsquo;s pipe, it has a constituency, and that constituency votes.</p>
+
+    <p>The cautionary tale here is a real one. In the 1960s, an engineering firm proposed NAWAPA &mdash; the North American Water and Power Alliance &mdash; a continental replumbing that would have dammed British Columbia&rsquo;s Rocky Mountain Trench into a 500-mile reservoir and sent Alaskan and Canadian rivers south to the American West&dagger;. It was studied seriously, priced in the hundreds of billions of 1960s dollars, and died of every cause listed above at once. British Columbia eventually did flood a stretch of that trench &mdash; with the W.A.C. Bennett Dam, for its own power, keeping every drop. Canada answered the continental-pipeline question fifty years ago, and the answer was no.</p>
+
+    <p>And still the idea won&rsquo;t die: as recently as 2021, Arizona&rsquo;s legislature formally asked Congress to study piping Mississippi floodwater west&dagger;. Every drought resurrects it. Every cost estimate reburies it.</p>
+
+    <h2>The pipeline that already exists</h2>
+    <p>Here&rsquo;s the twist ending. America <em>does</em> move water from wet regions to dry ones, continuously, at continental scale &mdash; it just doesn&rsquo;t move it as water.</p>
+
+    <p>It moves it as alfalfa, almonds, lettuce, and beef. Economists call it virtual water: the thousands of gallons embedded in every crop and carcass&dagger;. A truckload of hay is, hydrologically speaking, a small water shipment that loaded itself, and shipping the crop is radically cheaper than shipping the water that grew it. The transcontinental water pipeline exists. It&rsquo;s the interstate highway system, and it runs on diesel instead of pumps. There&rsquo;s an old saying in the West that water flows uphill toward money &mdash; and it turns out the cheapest way uphill is in a bale.</p>
+
+    <p>So the question isn&rsquo;t really &ldquo;why don&rsquo;t we pipe water like oil.&rdquo; It&rsquo;s the Ledger&rsquo;s question in a new costume: there are no solutions, only tradeoffs. Moving water costs energy, ecosystems, treaties, and votes &mdash; and against every version of that bill, the alternatives win. Use less. Price it honestly. Grow the thirsty crops nearer the rain. Every compact in the Headwaters Ledger is what a hundred years of that math looks like, written down and signed.</p>
+
+    <div class="foot">&dagger; Estimates and widely cited figures: consumption and withdrawal totals from USGS national water-use reporting; conveyance and lift figures from project operators (DWR, CAP); Keystone comparisons computed from nameplate capacity (830,000 bbl/day &asymp; 39,000 AF/yr); water pricing varies enormously by region, seniority, and year. Treat proportions as solid and decimals as soft.</div>
+  </template>
   <footer>
     <h4>Data notes &amp; confidence</h4>
     <p><b>Solid:</b> compact parties, dates, and allocation terms come from compact texts, state engineer offices, and the Bureau of Reclamation and State Department dockets. Colorado River 2026 process dates from Reclamation's Post-2026 NEPA docket. Columbia River Treaty status from the U.S. State Department and Province of B.C.</p>
@@ -821,6 +898,12 @@
         '<div class="meta">The headwaters club</div>' +
         '<p>Between them these six regions are party to 20+ compacts and agreements, three treaties spanning Canada and Mexico, several Supreme Court decrees, and the two largest tribal water settlements in U.S. history. Hover or tap a region for its one-line r\u00e9sum\u00e9.</p>' +
       '</div>' +
+      '<a class="essay-card" href="#essay">' +
+        '<span class="etag">From the Water Series \u00b7 Essay</span>' +
+        '<h3>Too Heavy, Too Cheap: Why America Pipes Oil and Not Water</h3>' +
+        '<p>We built pipelines that move crude from Alberta to the Gulf \u2014 so why not pipe Mississippi floodwater to Phoenix? The answer comes down to volume, value, physics, and politics \u2026 plus the continental water pipeline that already exists. (It ships as hay.)</p>' +
+        '<span class="read">Read the essay \u2192</span>' +
+      '</a>' +
       '<div class="stat-strip">' +
         '<div class="stat"><div class="n">6</div><div class="l">headwaters regions \u2014 four states, two provinces, the continent\u2019s roof</div></div>' +
         '<div class="stat"><div class="n">6</div><div class="l">seas receive their water: Pacific, Gulf of Mexico, Gulf of California, Hudson Bay, Atlantic, Arctic</div></div>' +
@@ -1156,13 +1239,25 @@
     window.scrollTo(0, 0);
   }
 
+  /* =============== ESSAY VIEW =============== */
+  function renderEssay(){
+    eyebrow.textContent = 'PMR Civic Tools \u00b7 No. 14 \u00b7 Water Series \u00b7 Essay';
+    var tpl = document.getElementById('essayContent');
+    app.innerHTML =
+      '<button class="back" id="backBtn">\u2190 Back to the map</button>' +
+      '<div class="essay">' + tpl.innerHTML + '</div>';
+    document.getElementById('backBtn').addEventListener('click', function(){ go('home'); });
+    window.scrollTo(0, 0);
+  }
+
   /* =============== ROUTER =============== */
   function go(key){
     try { history.replaceState(null, '', '#' + key); } catch(e){}
     route(key);
   }
   function route(key){
-    if (STATES[key]) renderState(key);
+    if (key === 'essay') renderEssay();
+    else if (STATES[key]) renderState(key);
     else renderHome();
   }
   window.addEventListener('hashchange', function(){
