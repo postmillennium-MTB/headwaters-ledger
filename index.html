@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Headwaters Ledger — Where the Rockies' Water Goes</title>
+<style>
+  :root{
+    --paper:#EDF2EF; --card:#F7FAF8; --ink:#1C3644; --ink-soft:#4A6272;
+    --river:#23708A; --river-deep:#155066; --canyon:#B4502A; --sage:#6E8464;
+    --line:#C9D6D0; --badge-perp-bg:#DCE9E4; --badge-exp-bg:#F3DED2;
+    --shadow:0 1px 3px rgba(28,54,68,.10), 0 4px 14px rgba(28,54,68,.06);
+  }
+  [data-theme="canyon"]{
+    --paper:#F3EBE0; --card:#FBF6EE; --ink:#3A2A1E; --ink-soft:#6E5844;
+    --river:#A8562E; --river-deep:#7E3D1E; --canyon:#8C2F1B; --sage:#8A7A4F;
+    --line:#DCCDB8; --badge-perp-bg:#E9DFC9; --badge-exp-bg:#F0D4C4;
+    --shadow:0 1px 3px rgba(58,42,30,.10), 0 4px 14px rgba(58,42,30,.06);
+  }
+  [data-theme="nightflow"]{
+    --paper:#12222C; --card:#1B303C; --ink:#E4EEF0; --ink-soft:#9EB6BF;
+    --river:#5BB8D4; --river-deep:#8FD4E8; --canyon:#E08B5A; --sage:#93B08A;
+    --line:#31495590; --badge-perp-bg:#24424C; --badge-exp-bg:#4A3226;
+    --shadow:0 1px 3px rgba(0,0,0,.35), 0 4px 14px rgba(0,0,0,.25);
+  }
+  [data-theme="survey"]{
+    --paper:#EFE9DA; --card:#F7F2E6; --ink:#2E2A20; --ink-soft:#5C5644;
+    --river:#4A6B52; --river-deep:#33513C; --canyon:#9E4B24; --sage:#7B7248;
+    --line:#D5CBB2; --badge-perp-bg:#E2DCC6; --badge-exp-bg:#EED8C4;
+    --shadow:0 1px 3px rgba(46,42,32,.10), 0 4px 14px rgba(46,42,32,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none!important;animation:none!important} }
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"Palatino Linotype",Palatino,"Book Antiqua","Iowan Old Style",Georgia,serif;
+    line-height:1.55; padding:18px 14px 60px;
+  }
+  .mono{font-family:ui-monospace,"SF Mono","Cascadia Mono",Consolas,Menlo,monospace}
+  .wrap{max-width:960px;margin:0 auto}
+
+  .eyebrow{
+    font-family:ui-monospace,"SF Mono",Consolas,monospace; font-size:.68rem;
+    letter-spacing:.22em; text-transform:uppercase; color:var(--ink-soft);
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    border-bottom:2px solid var(--ink); padding-bottom:8px; margin-bottom:14px;
+  }
+  .theme-picker{display:flex;gap:6px}
+  .theme-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--ink);cursor:pointer;padding:0;background:transparent;position:relative}
+  .theme-dot span{position:absolute;inset:2px;border-radius:50%}
+  .theme-dot[data-set="snowmelt"] span{background:#23708A}
+  .theme-dot[data-set="canyon"] span{background:#A8562E}
+  .theme-dot[data-set="nightflow"] span{background:#12222C}
+  .theme-dot[data-set="survey"] span{background:#7B7248}
+  .theme-dot:focus-visible{outline:3px solid var(--river);outline-offset:2px}
+
+  h1{font-size:clamp(1.6rem,5.5vw,2.5rem);line-height:1.08;letter-spacing:-.01em;font-weight:700}
+  h1 .flow{color:var(--river)}
+  .thesis{margin-top:10px;font-size:clamp(.98rem,2.8vw,1.13rem);color:var(--ink-soft);font-style:italic;max-width:660px}
+  .thesis b{color:var(--ink);font-style:normal}
+  h2{font-size:1.25rem;margin:6px 0 4px}
+  .sub{color:var(--ink-soft);font-size:.92rem;margin-bottom:16px}
+
+  .back{
+    display:inline-flex;align-items:center;gap:6px;margin-bottom:14px;
+    font-family:ui-monospace,Consolas,monospace;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;
+    padding:8px 13px;border:1.5px solid var(--ink);border-radius:999px;background:transparent;color:var(--ink);cursor:pointer;
+  }
+  .back:hover{background:var(--card)}
+  .back:focus-visible{outline:3px solid var(--river);outline-offset:2px}
+
+  /* MAP */
+  .map-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 10px 6px;box-shadow:var(--shadow)}
+  svg{width:100%;height:auto;display:block}
+  .state-shape{fill:var(--river);opacity:.28;stroke:var(--ink);stroke-width:2;cursor:pointer;transition:opacity .18s ease}
+  .state-shape:hover,.state-shape:focus-visible{opacity:.62;outline:none}
+  .state-name{fill:var(--ink);font-family:ui-monospace,Consolas,monospace;font-weight:700;letter-spacing:.14em;font-size:17px;pointer-events:none}
+  .state-tag{fill:var(--ink-soft);font-size:11px;font-style:italic;pointer-events:none}
+  .divide-line{stroke:var(--canyon);stroke-width:2.5;stroke-dasharray:2 6;fill:none;opacity:.8;pointer-events:none}
+  .map-hint{
+    margin-top:12px;background:var(--card);border-left:4px solid var(--river);border-radius:0 12px 12px 0;
+    padding:13px 16px;box-shadow:var(--shadow);min-height:76px;
+  }
+  .map-hint .meta{font-family:ui-monospace,Consolas,monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px}
+  .map-hint p{font-size:.92rem}
+
+  /* FLOW DIAGRAM */
+  .flow-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 10px 6px;box-shadow:var(--shadow)}
+  .river-path{fill:none;stroke:var(--river);stroke-linecap:round;opacity:.55;cursor:pointer;transition:opacity .2s ease,stroke .2s ease}
+  .river-path.hot{opacity:1;stroke:var(--river-deep)}
+  .river-hit{fill:none;stroke:transparent;stroke-width:26;cursor:pointer}
+  .dim .river-path:not(.hot){opacity:.14}
+  .src-box{fill:var(--ink)}
+  .src-label{fill:var(--paper);font-family:ui-monospace,Consolas,monospace;font-weight:700;letter-spacing:.12em}
+  .river-name{fill:var(--ink);font-family:ui-monospace,Consolas,monospace;font-size:11px;letter-spacing:.04em;cursor:pointer}
+  .dest-label{fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;font-size:11px}
+
+  .detail{
+    margin-top:12px;background:var(--card);border-left:4px solid var(--river);border-radius:0 12px 12px 0;
+    padding:14px 16px;box-shadow:var(--shadow);min-height:88px;
+  }
+  .detail h3{font-size:1.05rem;margin-bottom:3px}
+  .detail .meta{font-family:ui-monospace,Consolas,monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
+  .detail p{font-size:.92rem}
+
+  .stat-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:16px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
+  .stat .n{font-family:ui-monospace,Consolas,monospace;font-size:1.4rem;font-weight:700;color:var(--river)}
+  .stat .l{font-size:.78rem;color:var(--ink-soft);line-height:1.35}
+
+  .local{margin-top:16px;background:var(--card);border:1px dashed var(--sage);border-radius:12px;padding:14px 16px}
+  .local .tag{font-family:ui-monospace,Consolas,monospace;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--sage);font-weight:700}
+  .local p{font-size:.92rem;margin-top:4px}
+
+  /* TABS */
+  .tabs{display:flex;gap:6px;margin:22px 0 18px;flex-wrap:wrap}
+  .tab{
+    font-family:ui-monospace,Consolas,monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+    padding:9px 13px;border:1.5px solid var(--ink);border-radius:999px;background:transparent;color:var(--ink);
+    cursor:pointer;transition:all .15s ease;
+  }
+  .tab:hover{background:var(--card)}
+  .tab.active{background:var(--ink);color:var(--paper)}
+  .tab:focus-visible{outline:3px solid var(--river);outline-offset:2px}
+  .panel{display:none}
+  .panel.active{display:block;animation:fadeUp .3s ease}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* CARDS */
+  .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .filter{
+    font-family:ui-monospace,Consolas,monospace;font-size:.68rem;letter-spacing:.06em;
+    padding:6px 11px;border:1.5px solid var(--line);border-radius:999px;background:var(--card);
+    color:var(--ink-soft);cursor:pointer;transition:all .15s ease;
+  }
+  .filter.active{border-color:var(--ink);color:var(--ink);font-weight:700}
+  .filter:focus-visible{outline:3px solid var(--river);outline-offset:2px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 16px;
+    box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px;
+  }
+  .card .yr{font-family:ui-monospace,Consolas,monospace;font-size:.7rem;letter-spacing:.14em;color:var(--ink-soft)}
+  .card h3{font-size:1.02rem;line-height:1.25}
+  .chips{display:flex;flex-wrap:wrap;gap:4px}
+  .chip{
+    font-family:ui-monospace,Consolas,monospace;font-size:.64rem;letter-spacing:.05em;
+    background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:2px 6px;color:var(--ink-soft);
+  }
+  .card p{font-size:.85rem;flex:1}
+  .badge{
+    align-self:flex-start;font-family:ui-monospace,Consolas,monospace;font-size:.62rem;
+    letter-spacing:.1em;text-transform:uppercase;font-weight:700;border-radius:6px;padding:4px 8px;
+  }
+  .badge.perp{background:var(--badge-perp-bg);color:var(--river-deep)}
+  .badge.exp{background:var(--badge-exp-bg);color:var(--canyon)}
+  .badge.none{background:var(--paper);border:1px dashed var(--ink-soft);color:var(--ink-soft)}
+  [data-theme="nightflow"] .badge.perp{color:var(--river)}
+
+  /* CRISIS / STAKES */
+  .count-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:20px}
+  .count{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);border-top:5px solid var(--canyon)}
+  .count.blue{border-top-color:var(--river)}
+  .count .big{font-family:ui-monospace,Consolas,monospace;font-size:2.4rem;font-weight:700;line-height:1;color:var(--canyon)}
+  .count.blue .big{color:var(--river)}
+  .count .cap{font-size:.82rem;color:var(--ink-soft);margin-top:6px;line-height:1.4}
+  .timeline{list-style:none;border-left:2.5px solid var(--line);margin:8px 0 26px 8px;padding-left:20px}
+  .timeline li{position:relative;padding:0 0 16px}
+  .timeline li::before{
+    content:"";position:absolute;left:-27.5px;top:5px;width:11px;height:11px;border-radius:50%;
+    background:var(--river);border:2.5px solid var(--paper);
+  }
+  .timeline li.future::before{background:var(--paper);border-color:var(--canyon)}
+  .timeline .d{font-family:ui-monospace,Consolas,monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft)}
+  .timeline .t{font-size:.93rem}
+  .math{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+  .math label{display:block;font-size:.88rem;margin-bottom:8px}
+  input[type=range]{width:100%;accent-color:var(--river);height:28px}
+  .bars{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+  .barrow .bl{display:flex;justify-content:space-between;font-family:ui-monospace,Consolas,monospace;font-size:.72rem;color:var(--ink-soft);margin-bottom:3px}
+  .bartrack{background:var(--paper);border:1px solid var(--line);border-radius:6px;height:26px;overflow:hidden}
+  .barfill{height:100%;border-radius:5px 0 0 5px;transition:width .25s ease}
+  .barfill.paper-b{background:var(--ink);opacity:.85}
+  .barfill.flow-b{background:var(--river)}
+  .deficit{margin-top:12px;font-size:.95rem}
+  .deficit b{color:var(--canyon);font-family:ui-monospace,Consolas,monospace}
+  .stake{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--canyon);border-radius:0 12px 12px 0;padding:14px 16px;box-shadow:var(--shadow);margin-bottom:12px}
+  .stake .d{font-family:ui-monospace,Consolas,monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--canyon);font-weight:700}
+  .stake h3{font-size:1rem;margin:2px 0 4px}
+  .stake p{font-size:.88rem}
+
+  /* QUIZ */
+  .q{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);margin-bottom:12px}
+  .q h3{font-size:.98rem;margin-bottom:10px}
+  .opts{display:flex;flex-direction:column;gap:7px}
+  .opt{
+    text-align:left;font-family:inherit;font-size:.9rem;padding:9px 12px;border:1.5px solid var(--line);
+    border-radius:10px;background:var(--paper);color:var(--ink);cursor:pointer;transition:all .15s ease;
+  }
+  .opt:hover{border-color:var(--river)}
+  .opt.right{border-color:var(--sage);background:var(--badge-perp-bg);font-weight:700}
+  .opt.wrong{border-color:var(--canyon);background:var(--badge-exp-bg);opacity:.85}
+  .opt:disabled{cursor:default}
+  .expl{display:none;margin-top:10px;font-size:.85rem;color:var(--ink-soft);border-top:1px dashed var(--line);padding-top:8px}
+  .expl.show{display:block}
+  .score{display:none;text-align:center;background:var(--ink);color:var(--paper);border-radius:14px;padding:18px;font-size:1.05rem;margin-top:6px}
+  .score.show{display:block}
+  .score .mono{font-size:1.9rem;font-weight:700}
+
+  .home-link-row{text-align:right;margin:-4px 0 12px}
+  .home-link{
+    font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:.68rem;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--river);text-decoration:none;border-bottom:1px dashed var(--river);
+    padding-bottom:1px;
+  }
+  .home-link:hover{color:var(--river-deep);border-bottom-style:solid}
+  .home-link:focus-visible{outline:3px solid var(--river);outline-offset:3px}
+
+  /* PIE / LEDGER BALANCE */
+  .pie-card{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;
+    box-shadow:var(--shadow);display:grid;grid-template-columns:minmax(190px,250px) 1fr;gap:20px;align-items:center;
+  }
+  @media(max-width:620px){.pie-card{grid-template-columns:1fr;justify-items:center}}
+  .pie-svg{width:100%;max-width:250px;height:auto}
+  .pie-slice{cursor:pointer;transition:opacity .15s ease}
+  .pie-card.dimmed .pie-slice:not(.hot){opacity:.22}
+  .pie-legend{display:flex;flex-direction:column;gap:6px;width:100%}
+  .leg-row{display:flex;gap:9px;align-items:flex-start;padding:6px 8px;border-radius:8px;cursor:pointer;transition:background .15s ease}
+  .leg-row.hot{background:var(--paper)}
+  .leg-sw{width:13px;height:13px;border-radius:4px;flex:none;margin-top:3px;border:1px solid var(--line)}
+  .leg-pct{font-family:ui-monospace,Consolas,monospace;font-weight:700;width:46px;flex:none}
+  .leg-lab{font-size:.88rem;line-height:1.3}
+  .leg-sub{display:block;font-size:.72rem;color:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;margin-top:1px}
+  .pie-note{font-size:.78rem;color:var(--ink-soft);margin-top:10px}
+
+  footer{margin-top:34px;border-top:2px solid var(--ink);padding-top:12px;font-size:.78rem;color:var(--ink-soft)}
+  footer h4{font-family:ui-monospace,Consolas,monospace;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-bottom:6px}
+  footer p{margin-bottom:6px}
+  @media(max-width:560px){ .count .big{font-size:2rem} body{padding:14px 10px 50px} .state-name{font-size:20px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">
+    <span id="eyebrowText">PMR Civic Tools · No. 14 · Water Series</span>
+    <span class="theme-picker" role="group" aria-label="Color theme">
+      <button class="theme-dot" data-set="snowmelt" title="Snowmelt theme" aria-label="Snowmelt theme"><span></span></button>
+      <button class="theme-dot" data-set="canyon" title="Canyon theme" aria-label="Canyon theme"><span></span></button>
+      <button class="theme-dot" data-set="nightflow" title="Nightflow theme" aria-label="Nightflow theme"><span></span></button>
+      <button class="theme-dot" data-set="survey" title="Survey theme" aria-label="Survey theme"><span></span></button>
+    </span>
+  </div>
+  <div class="home-link-row">
+    <a class="home-link" href="https://www.postmillenniumrenaissance.com">postmillenniumrenaissance.com &#8599;</a>
+  </div>
+  <div id="app"></div>
+  <footer>
+    <h4>Data notes &amp; confidence</h4>
+    <p><b>Solid:</b> compact parties, dates, and allocation terms come from compact texts, state engineer offices, and the Bureau of Reclamation and State Department dockets. Colorado River 2026 process dates from Reclamation's Post-2026 NEPA docket. Columbia River Treaty status from the U.S. State Department and Province of B.C.</p>
+    <p><b>Estimates (†):</b> flow averages, aquifer-volume comparisons, and "longest undammed river" style superlatives are widely cited figures that vary by source and measurement method. Percentage splits within tributary compacts are summarized, not quoted. The Ledger Balance pie charts are rough proportions assembled from state and provincial water plans plus long-term gauge averages, rounded to whole percents — reliable as shares, not as gauge readings, and annual totals swing enormously between wet and dry years.</p>
+    <p><b>Not legal advice:</b> built by a trail advocate, not a water attorney. The Law of the River keeps actual water attorneys extremely busy.</p>
+    <p class="mono" style="margin-top:8px">Post Millennium Renaissance · postmillenniumrenaissance.com · built 2026</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* =============== STATE DATA =============== */
+  var STATES = {
+
+    co: {
+      name:'Colorado', abbr:'CO', num:'14-A',
+      title:'The Colorado <span class="flow">Water Ledger</span>',
+      thesis:'No major river flows <b>into</b> Colorado. Every drop that falls here is already on its way to somebody else — and the paperwork that says who gets it is a century old, partly expiring, and headed for a reckoning in <b>2026</b>.',
+      flowH2:'The headwaters state',
+      flowSub:'Tap a river to see who\u2019s waiting downstream and which agreement governs it. Diagrammatic, not geographic.',
+      srcNote:'HEADWATERS OF 7 BASINS',
+      riverIntro:{meta:'Select a river above', h:'Seven basins, one direction: out',
+        p:'Snow that lands in Colorado feeds seven river systems and ends up in roughly 18 states plus Mexico. Everything downstream of that snow is governed by a compact \u2014 pick a river to see its paperwork.'},
+      rivers:[
+        {id:'nplatte', name:'NORTH PLATTE', w:5, dest:'WY \u2192 NE', meta:'Governed by U.S. Supreme Court decree (Nebraska v. Wyoming), not a compact', h:'North Platte River',
+         text:'Rises in North Park, Colorado, then runs through Wyoming to Nebraska. Colorado\u2019s use is capped by a Supreme Court equitable-apportionment decree \u2014 a reminder that when states can\u2019t agree on a compact, the Court writes the rules for them.'},
+        {id:'splatte', name:'SOUTH PLATTE', w:6, dest:'NE \u2192 Missouri R.', meta:'1923 South Platte River Compact \u00b7 CO \u2013 NE', h:'South Platte River',
+         text:'Castle Rock\u2019s home basin. The compact protects Nebraska\u2019s senior irrigation rights in the river\u2019s lower section during the growing season. Nebraska\u2019s 2022 revival of its century-old Perkins County Canal claim proved even 1923 paperwork still has teeth.'},
+        {id:'republican', name:'REPUBLICAN', w:4, dest:'NE \u00b7 KS', meta:'1942 Republican River Compact \u00b7 CO \u2013 KS \u2013 NE', h:'Republican River',
+         text:'A quiet plains river with loud litigation. The compact allocates the basin\u2019s \u201cvirgin water supply\u201d among three states; groundwater pumping disputes sent it to the Supreme Court repeatedly. Colorado built a pipeline just to make its compact deliveries.'},
+        {id:'arkansas', name:'ARKANSAS', w:7, dest:'KS \u00b7 OK \u00b7 AR', meta:'1948 Arkansas River Compact \u00b7 CO \u2013 KS', h:'Arkansas River',
+         text:'Born near Leadville, leaves at the Kansas line. The compact divides flows and governs John Martin Reservoir operations. Kansas sued Colorado over well pumping and won \u2014 Colorado paid tens of millions in damages. From Kansas the water continues to the Mississippi.'},
+        {id:'riogrande', name:'RIO GRANDE', w:7, dest:'NM \u00b7 TX \u00b7 Mexico', meta:'1938 Rio Grande Compact \u00b7 CO \u2013 NM \u2013 TX', h:'Rio Grande',
+         text:'Rises in the San Juan Mountains, exits through the San Luis Valley. Colorado owes New Mexico an indexed delivery schedule measured at state-line gauges \u2014 the wetter the year, the more Colorado must send. Perpetual, and famously litigated at the Supreme Court.'},
+        {id:'colorado', name:'COLORADO RIVER', w:18, dest:'UT \u00b7 AZ \u00b7 NV \u00b7 CA \u00b7 Mexico', meta:'1922 Colorado River Compact \u00b7 1948 Upper Basin Compact \u00b7 1944 Mexico Treaty', h:'Colorado River',
+         text:'The big one \u2014 roughly 70% of the water leaving the state. The 1922 Compact splits the river 7.5 MAF per year to each basin at Lee Ferry; the 1948 Compact gives Colorado 51.75% of the Upper Basin\u2019s share. Serves ~40 million people and 30 Tribal Nations. The compacts are perpetual \u2014 but the operating rules on top expire in 2026.'},
+        {id:'sanjuan', name:'SAN JUAN & LA PLATA', w:7, dest:'NM \u00b7 UT (joins Colorado R.)', meta:'1922 La Plata Compact \u00b7 1969 Animas\u2013La Plata Compact', h:'San Juan & La Plata',
+         text:'Southwest Colorado\u2019s rivers cross into New Mexico, then rejoin the Colorado system at Lake Powell. The La Plata Compact (also 1922) alternates flows with New Mexico in dry years \u2014 one of the oldest compacts in the country, and still in force.'}
+      ],
+      stats:[
+        {n:'~40M', l:'people rely on the Colorado River system alone'},
+        {n:'18+1', l:'states plus Mexico ultimately touch water born in Colorado'},
+        {n:'9', l:'interstate compacts Colorado is party to'},
+        {n:'~80%', l:'of the state\u2019s water falls west of the Divide; ~80% of its people live east of it\u2020'}
+      ],
+      local:{tag:'The Castle Rock angle',
+        p:'Castle Rock sits east of the Divide in the South Platte basin, historically leaning on deep Denver Basin groundwater \u2014 a savings account, not a paycheck. The town\u2019s long-term plan shifts toward renewable surface water (Plum Creek reuse, WISE partnership water). The century-old paperwork on the other tabs shapes what \u201crenewable\u201d even means on the Front Range.'},
+      pie:{
+        total:'~14',
+        sub:'Roughly 14 million acre-feet\u2020 of streamflow rises in Colorado in an average year. Over half rides one river out \u2014 and Colorado keeps a bigger share of its own water than any other region on this map.',
+        note:'Rough proportions built from the Colorado Water Plan\u2019s ~5.3 MAF consumptive-use figure and long-term state-line gauge averages, rounded to whole percents. Yearly totals swing wildly \u2014 read these as shares, not gauge readings.',
+        slices:[
+          {p:53, l:'Colorado River system', s:'\u2192 UT \u00b7 AZ \u00b7 NV \u00b7 CA \u00b7 Mexico'},
+          {p:38, l:'Stays in Colorado', s:'cities, farms & evaporation'},
+          {p:6, l:'Platte & Republican rivers', s:'\u2192 WY \u00b7 NE \u00b7 KS \u2192 Missouri R.'},
+          {p:2, l:'Rio Grande', s:'\u2192 NM \u00b7 TX \u00b7 Mexico'},
+          {p:1, l:'Arkansas River', s:'\u2192 KS \u00b7 OK \u00b7 AR \u2192 Mississippi R.'}
+        ]
+      },
+      compactsSub:'The key distinction most coverage blurs: the <b>compacts are perpetual</b> \u2014 no expiration date. What expires in 2026 is the <b>operating layer</b> stacked on top of the biggest one.',
+      compacts:[
+        {yr:'1922', name:'Colorado River Compact', states:['AZ','CA','CO','NM','NV','UT','WY'], kind:'perp', text:'The cornerstone. Splits the river at Lee Ferry: 7.5 MAF/yr apportioned to each basin. Negotiated during wet years \u2014 the promises exceed the modern river.'},
+        {yr:'1922', name:'La Plata River Compact', states:['CO','NM'], kind:'perp', text:'Same year, tiny river, same idea: in dry stretches the two states alternate use of the full flow rather than splitting a trickle.'},
+        {yr:'1923', name:'South Platte River Compact', states:['CO','NE'], kind:'perp', text:'Protects Nebraska\u2019s senior irrigation rights on the lower river during the growing season. Castle Rock\u2019s basin lives under this one.'},
+        {yr:'1938', name:'Rio Grande Compact', states:['CO','NM','TX'], kind:'perp', text:'Indexed delivery schedules at state-line gauges: wet years mean bigger debts downstream. Chronic accounting disputes; heavyweight litigation.'},
+        {yr:'1942', name:'Republican River Compact', states:['CO','KS','NE'], kind:'perp', text:'Allocates the basin\u2019s \u201cvirgin water supply.\u201d Groundwater pumping fights sent all three states to the Supreme Court more than once.'},
+        {yr:'1944', name:'Costilla Creek Compact', states:['CO','NM'], kind:'perp', text:'The smallest of the set (amended 1963). Divides a creek in the San Luis Valley \u2014 proof no stream is too small for interstate paperwork.'},
+        {yr:'1944', name:'U.S.\u2013Mexico Water Treaty', states:['USA','MEX'], kind:'exp', text:'Guarantees Mexico 1.5 MAF/yr of Colorado River water. The treaty itself is permanent \u2014 but Minute 323, the implementing shortage-sharing agreement, expires Dec 31, 2026.'},
+        {yr:'1948', name:'Arkansas River Compact', states:['CO','KS'], kind:'perp', text:'Divides flows and governs John Martin Reservoir. Kansas v. Colorado over well pumping cost Colorado tens of millions in damages.'},
+        {yr:'1948', name:'Upper Colorado River Basin Compact', states:['CO','NM','UT','WY','AZ'], kind:'perp', text:'Divides the Upper Basin\u2019s share by percentage: Colorado 51.75%, Utah 23%, Wyoming 14%, New Mexico 11.25% (Arizona gets a fixed 50,000 AF).'},
+        {yr:'1969', name:'Animas\u2013La Plata Project Compact', states:['CO','NM'], kind:'perp', text:'Enables the shared Animas\u2013La Plata Project in the state\u2019s southwest corner, tied to Ute tribal water-rights settlements.'},
+        {yr:'2007', name:'Interim Operating Guidelines', states:['7 states','Reclamation'], kind:'exp', text:'The rulebook for shortages: tiered cuts and coordinated Lake Powell\u2013Lake Mead operations. Explicitly temporary \u2014 expires end of 2026, replacement effective Oct 1, 2026.'},
+        {yr:'2019', name:'Drought Contingency Plans', states:['7 states','Reclamation'], kind:'exp', text:'Emergency overlay on the 2007 Guidelines: deeper cuts at trigger elevations, plus Upper Basin drought-response releases. Also expires in 2026.'}
+      ],
+      thirdTab:{label:'Countdown 2026', type:'crisis'},
+      quiz:[
+        {q:'Does the 1922 Colorado River Compact expire in 2026?',
+         opts:['Yes \u2014 that\u2019s the whole crisis','No \u2014 the compact is perpetual; the operating rules on top of it expire','It expired in 2007','Only if Congress lets it'], a:1,
+         why:'The compacts have no sunset. What expires is the 2007 Interim Guidelines, the 2019 Drought Contingency Plans, and Minute 323 with Mexico.'},
+        {q:'Roughly how much water did the 1922 negotiators promise on paper vs. the 21st-century average flow?',
+         opts:['10 promised vs. 12 actual','16.5 promised vs. ~12\u201313 actual','Equal \u2014 that\u2019s why it worked','20 promised vs. 18 actual'], a:1,
+         why:'15 MAF split between the basins plus 1.5 to Mexico = 16.5 MAF of paper against a river that\u2019s averaged roughly 12\u201313 in the megadrought era.'},
+        {q:'How many major rivers flow INTO Colorado?',
+         opts:['Three','One','Zero','Two'], a:2,
+         why:'Colorado is a pure headwaters state \u2014 the water only leaves. The Green River flows through a sliver of northwest Colorado but rises in Wyoming, so pedants get partial credit.'},
+        {q:'What happens on October 1, 2026?',
+         opts:['The compact is renegotiated','New federal operating guidelines for Lake Powell & Mead take effect','Mexico\u2019s treaty ends','All water rights reset to zero'], a:1,
+         why:'Reclamation is finalizing the post-2026 guidelines to take effect Oct 1, 2026 \u2014 with or without seven-state consensus, which never materialized.'},
+        {q:'Where does an interstate compact dispute get litigated?',
+         opts:['State district court','Federal arbitration panel','The U.S. Supreme Court, original jurisdiction','The Bureau of Reclamation decides'], a:2,
+         why:'Disputes between states go straight to the Supreme Court \u2014 as Kansas v. Colorado (Arkansas) and Texas v. New Mexico (Rio Grande) both proved expensively.'}
+      ]
+    },
+
+    wy: {
+      name:'Wyoming', abbr:'WY', num:'14-B',
+      title:'The Wyoming <span class="flow">Water Ledger</span>',
+      thesis:'Snow on one Wyoming mountain can end up in <b>three different seas</b> \u2014 the Pacific, the Gulf of Mexico, and the Gulf of California. Wyoming signs more water compacts per resident than any state in the country, and one of its rivers is governed by the Supreme Court itself.',
+      flowH2:'The three-seas state',
+      flowSub:'From Three Waters Mountain in the Wind River Range, meltwater parts ways for the Columbia, the Missouri, and the Colorado. Tap a river to follow it out.',
+      srcNote:'WATER TO THREE SEAS',
+      riverIntro:{meta:'Select a river above', h:'One divide, three directions',
+        p:'Wyoming\u2019s crest splits water toward the Pacific (Snake), the Gulf of Mexico (Yellowstone, Platte, Belle Fourche, Niobrara), and the Gulf of California (Green). Every exit has paperwork \u2014 seven compacts and one Supreme Court decree.'},
+      rivers:[
+        {id:'snake', name:'SNAKE', w:9, dest:'ID \u2192 Columbia \u2192 Pacific', meta:'1949 Snake River Compact \u00b7 WY \u2013 ID', h:'Snake River',
+         text:'Rises in Yellowstone, exits through Jackson Hole. The compact\u2019s split is the bluntest in the West: 96% of the river\u2019s waters to Idaho, 4% to Wyoming. Downstream it carves Hells Canyon and joins the Columbia.'},
+        {id:'yellowstone', name:'YELLOWSTONE + BIGHORN \u00b7 TONGUE \u00b7 POWDER', w:11, dest:'MT \u2192 Missouri R.', meta:'1950 Yellowstone River Compact \u00b7 WY \u2013 MT \u2013 ND', h:'Yellowstone system',
+         text:'The Yellowstone and its Wyoming-born tributaries carry the biggest volume leaving the state\u2019s northeast. The compact splits unappropriated tributary flows by percentage \u2014 and produced Montana v. Wyoming, a decade-long Supreme Court fight over what counts as \u201cusing\u201d water.'},
+        {id:'green', name:'GREEN', w:12, dest:'UT \u2192 Colorado R. \u2192 Gulf of California', meta:'1922 Colorado River Compact \u00b7 1948 Upper Basin Compact (WY: 14%)', h:'Green River',
+         text:'The Colorado River system\u2019s largest tributary starts in the Wind River Range. Wyoming holds 14% of the Upper Basin\u2019s share under the 1948 compact \u2014 which drags Wyoming into the same 2026 reckoning Colorado faces.'},
+        {id:'nplatte', name:'NORTH PLATTE', w:8, dest:'NE \u2192 Missouri R.', meta:'U.S. Supreme Court decree \u00b7 Nebraska v. Wyoming (1945, modified 2001)', h:'North Platte River',
+         text:'Enters from Colorado, waters ranch country, leaves for Nebraska. No compact here \u2014 the states litigated instead, and the Supreme Court wrote the allocation itself in 1945, then modified it in 2001. The decree caps Wyoming\u2019s irrigated acreage directly.'},
+        {id:'bear', name:'BEAR', w:5, dest:'ID \u00b7 UT \u2192 Great Salt Lake', meta:'1958 Bear River Compact (amended 1980) \u00b7 WY \u2013 ID \u2013 UT', h:'Bear River',
+         text:'A river that can\u2019t make up its mind \u2014 it crosses state lines five times before dying in the Great Salt Lake, never reaching an ocean. Three states split it by reach under a compact updated in 1980.'},
+        {id:'bellef', name:'BELLE FOURCHE / CHEYENNE', w:4, dest:'SD \u2192 Missouri R.', meta:'1943 Belle Fourche River Compact \u00b7 WY \u2013 SD', h:'Belle Fourche River',
+         text:'Loops around the Black Hills into South Dakota. The compact leaves Wyoming a small fixed share of unappropriated flows \u2014 roughly a tenth \u2014 with the rest passing downstream.'},
+        {id:'niobrara', name:'NIOBRARA', w:3, dest:'NE \u2192 Missouri R.', meta:'1962 Upper Niobrara River Compact \u00b7 WY \u2013 NE', h:'Niobrara River',
+         text:'The quietest compact in the set. Notable mostly because it anticipated the groundwater era \u2014 it contemplated allocating aquifer pumping decades before most compacts admitted groundwater existed.'}
+      ],
+      stats:[
+        {n:'3', l:'seas receive Wyoming water: Pacific, Gulf of Mexico, Gulf of California'},
+        {n:'96/4', l:'the Snake River Compact split \u2014 Idaho\u2019s share vs. Wyoming\u2019s'},
+        {n:'14%', l:'Wyoming\u2019s slice of the Upper Colorado Basin\u2019s share'},
+        {n:'7+1', l:'compacts plus one Supreme Court decree governing Wyoming\u2019s exits'}
+      ],
+      local:{tag:'The Wind River angle',
+        p:'At the \u201cWedding of the Waters\u201d near Thermopolis, the Wind River changes its name mid-stream to the Bighorn \u2014 same water, new paperwork. The Wind River Reservation\u2019s tribal rights were confirmed through the Big Horn adjudication, one of the longest water cases in U.S. history (filed 1977), awarding the Eastern Shoshone and Northern Arapaho roughly half a million acre-feet\u2020 \u2014 senior to nearly everything else in the basin.'},
+      pie:{
+        total:'~15',
+        sub:'About 15 million acre-feet\u2020 leaves the roof of the continent through seven exits in an average year. Wyoming keeps roughly a seventh \u2014 most of the rest is spoken for before it reaches the state line.',
+        note:'Rough proportions from long-term gauge averages near each exit point, rounded to whole percents. The Yellowstone system includes the Bighorn, Tongue, Powder, and Clarks Fork.',
+        slices:[
+          {p:36, l:'Yellowstone system', s:'\u2192 MT \u2192 Missouri R.'},
+          {p:29, l:'Snake River', s:'\u2192 ID \u2192 Columbia \u2192 Pacific'},
+          {p:15, l:'Stays in Wyoming', s:'ranches, towns & evaporation'},
+          {p:11, l:'Green River', s:'\u2192 UT \u2192 Colorado R. system'},
+          {p:6, l:'North Platte', s:'\u2192 NE \u2192 Missouri R.'},
+          {p:3, l:'Bear, Belle Fourche & Niobrara', s:'\u2192 ID \u00b7 UT \u00b7 SD \u00b7 NE'}
+        ]
+      },
+      compactsSub:'Wyoming\u2019s ledger is all perpetual compacts \u2014 plus one river where the states never agreed and the <b>Supreme Court wrote the rules</b> itself. The expiring-agreement drama reaches Wyoming through the Colorado River system.',
+      compacts:[
+        {yr:'1922', name:'Colorado River Compact', states:['AZ','CA','CO','NM','NV','UT','WY'], kind:'perp', text:'Wyoming signed the cornerstone as an Upper Basin state. Its Green River gives Wyoming a seat at the most contested water table in America.'},
+        {yr:'1943', name:'Belle Fourche River Compact', states:['WY','SD'], kind:'perp', text:'Divides unappropriated flows heading around the Black Hills \u2014 Wyoming keeps a small fixed share, South Dakota takes the rest.'},
+        {yr:'1945', name:'North Platte Decree', states:['WY','NE','CO','SCOTUS'], kind:'none', text:'Not a compact \u2014 an equitable-apportionment decree from Nebraska v. Wyoming, modified in 2001. The Court caps Wyoming\u2019s irrigated acreage and storage directly. Perpetual, and enforced from the bench.'},
+        {yr:'1948', name:'Upper Colorado River Basin Compact', states:['CO','NM','UT','WY','AZ'], kind:'perp', text:'Wyoming\u2019s share of the Upper Basin: 14%. This is the document that ties Wyoming ranches to Lake Powell\u2019s fate \u2014 and to the 2026 reckoning.'},
+        {yr:'1949', name:'Snake River Compact', states:['WY','ID'], kind:'perp', text:'96% Idaho, 4% Wyoming. Lopsided by design \u2014 nearly all the irrigable land is downstream in Idaho\u2019s Snake River Plain.'},
+        {yr:'1950', name:'Yellowstone River Compact', states:['WY','MT','ND'], kind:'perp', text:'Percentage splits of unappropriated flows on the Clarks Fork, Bighorn, Tongue, and Powder. Produced Montana v. Wyoming at the Supreme Court \u2014 see The Stakes.'},
+        {yr:'1958', name:'Bear River Compact', states:['WY','ID','UT'], kind:'perp', text:'Amended 1980. Divides a river that crosses state lines five times by reach and by storage rights, all draining to the Great Salt Lake.'},
+        {yr:'1962', name:'Upper Niobrara River Compact', states:['WY','NE'], kind:'perp', text:'A small river with a forward-looking clause: it contemplated groundwater allocation long before hydrology made that fashionable.'}
+      ],
+      thirdTab:{label:'The Stakes', type:'stakes'},
+      stakes:{
+        sub:'Wyoming\u2019s water fights are quieter than Colorado\u2019s \u2014 but the state has been to the Supreme Court twice as a defendant and shares fully in the 2026 Colorado River reckoning.',
+        items:[
+          {d:'2011\u20132018 \u00b7 Montana v. Wyoming', h:'What counts as \u201cusing\u201d water?',
+           p:'Montana sued over the Tongue and Powder rivers, arguing Wyoming irrigators\u2019 switch to efficient sprinklers shrank the return flows Montana depended on. The Supreme Court largely sided with Wyoming: using your water more efficiently isn\u2019t a compact violation. A landmark for the entire West \u2014 efficiency upgrades are safe, but downstream states eat the difference.'},
+          {d:'2001 \u00b7 North Platte modified decree', h:'The Court as river master',
+           p:'After a second round of Nebraska v. Wyoming, the modified decree tightened limits on Wyoming\u2019s irrigated acreage and groundwater near the river. When states skip the compact and litigate, they get a judge for a river master \u2014 permanently.'},
+          {d:'2026 \u00b7 Colorado River reckoning', h:'The Green River\u2019s exposure',
+           p:'Wyoming holds 14% of the Upper Basin share, so the post-2026 Lake Powell rules \u2014 taking effect Oct 1, 2026 without seven-state consensus \u2014 reach all the way up the Green to Pinedale. Upper Basin states argue their cuts already happen automatically: in a dry year, the water simply never shows up.'},
+          {d:'Ongoing \u00b7 Wind River rights', h:'Half a million acre-feet, senior to almost everything',
+           p:'The Big Horn adjudication confirmed tribal reserved rights dating to the 1868 treaty \u2014 senior to nearly every ranch in the basin. How those rights are developed and marketed remains one of Wyoming\u2019s biggest open water questions.'}
+        ]
+      },
+      quiz:[
+        {q:'The Snake River Compact splits the river how?',
+         opts:['50/50','75% Wyoming, 25% Idaho','96% Idaho, 4% Wyoming','It\u2019s unallocated'], a:2,
+         why:'Nearly all the irrigable land sits downstream on Idaho\u2019s Snake River Plain, so the 1949 compact gave Idaho 96%.'},
+        {q:'Who wrote the rules for the North Platte River?',
+         opts:['A 1923 compact','The U.S. Supreme Court, via decree','The Bureau of Reclamation','Wyoming\u2019s state engineer'], a:1,
+         why:'Wyoming and Nebraska never agreed on a compact, so the Court apportioned the river itself in Nebraska v. Wyoming (1945) and modified the decree in 2001.'},
+        {q:'In Montana v. Wyoming, the Supreme Court ruled that Wyoming irrigators switching to efficient sprinklers was\u2026',
+         opts:['A compact violation \u2014 Montana won everything','Legal \u2014 efficiency isn\u2019t a violation, even if return flows shrink','Banned going forward','A federal question for Congress'], a:1,
+         why:'The Court held that improving irrigation efficiency on existing acreage doesn\u2019t breach the Yellowstone Compact \u2014 a precedent the whole West watches.'},
+        {q:'Snowmelt from Three Waters Mountain can reach which three seas?',
+         opts:['Pacific, Arctic, Atlantic','Pacific, Gulf of Mexico, Gulf of California','Gulf of Mexico, Hudson Bay, Atlantic','Pacific, Great Salt Lake, Gulf of Mexico'], a:1,
+         why:'Via the Snake\u2013Columbia, the Yellowstone/Platte\u2013Missouri\u2013Mississippi, and the Green\u2013Colorado. (The Great Salt Lake gets Bear River water, but it\u2019s a lake, not a sea \u2014 tempting answer though.)'}
+      ]
+    },
+
+    mt: {
+      name:'Montana', abbr:'MT', num:'14-C',
+      title:'The Montana <span class="flow">Water Ledger</span>',
+      thesis:'On Triple Divide Peak in Glacier, a single rain cloud can send water to the <b>Pacific, the Gulf of Mexico, and Hudson Bay</b>. Montana\u2019s ledger includes the longest undammed river in the lower 48, the biggest tribal water settlement in U.S. history \u2014 and a treaty with Canada currently stuck in limbo.',
+      flowH2:'Crown of the continent',
+      flowSub:'Montana is the only state on this map that trades water with another country in both directions. Tap a river to follow it out \u2014 or out and back in.',
+      srcNote:'PACIFIC \u00b7 GULF \u00b7 HUDSON BAY',
+      riverIntro:{meta:'Select a river above', h:'Three oceans from one peak',
+        p:'Triple Divide Peak splits the continent three ways \u2014 the only such spot in the lower 48. West of it, Montana\u2019s water joins the Columbia and answers to a treaty with Canada. East of it, the Missouri begins its 2,300-mile run with, remarkably, no interstate compact at all.'},
+      rivers:[
+        {id:'kootenai', name:'KOOTENAI', w:8, dest:'ID \u2192 back to B.C. \u2192 Columbia', meta:'1964 Columbia River Treaty \u00b7 Libby Dam \u00b7 status: in limbo', h:'Kootenai River',
+         text:'The international boomerang: enters from British Columbia, swings through Montana past Libby Dam, clips Idaho, and returns to Canada before joining the Columbia. Libby is one of the Columbia River Treaty\u2019s four dams \u2014 which makes Montana a direct party to the treaty stalemate.'},
+        {id:'clarkfork', name:'CLARK FORK / FLATHEAD', w:9, dest:'ID \u2192 WA \u2192 Columbia \u2192 Pacific', meta:'1964 Columbia River Treaty \u00b7 CSKT Compact (tribal)', h:'Clark Fork River',
+         text:'Montana\u2019s largest river by volume drains the state\u2019s west into Lake Pend Oreille, Idaho, then the Columbia. The Flathead arm runs through the Confederated Salish and Kootenai Tribes\u2019 homeland \u2014 whose 2020 water compact is the largest tribal settlement ever ratified.'},
+        {id:'stmary', name:'ST. MARY \u2192 MILK', w:5, dest:'Alberta \u2192 Hudson Bay / back into MT', meta:'1909 Boundary Waters Treaty \u00b7 1921 IJC apportionment', h:'St. Mary & Milk rivers',
+         text:'The strangest plumbing on the map: St. Mary water (bound for Hudson Bay) is siphoned into the Milk River, which crosses into Alberta and loops back into Montana to irrigate the Hi-Line. A 1909 treaty with Canada splits both rivers \u2014 and a 2024 siphon failure showed how much hangs on century-old steel.'},
+        {id:'missouri', name:'MISSOURI', w:14, dest:'ND \u2192 Mississippi \u2192 Gulf of Mexico', meta:'No interstate compact \u2014 Army Corps Master Manual governs', h:'Missouri River',
+         text:'North America\u2019s longest river is born at Three Forks, where the Jefferson, Madison, and Gallatin meet. Here\u2019s the surprise: the entire Missouri has no interstate compact. Upstream and downstream states fought to a stalemate in the 1940s, so the Army Corps of Engineers runs the river by federal manual instead.'},
+        {id:'yellowstone', name:'YELLOWSTONE', w:11, dest:'ND \u2192 joins Missouri', meta:'1950 Yellowstone River Compact \u00b7 MT \u2013 WY \u2013 ND', h:'Yellowstone River',
+         text:'The longest undammed river in the lower 48\u2020 \u2014 roughly 690 free-flowing miles from the park to its Missouri confluence. The 1950 compact splits its Wyoming-born tributaries, and Montana enforced it all the way to the Supreme Court.'}
+      ],
+      stats:[
+        {n:'3', l:'watersheds from one peak: Pacific, Gulf of Mexico, Hudson Bay'},
+        {n:'0', l:'interstate compacts on the entire Missouri River \u2014 the Corps runs it by manual'},
+        {n:'~690mi', l:'of free-flowing Yellowstone \u2014 longest undammed river in the lower 48\u2020'},
+        {n:'$1.9B', l:'the CSKT Compact \u2014 the largest tribal water settlement in U.S. history'}
+      ],
+      local:{tag:'The Hi-Line angle',
+        p:'The Milk River Project waters a huge share of Montana\u2019s Hi-Line wheat and cattle country using St. Mary water moved through siphons built in 1915. When Siphon No. 2 blew out in June 2024, the Hi-Line lost most of its irrigation supply overnight \u2014 and the emergency rebuild became a case study in what deferred maintenance on century-old water infrastructure actually costs.'},
+      pie:{
+        total:'~45',
+        sub:'Around 45 million acre-feet\u2020 in an average year \u2014 triple Colorado\u2019s yield \u2014 and more than half of it heads west for the Pacific, not east down the Missouri like most people picture.',
+        note:'Rough proportions from long-term gauge averages near each border crossing, rounded to whole percents. The Clark Fork alone carries more water out of Montana than the Missouri and Yellowstone combined.',
+        slices:[
+          {p:56, l:'Clark Fork & Kootenai', s:'\u2192 ID \u00b7 B.C. \u2192 Columbia \u2192 Pacific'},
+          {p:19, l:'Yellowstone River', s:'\u2192 ND \u2192 Missouri R. \u2192 Gulf'},
+          {p:16, l:'Missouri River', s:'\u2192 ND \u2192 Gulf of Mexico'},
+          {p:8, l:'Stays in Montana', s:'farms, ranches & evaporation'},
+          {p:1, l:'St. Mary River', s:'\u2192 Alberta \u2192 Hudson Bay'}
+        ]
+      },
+      compactsSub:'Montana\u2019s ledger is short on interstate compacts and long on <b>everything else</b>: an international treaty from 1909, another from 1964 currently in limbo, a federal manual standing in for a Missouri compact, and the biggest tribal settlement ever signed.',
+      compacts:[
+        {yr:'1909', name:'Boundary Waters Treaty (St. Mary & Milk)', states:['USA','CAN'], kind:'perp', text:'With the 1921 IJC order, splits the St. Mary and Milk rivers with Canada. The oldest working water-sharing arrangement on this map \u2014 and the Hi-Line\u2019s lifeline.'},
+        {yr:'1944', name:'Missouri: no compact (Pick\u2013Sloan / Corps Manual)', states:['MT','+9 states'], kind:'none', text:'The exception that proves the rule. Basin states never agreed on a compact, so the 1944 Flood Control Act and the Army Corps Master Manual govern instead \u2014 renegotiated politically, not contractually.'},
+        {yr:'1950', name:'Yellowstone River Compact', states:['MT','WY','ND'], kind:'perp', text:'Percentage splits of unappropriated tributary flows. Montana sued Wyoming under it in 2007 and spent a decade at the Supreme Court \u2014 winning the principle, modest damages, and a clarified rulebook.'},
+        {yr:'1964', name:'Columbia River Treaty', states:['USA','CAN'], kind:'exp', text:'Coordinates four treaty dams \u2014 including Libby, in Montana. Its assured flood-control terms expired in Sept 2024; a 2024 agreement-in-principle would modernize it, but negotiations are paused and the regime runs on interim arrangements.'},
+        {yr:'1985', name:'Fort Peck\u2013Montana Compact', states:['MT','Fort Peck Tribes'], kind:'perp', text:'One of the first negotiated tribal water compacts in the nation \u2014 Montana chose settlement over litigation decades before it was standard practice.'},
+        {yr:'2020', name:'CSKT Water Compact', states:['MT','CSKT','USA'], kind:'perp', text:'Confederated Salish and Kootenai Tribes settlement, ratified by Congress in 2020 with ~$1.9 billion in federal funding \u2014 the largest tribal water settlement in U.S. history. Resolved thousands of claims across western Montana.'}
+      ],
+      thirdTab:{label:'The Stakes', type:'stakes'},
+      stakes:{
+        sub:'Montana\u2019s live water stories are international and industrial: a treaty in limbo, a siphon that blew out, and a compact enforced at the highest court in the land.',
+        items:[
+          {d:'2024\u2013now \u00b7 Columbia River Treaty limbo', h:'Libby Dam waits on Washington \u2014 both of them',
+           p:'The treaty\u2019s pre-paid flood-control terms expired in September 2024. The U.S. and Canada reached an agreement-in-principle that summer \u2014 then negotiations were paused under the new administration in 2025. The treaty isn\u2019t canceled; it runs on interim arrangements. But Libby Dam\u2019s operations, Kootenai ecosystem work, and Montana\u2019s seat at the table all hang on talks that currently aren\u2019t happening.'},
+          {d:'June 2024 \u00b7 St. Mary siphon failure', h:'The day the Hi-Line\u2019s water stopped',
+           p:'Siphon No. 2 on the 1915-era St. Mary Canal ruptured catastrophically, cutting the Milk River Project\u2019s supply in an instant. An emergency rebuild restored deliveries the following season\u2020 \u2014 but the failure put a price tag on a question every western state is avoiding: what happens when the century-old plumbing under our compacts gives out first?'},
+          {d:'2007\u20132018 \u00b7 Montana v. Wyoming', h:'Winning the principle, eating the efficiency',
+           p:'Montana enforced the Yellowstone Compact at the Supreme Court and won recognition that its pre-1950 rights are protected \u2014 but the Court also blessed Wyoming\u2019s efficient sprinklers, meaning less return flow for Montana forever. A win on paper with a tradeoff in the water.'},
+          {d:'Ongoing \u00b7 The Missouri question', h:'The biggest river with no compact',
+           p:'Every drop of the Missouri leaving Montana is governed by federal manual, not interstate contract. Downstream navigation interests and upstream storage interests renegotiate through politics and litigation each drought. Whether that\u2019s freedom or exposure depends on the year.'}
+        ]
+      },
+      quiz:[
+        {q:'How many interstate compacts govern the Missouri River?',
+         opts:['One \u2014 the 1944 Missouri Compact','Three','Zero','Seven'], a:2,
+         why:'The basin states never agreed. The 1944 Flood Control Act and the Army Corps Master Manual fill the gap \u2014 politics instead of contract.'},
+        {q:'Triple Divide Peak sends water toward which three destinations?',
+         opts:['Pacific, Gulf of Mexico, Hudson Bay','Pacific, Atlantic, Arctic','Gulf of Mexico, Great Salt Lake, Pacific','Hudson Bay, Atlantic, Gulf of California'], a:0,
+         why:'Via the Columbia, the Missouri\u2013Mississippi, and the St. Mary\u2013Saskatchewan\u2013Nelson systems. The only such three-way split in the lower 48.'},
+        {q:'The longest undammed river in the lower 48 is\u2026',
+         opts:['The Salmon','The Yellowstone','The Snake','The Clark Fork'], a:1,
+         why:'Roughly 690 free-flowing miles\u2020 from Yellowstone country to the Missouri confluence in North Dakota.'},
+        {q:'What\u2019s the current status of the Columbia River Treaty?',
+         opts:['Canceled by the U.S. in 2025','Fully modernized and ratified','In limbo \u2014 flood provisions expired 2024, modernization talks paused, interim arrangements in effect','Unchanged since 1964'], a:2,
+         why:'An agreement-in-principle was reached in July 2024, key old provisions expired that September, and negotiations were then paused \u2014 leaving the regime running on interim arrangements.'}
+      ]
+    },
+
+    id: {
+      name:'Idaho', abbr:'ID', num:'14-D',
+      title:'The Idaho <span class="flow">Water Ledger</span>',
+      thesis:'Idaho is the exception on this map: water actually flows <b>in</b> \u2014 from Wyoming, Montana, and even Canada. But nearly every drop leaves through a single door: the Snake River, carrying the state\u2019s fortunes to the Columbia. Underneath it all sits an aquifer holding roughly a <b>Lake Erie\u2019s worth</b> of water\u2020.',
+      flowH2:'One river to rule them all',
+      flowSub:'Six systems, but one exit dominates \u2014 the Snake collects the Salmon, the Clearwater, the Boise, and the whole eastern plain before leaving at Lewiston. Tap a river to follow it.',
+      srcNote:'THE SNAKE RIVER FUNNEL',
+      riverIntro:{meta:'Select a river above', h:'Everything funnels to the Snake',
+        p:'The Snake enters from Wyoming at 4% strength (per compact), swallows the Henrys Fork, the Boise, the Payette, the Salmon, and the Clearwater, and exits at Lewiston bound for the Columbia. Idaho\u2019s water law is mostly the story of managing that one river \u2014 and the giant aquifer beneath it.'},
+      rivers:[
+        {id:'kootenai', name:'KOOTENAI', w:6, dest:'back to B.C. \u2192 Columbia', meta:'1964 Columbia River Treaty \u00b7 status: in limbo', h:'Kootenai River',
+         text:'Passes through Idaho\u2019s panhandle on its Canada\u2013Montana\u2013Idaho\u2013Canada loop. Treaty operations at Libby Dam upstream set its flows \u2014 so the paused treaty modernization is a panhandle issue too, especially for the Kootenai Tribe\u2019s sturgeon recovery work.'},
+        {id:'pendoreille', name:'CLARK FORK \u2192 PEND OREILLE', w:8, dest:'WA \u2192 Columbia \u2192 Pacific', meta:'1964 Columbia River Treaty', h:'Pend Oreille system',
+         text:'Montana\u2019s Clark Fork becomes Idaho\u2019s Lake Pend Oreille \u2014 the state\u2019s largest and deepest lake \u2014 then exits to Washington as the Pend Oreille River. Another Columbia tributary whose management sits inside the treaty framework with Canada.'},
+        {id:'spokane', name:'SPOKANE', w:4, dest:'WA \u2192 Columbia', meta:'Bi-state aquifer management \u00b7 ID \u2013 WA', h:'Spokane River',
+         text:'Drains Lake Coeur d\u2019Alene westward into Washington, riding atop the Spokane Valley\u2013Rathdrum Prairie Aquifer that both states share and jointly manage \u2014 interstate water cooperation without a formal compact.'},
+        {id:'salmon', name:'SALMON & CLEARWATER', w:9, dest:'join the Snake at Lewiston', meta:'2004 Nez Perce Agreement (Snake River Basin Adjudication)', h:'Salmon & Clearwater rivers',
+         text:'The \u201cRiver of No Return\u201d and the Clearwater are Idaho-internal \u2014 they never leave the state on their own, joining the Snake at its exit. Their flows anchor the 2004 Nez Perce settlement, one of the largest tribal water agreements in the country, resolving 175,000+ claims.'},
+        {id:'snake', name:'SNAKE', w:16, dest:'OR/WA line \u2192 Columbia \u2192 Pacific', meta:'1949 Snake River Compact (ID: 96%) \u00b7 Swan Falls Agreement 1984', h:'Snake River',
+         text:'Enters from Wyoming, waters the entire southern Idaho economy, carves Hells Canyon \u2014 deeper than the Grand Canyon\u2020 \u2014 and exits at Lewiston. The 1949 compact hands Idaho 96% of it; the real fights are internal, between surface users and the aquifer pumpers beneath the plain.'},
+        {id:'bear', name:'BEAR', w:5, dest:'UT \u2192 Great Salt Lake (never reaches the sea)', meta:'1958 Bear River Compact (amended 1980) \u00b7 ID \u2013 UT \u2013 WY', h:'Bear River',
+         text:'Crosses state lines five times and ends in the Great Salt Lake \u2014 the largest river in the hemisphere that never reaches an ocean\u2020. As the lake shrinks, every drop Idaho diverts upstream gets audited by three states and a growing chorus of dust-storm scientists.'}
+      ],
+      stats:[
+        {n:'96%', l:'Idaho\u2019s share of the Snake under the 1949 compact'},
+        {n:'~1 Lake Erie', l:'volume of the Eastern Snake Plain Aquifer, roughly\u2020'},
+        {n:'175k+', l:'water claims resolved by the Snake River Basin Adjudication \u2014 the largest in U.S. history'},
+        {n:'5', l:'times the Bear River crosses a state line before dying in the Great Salt Lake'}
+      ],
+      local:{tag:'The aquifer angle',
+        p:'The Eastern Snake Plain Aquifer is Idaho\u2019s Denver Basin problem at 100x scale: a groundwater bank that surface-water seniors and well pumpers both draw on. In 2024 the state\u2019s curtailment order briefly threatened water to hundreds of thousands of farm acres before a settlement \u2014 the sharpest surface-vs-groundwater showdown in the modern West, and a preview for every state on this map.'},
+      pie:{
+        total:'~70',
+        sub:'Idaho\u2019s ledger runs on volume: roughly 70 million acre-feet\u2020 in an average year, with the Snake \u2014 fattened by the Salmon and Clearwater \u2014 carrying almost half of it out at Lewiston.',
+        note:'Rough proportions from long-term gauge averages, rounded to whole percents. The Snake figure includes the Salmon and Clearwater, which join it right at the exit. Nearly everything here ends in the Pacific.',
+        slices:[
+          {p:43, l:'Snake (+ Salmon & Clearwater)', s:'\u2192 WA/OR \u2192 Columbia \u2192 Pacific'},
+          {p:27, l:'Pend Oreille (Clark Fork)', s:'\u2192 WA \u2192 Columbia \u2192 Pacific'},
+          {p:14, l:'Kootenai River', s:'\u2192 back to B.C. \u2192 Columbia'},
+          {p:8, l:'Stays in Idaho', s:'irrigation, cities & evaporation'},
+          {p:7, l:'Spokane River', s:'\u2192 WA \u2192 Columbia'},
+          {p:1, l:'Bear River', s:'\u2192 UT \u2192 Great Salt Lake'}
+        ]
+      },
+      compactsSub:'Idaho\u2019s ledger tilts international and internal: only <b>two interstate compacts</b>, but a superpower treaty in limbo, the largest water-rights adjudication ever completed, and a landmark deal that saved the Snake from itself.',
+      compacts:[
+        {yr:'1949', name:'Snake River Compact', states:['ID','WY'], kind:'perp', text:'Idaho 96%, Wyoming 4%. The friendliest compact on the map \u2014 lopsided enough that nobody\u2019s ever needed to sue over it.'},
+        {yr:'1958', name:'Bear River Compact', states:['ID','UT','WY'], kind:'perp', text:'Amended 1980. Splits a line-hopping river by reach and storage right. The Great Salt Lake\u2019s decline is turning this quiet compact into a loud one.'},
+        {yr:'1964', name:'Columbia River Treaty', states:['USA','CAN'], kind:'exp', text:'Governs the system Idaho\u2019s panhandle rivers feed. Flood provisions expired Sept 2024; the 2024 agreement-in-principle awaits paused negotiations. The regime runs on interim arrangements.'},
+        {yr:'1984', name:'Swan Falls Agreement', states:['ID','Idaho Power'], kind:'perp', text:'The internal grand bargain: settled whether hydropower rights at Swan Falls Dam could strangle upstream growth. Created minimum stream flows and the trust-water framework modern Idaho runs on.'},
+        {yr:'2004', name:'Nez Perce Agreement', states:['ID','Nez Perce','USA'], kind:'perp', text:'Capstone of the Snake River Basin Adjudication \u2014 175,000+ claims resolved, tribal flows secured for salmon, and decades of litigation retired in one settlement.'}
+      ],
+      thirdTab:{label:'The Stakes', type:'stakes'},
+      stakes:{
+        sub:'Idaho\u2019s live fights: a paused treaty, a stressed aquifer, a shrinking terminal lake, and four dams the whole Northwest argues about.',
+        items:[
+          {d:'2024\u2013now \u00b7 Columbia River Treaty limbo', h:'The Northwest\u2019s operating system, unpatched',
+           p:'The 1964 treaty\u2019s assured flood-control terms expired in September 2024. A modernization agreement-in-principle exists \u2014 Canada would provide preplanned flood storage and salmon flows \u2014 but talks were paused in 2025 and haven\u2019t resumed. Idaho\u2019s hydropower rates, flood management, and salmon programs all ride on a treaty running in interim mode.'},
+          {d:'2024 \u00b7 ESPA curtailment showdown', h:'The year the aquifer called the question',
+           p:'Idaho\u2019s water department ordered curtailment of junior groundwater pumping to protect senior surface rights \u2014 briefly putting water for hundreds of thousands of acres at risk before a mitigation settlement. The core math is generational: the aquifer that holds a Lake Erie\u2020 has been drawn down for decades, and the recharge program is racing the decline.'},
+          {d:'Ongoing \u00b7 Great Salt Lake pressure', h:'The Bear River gets audited',
+           p:'The lake\u2019s decline has turned Bear River accounting into a three-state issue with public-health stakes \u2014 exposed lakebed dust reaches millions. Utah\u2019s long-planned Bear River development and Idaho\u2019s upstream use are now weighed against a shrinking terminal lake with no water right of its own.'},
+          {d:'2023\u20132026 \u00b7 Lower Snake dams', h:'Four dams, one endless argument',
+           p:'A 2023 federal agreement paused decades of salmon litigation and funded studies on replacing the four lower Snake dams\u2019 services \u2014 then was scrapped in 2025, and courts have since re-entered the picture. Breach or keep, the outcome reshapes barging, power, and salmon for every drop Idaho sends downstream.'}
+        ]
+      },
+      quiz:[
+        {q:'How much of the Snake River does the 1949 compact give Idaho?',
+         opts:['50%','75%','96%','100%'], a:2,
+         why:'96% \u2014 nearly all the irrigable land is in Idaho, so Wyoming settled for 4%.'},
+        {q:'Where does the Bear River end?',
+         opts:['The Pacific, via the Columbia','The Great Salt Lake \u2014 it never reaches an ocean','The Snake River','The Colorado River'], a:1,
+         why:'It crosses state lines five times and dies in the Great Salt Lake \u2014 the hemisphere\u2019s largest river that never reaches the sea\u2020.'},
+        {q:'The Eastern Snake Plain Aquifer holds roughly as much water as\u2026',
+         opts:['Lake Tahoe','Lake Erie','Lake Powell','The Great Salt Lake'], a:1,
+         why:'The standard comparison\u2020 \u2014 a Great Lake\u2019s worth of water under the potato fields, which is why the 2024 curtailment fight mattered so much.'},
+        {q:'Which of these is NOT true of Idaho on this map?',
+         opts:['Major rivers flow into it from other states','It shares a water treaty issue with Canada','It is a pure headwaters state like Colorado','Nearly all its water exits via one river'], a:2,
+         why:'Idaho is the exception \u2014 the Snake arrives from Wyoming and the Kootenai and Clark Fork from Montana/B.C. Colorado, Wyoming (mostly), and Montana are the pure headwaters states.'}
+      ]
+    },
+
+    bc: {
+      name:'British Columbia', abbr:'BC', num:'14-E',
+      title:'The British Columbia <span class="flow">Water Ledger</span>',
+      thesis:'British Columbia is where the Columbia River is born \u2014 and where Canada holds up its half of a sixty-year argument. There\u2019s no interprovincial compact system here at all; BC\u2019s real water diplomacy happens at the border, under a 1964 treaty that\u2019s currently stuck in <b>park</b>.',
+      flowH2:'Where Canada\u2019s share begins',
+      flowSub:'BC doesn\u2019t divide water with other provinces the way American states divide it with each other. Its real negotiating partner is the country to the south. Tap a river to follow it.',
+      srcNote:'HEADWATERS OF THE COLUMBIA & PEACE',
+      riverIntro:{meta:'Select a river above', h:'A treaty province, not a compact province',
+        p:'Nearly every major river below eventually answers to an international treaty or agreement with the United States \u2014 not an interprovincial compact. That\u2019s the core difference between how Canada and the U.S. handle shared water, and BC lives it more than anywhere else on this map.'},
+      rivers:[
+        {id:'columbia', name:'COLUMBIA', w:16, dest:'south to WA \u2192 Pacific', meta:'1964 Columbia River Treaty \u00b7 status: modernization talks paused', h:'Columbia River',
+         text:'Born at Columbia Lake near Canal Flats, the river runs about 320 km north before doubling back south at the Big Bend near Mica Dam \u2014 roughly 760 km inside Canada in total before it ever reaches Washington State. Three Canadian dams (Duncan, Keenleyside, Mica) hold back that water under the treaty, in exchange for the "Canadian Entitlement": BC\u2019s negotiated share of the extra U.S. hydropower its storage makes possible.'},
+        {id:'kootenay', name:'KOOTENAY', w:8, dest:'south to MT \u2192 ID \u2192 back to BC \u2192 Columbia', meta:'Same 1964 treaty \u00b7 coordinated with Libby Dam, Montana', h:'Kootenay River',
+         text:'BC\u2019s version of the boomerang Montana and Idaho already know: the Kootenay (spelled Kootenai south of the border) leaves Canada near Kootenay National Park, loops through Montana and Idaho, and returns to BC to join the Columbia at Castlegar. Libby Dam, just across the line in Montana, backs Lake Koocanusa some 68 km into BC \u2014 one reservoir, two countries.'},
+        {id:'peace', name:'PEACE', w:10, dest:'east to AB \u2192 Arctic Ocean', meta:'1997 Mackenzie River Basin Transboundary Waters Master Agreement', h:'Peace River',
+         text:'The only river on this entire map bound for the Arctic. The W.A.C. Bennett Dam backs it into Williston Lake \u2014 the seventh-largest reservoir in the world by volume\u2020 \u2014 before it crosses into Alberta, joins the Athabasca and the Mackenzie, and empties into the Beaufort Sea roughly 4,000 km later.'},
+        {id:'fraser', name:'FRASER', w:9, dest:'stays in BC \u2192 Pacific at Vancouver', meta:'No transboundary agreement \u2014 entirely a BC river', h:'Fraser River',
+         text:'The river that never leaves. BC\u2019s longest river runs 1,375 km from the Rockies to Vancouver without crossing a border, is never dammed on its main stem, and remains the most productive salmon river on the Pacific coast \u2014 the rare major river on this whole map with no compact, no treaty, and nobody else to negotiate with.'},
+        {id:'skagit', name:'SKAGIT & OKANAGAN', w:5, dest:'south to WA \u2192 Pacific / Columbia', meta:'1984 Skagit River Treaty (High Ross) \u00b7 Okanagan\u2013Osoyoos IJC orders', h:'Skagit & Okanagan rivers',
+         text:'Two quieter border stories. In 1984, Seattle agreed to leave the Skagit Valley unflooded for 80 years \u2014 the deal runs to 2065 \u2014 in exchange for BC supplying power at the rate a taller dam would have produced. Further east, Okanagan and Osoyoos lake levels are managed under longstanding orders from the International Joint Commission, shared with Washington State.'},
+        {id:'flathead', name:'FLATHEAD (NORTH FORK)', w:4, dest:'south to MT \u2192 Columbia system', meta:'2010 BC\u2013Montana MOU \u00b7 2011 BC Flathead Watershed Area Conservation Act', h:'Flathead River (North Fork)',
+         text:'A rare water story with a happy ending. Proposed coal and gas development in BC\u2019s Flathead Valley alarmed Montana and Glacier National Park; in 2011 BC legislated a permanent ban on mining and energy development in its side of the valley. Montana\u2019s matching federal bill never passed \u2014 but most oil and gas leases on its side were voluntarily surrendered anyway.'}
+      ],
+      stats:[
+        {n:'760km\u2020', l:'the Columbia flows inside Canada before it ever reaches the U.S. border'},
+        {n:'Arctic', l:'the ocean the Peace River reaches \u2014 the only one on this map besides Alberta\u2019s'},
+        {n:'0', l:'interprovincial water compacts \u2014 BC\u2019s water diplomacy is almost entirely international'},
+        {n:'3', l:'Canadian dams (Duncan, Keenleyside, Mica) operated under the Columbia River Treaty'}
+      ],
+      local:{tag:'The Arrow Lakes angle',
+        p:'Building the treaty dams in the 1960s meant flooding valley towns and farmland \u2014 roughly 2,300 residents and First Nations communities were displaced, and 110,000 hectares went under water\u2020. The 2024 modernization deal promised better ecosystem and Indigenous provisions to make up for it. With talks paused since 2025, Arrow Lakes communities are waiting on the outcome like everyone else on the river.'},
+      pie:{
+        total:'~200',
+        sub:'The ledger\u2019s BC rivers alone move roughly 200 million acre-feet\u2020 a year \u2014 more than the other five regions combined. Consumption barely registers; nearly every drop reaches an ocean.',
+        note:'Rough proportions from long-term gauge averages for the rivers in this ledger only \u2014 BC\u2019s many other coastal rivers (Skeena, Stikine, and more) would add far more. Consumptive use in BC is under 1% and too small to slice.',
+        slices:[
+          {p:44, l:'Fraser River', s:'never leaves BC \u2192 Pacific at Vancouver'},
+          {p:35, l:'Columbia & Kootenay', s:'\u2192 USA \u2192 Pacific'},
+          {p:20, l:'Peace River', s:'\u2192 AB \u2192 Mackenzie \u2192 Arctic Ocean'},
+          {p:1, l:'Skagit, Flathead & Okanagan', s:'\u2192 WA \u00b7 MT'}
+        ]
+      },
+      compactsSub:'Canada doesn\u2019t run an interprovincial compact system the way the U.S. does \u2014 provinces largely own their water outright. BC\u2019s real "paperwork" is almost entirely international, negotiated directly with Washington, D.C. and individual U.S. states.',
+      compacts:[
+        {yr:'1909', name:'Boundary Waters Treaty', states:['CAN','USA'], kind:'perp', text:'Created the International Joint Commission and the framework behind dozens of smaller BC\u2013Washington orders, including the Skagit, Osoyoos, and Similkameen arrangements.'},
+        {yr:'1964', name:'Columbia River Treaty', states:['CAN','USA'], kind:'exp', text:'Coordinates BC\u2019s three treaty dams with Libby Dam in Montana. Assured flood-control terms expired in September 2024; a 2024 agreement-in-principle sits unratified while modernization talks remain paused.'},
+        {yr:'1984', name:'Skagit River Treaty (High Ross)', states:['BC','USA'], kind:'perp', text:'A permanent trade: BC keeps the Skagit Valley unflooded through 2065, and Seattle pays for power at the rate a taller dam would have produced instead.'},
+        {yr:'1997', name:'Mackenzie River Basin Transboundary Waters Master Agreement', states:['BC','AB','SK','YT','NWT'], kind:'perp', text:'A cooperative framework \u2014 not a fixed-percentage split \u2014 for the Peace, Athabasca, and Liard systems heading to the Arctic. Looser and younger than anything on the U.S. side of this map.'},
+        {yr:'2010/2011', name:'BC\u2013Montana Flathead Agreement', states:['BC','MT'], kind:'perp', text:'A memorandum of understanding, then a BC law, banning mining and energy development in the province\u2019s side of the Flathead Valley \u2014 ending a cross-border fight with conservation instead of a compact.'}
+      ],
+      thirdTab:{label:'The Stakes', type:'stakes'},
+      stakes:{
+        sub:'BC\u2019s live water story is really one story: a sixty-year-old treaty being remade in real time, with flood control, salmon, and Indigenous rights all riding on talks that currently aren\u2019t happening.',
+        items:[
+          {d:'2024\u2013now \u00b7 Columbia River Treaty limbo', h:'BC\u2019s half of the pause',
+           p:'The 2024 agreement-in-principle would have added guaranteed salmon flows and an Indigenous-led advisory body \u2014 genuine wins BC pushed hard for. With modernization talks paused since 2025, BC operates under interim arrangements instead of the deal it helped design.'},
+          {d:'1967\u201373 \u00b7 The Arrow Lakes flooding', h:'The cost side of the hydropower math',
+           p:'Building Duncan, Keenleyside, and Mica dams meant flooding valley towns and farmland to create the storage the treaty required \u2014 roughly 2,300 people and First Nations communities displaced. It\u2019s the part of the Columbia story rarely mentioned alongside the Canadian Entitlement payments.'},
+          {d:'Ongoing \u00b7 Williston Lake & the Peace-Athabasca Delta', h:'One dam, two provinces, one delta',
+           p:'BC\u2019s W.A.C. Bennett Dam created Williston Lake and cut flooding in Alberta\u2019s Peace-Athabasca Delta by roughly 38%\u2020 almost overnight. That delta is now a UNESCO World Heritage site under repeated international monitoring \u2014 a downstream consequence BC shares with Alberta.'},
+          {d:'2010\u201311 \u00b7 The Flathead mining ban', h:'Choosing conservation over a border fight',
+           p:'Facing pressure from Montana, Glacier National Park, and conservation groups on both sides, BC chose to legislate a permanent ban rather than litigate \u2014 a rare case on this whole map where a transboundary water fight ended in agreement instead of a Supreme Court docket.'}
+        ]
+      },
+      quiz:[
+        {q:'How does BC\u2019s water-sharing system differ from the American states on this map?',
+         opts:['It has more interstate-style compacts','It has almost no interprovincial compacts \u2014 its water diplomacy happens internationally instead','It has no rivers crossing borders','Its rivers are all controlled by Ottawa'], a:1,
+         why:'Canadian provinces largely own their water outright; BC\u2019s real negotiating partner for most of its major rivers is the United States, not another province.'},
+        {q:'Which ocean does BC reach that none of the four U.S. states on this map can?',
+         opts:['Atlantic','Arctic','Indian','Southern'], a:1,
+         why:'The Peace River carries BC water east into Alberta and eventually to the Arctic Ocean via the Mackenzie River system.'},
+        {q:'What did BC agree to do in the Flathead Valley in 2011?',
+         opts:['Build a new dam','Permanently ban mining and energy development','Sell water rights to Montana','Divert the river to Alberta'], a:1,
+         why:'The BC Flathead Watershed Area Conservation Act legislated a permanent ban, resolving a long transboundary dispute through conservation rather than litigation.'},
+        {q:'What is the "Canadian Entitlement"?',
+         opts:['A tax BC pays the U.S.','BC\u2019s negotiated share of the extra U.S. hydropower its storage makes possible','A fishing quota','A federal grant program'], a:1,
+         why:'Under the Columbia River Treaty, Canadian storage boosts downstream U.S. hydropower, and Canada receives a negotiated share of that benefit in return.'}
+      ]
+    },
+
+    ab: {
+      name:'Alberta', abbr:'AB', num:'14-F',
+      title:'The Alberta <span class="flow">Water Ledger</span>',
+      thesis:'One icefield in the Rockies feeds three oceans \u2014 the only spot on this entire map that can say that. Alberta is also the one Canadian region here with a real, quantified water-sharing rule: pass at least half of what falls on you to the next province downstream, audited every single year.',
+      flowH2:'Two rivers, two rulebooks',
+      flowSub:'Alberta\u2019s water splits into two systems with two very different governance styles: a hard 50% rule heading toward Hudson Bay, and a looser cooperative framework heading to the Arctic. Tap a river to see which applies.',
+      srcNote:'FROM ONE ICEFIELD, TWO DIRECTIONS',
+      riverIntro:{meta:'Select a river above', h:'The 50% province',
+        p:'Alberta is upstream of everyone here \u2014 there\u2019s no one else to blame for a dry year. Its rivers split into the Saskatchewan system (a hard quota owed to Saskatchewan) and the Arctic-bound system (a cooperative framework, no fixed percentage). Pick a river to see which rulebook applies.'},
+      rivers:[
+        {id:'bow', name:'BOW', w:6, dest:'joins Oldman \u2192 South Saskatchewan \u2192 SK', meta:'1969 Master Agreement on Apportionment \u00b7 basin closed to new licenses since 2006', h:'Bow River',
+         text:'Runs through Calgary from a glacier near Lake Louise. So heavily allocated that Alberta closed the entire South Saskatchewan basin to new water licenses in 2006 \u2014 its own version of Idaho\u2019s aquifer crunch, decided ahead of a crisis instead of during one.'},
+        {id:'oldman', name:'OLDMAN', w:5, dest:'joins Bow \u2192 South Saskatchewan \u2192 SK', meta:'1969 Master Agreement on Apportionment', h:'Oldman River',
+         text:'Southern Alberta\u2019s irrigation backbone, watering some of the most productive farmland in the province. Together with the Bow, it\u2019s the reason the South Saskatchewan basin ran out of room to allocate two decades ago.'},
+        {id:'nsask', name:'NORTH SASKATCHEWAN', w:7, dest:'through Edmonton \u2192 SK \u2192 Hudson Bay', meta:'1969 Master Agreement on Apportionment \u00b7 AB owes \u226550% of natural flow', h:'North Saskatchewan River',
+         text:'Rises at the Saskatchewan Glacier in the Columbia Icefield and runs through Edmonton before crossing into Saskatchewan. The Prairie Provinces Water Board audits this handoff every year \u2014 Alberta\u2019s hard commitment is at least half the river\u2019s natural flow, measured at the border.'},
+        {id:'milk', name:'MILK', w:4, dest:'south back into MT \u2192 Missouri R.', meta:'1909 Boundary Waters Treaty \u00b7 1921 IJC Order: 50/50 split with the U.S.', h:'Milk River',
+         text:'The mirror image of Montana\u2019s St. Mary story: the Milk rises in Montana, loops north through Alberta ranch country around the town that shares its name, then heads back south to rejoin the Missouri. The same 1921 order splits both rivers 50/50 between the two countries.'},
+        {id:'athabasca', name:'ATHABASCA', w:8, dest:'north \u2192 Lake Athabasca \u2192 Arctic Ocean', meta:'1997 Mackenzie River Basin Transboundary Waters Master Agreement', h:'Athabasca River',
+         text:'Also born at the Columbia Icefield, the Athabasca runs north past the oil sands at Fort McMurray into Lake Athabasca and eventually the Arctic \u2014 governed by a cooperative framework with BC, Saskatchewan, and the territories rather than a fixed percentage split.'},
+        {id:'peace_ab', name:'PEACE (Alberta reach)', w:6, dest:'from BC \u2192 through the delta \u2192 Arctic Ocean', meta:'1997 Mackenzie Master Agreement \u00b7 Peace-Athabasca Delta', h:'Peace River (Alberta reach)',
+         text:'Arrives from BC already regulated by the W.A.C. Bennett Dam, then joins the Athabasca in the Peace-Athabasca Delta \u2014 a UNESCO World Heritage wetland whose flooding patterns have been disrupted enough to draw repeated international monitoring missions.'}
+      ],
+      stats:[
+        {n:'3', l:'oceans reachable from one point in the Columbia Icefield \u2014 Pacific, Arctic, Hudson Bay'},
+        {n:'\u226550%', l:'of the Saskatchewan rivers\u2019 natural flow Alberta must pass downstream every year'},
+        {n:'2006', l:'the year Alberta closed the South Saskatchewan basin to new water allocations'},
+        {n:'81%\u2020', l:'the share Alberta has actually passed on average \u2014 well above the 50% it owes'}
+      ],
+      local:{tag:'The icefield angle',
+        p:'Snow Dome, on the Alberta\u2013BC boundary inside the Columbia Icefield, is the only confirmed spot in North America where meltwater reaches three oceans \u2014 one side toward the Pacific via the Columbia, one toward Hudson Bay via the Saskatchewan system, one toward the Arctic via the Athabasca. Banff and Jasper build entire visitor centers around this fact; water lawyers build entire careers around what happens to it next.'},
+      pie:{
+        total:'~85',
+        sub:'Roughly 85 million acre-feet\u2020 crosses Alberta in an average year \u2014 and more than four-fifths of it is headed for the Arctic, not the prairie farms most people picture when they think of Alberta water.',
+        note:'Rough proportions from long-term gauge averages, rounded to whole percents. The Peace arrives from BC already carrying most of the Arctic-bound volume; the fights, ironically, are all over the small Saskatchewan-bound slice.',
+        slices:[
+          {p:83, l:'Peace, Athabasca & northern rivers', s:'\u2192 Mackenzie \u2192 Arctic Ocean'},
+          {p:13, l:'Saskatchewan rivers', s:'\u2192 SK \u2192 Hudson Bay'},
+          {p:3, l:'Stays in Alberta', s:'irrigation, cities & evaporation'},
+          {p:1, l:'Milk River', s:'\u2192 back to MT \u2192 Missouri R.'}
+        ]
+      },
+      compactsSub:'Alberta is the one Canadian region here with something that actually functions like a U.S. compact: a quantified, audited flow-sharing rule with its downstream neighbor. Everything else runs on cooperative frameworks and a very old international treaty.',
+      compacts:[
+        {yr:'1909', name:'Boundary Waters Treaty', states:['CAN','USA'], kind:'perp', text:'Splits the St. Mary and Milk rivers 50/50 between the U.S. and Canada and created the International Joint Commission that still referees disputes on both.'},
+        {yr:'1969', name:'Master Agreement on Apportionment', states:['AB','SK','MB'], kind:'perp', text:'The closest thing to a U.S.-style compact in this entire app: Alberta must let at least 50% of the natural flow of eastward-bound rivers reach Saskatchewan, which owes the same downstream to Manitoba. In force forever unless every signatory agrees to change it.'},
+        {yr:'1997', name:'Mackenzie River Basin Transboundary Waters Master Agreement', states:['BC','AB','SK','YT','NWT'], kind:'perp', text:'Governs the Peace, Athabasca, and Liard systems heading to the Arctic. Cooperative and principle-based rather than percentage-based \u2014 a genuinely different philosophy from the Saskatchewan-bound rivers next door.'},
+        {yr:'2006', name:'South Saskatchewan River Basin Water Management Plan', states:['AB'], kind:'perp', text:'A purely internal decision, not a treaty with anyone \u2014 Alberta closed its most productive irrigation basin to new licenses once existing allocations left no reliable room for more.'}
+      ],
+      thirdTab:{label:'The Stakes', type:'stakes'},
+      stakes:{
+        sub:'Alberta\u2019s water problems are less about interprovincial fights and more about running out of room inside its own rules \u2014 plus a downstream delta that\u2019s become an international concern.',
+        items:[
+          {d:'2006\u2013now \u00b7 South Saskatchewan basin closure', h:'Full, by Alberta\u2019s own numbers',
+           p:'Alberta closed the basin to new water licenses once existing allocations, held against the 50% commitment to Saskatchewan, left no reliable room for more. New irrigation or municipal growth in the basin now happens by buying an existing license, not applying for a new one.'},
+          {d:'Ongoing \u00b7 Peace-Athabasca Delta concerns', h:'A UNESCO site watching two dams upstream',
+           p:'Reduced flooding in the delta \u2014 tied to BC\u2019s Bennett Dam, the newer Site C dam, and a changing climate \u2014 prompted repeated UNESCO monitoring missions and a 2023 push to list Wood Buffalo National Park as a World Heritage Site in danger. A downstream consequence Alberta shares with BC whether either government planned for it or not.'},
+          {d:'Annual \u00b7 The Saskatchewan handoff', h:'Auditing 50% every single year',
+           p:'The Prairie Provinces Water Board measures flow at the Alberta\u2013Saskatchewan border continuously. Unlike the multi-year court fights common on the U.S. side of this map, this one is quiet, technical, and has mostly worked for over fifty years \u2014 what a functioning apportionment system looks like day to day.'},
+          {d:'Ongoing \u00b7 Milk River infrastructure', h:'Alberta\u2019s side of a shared headache',
+           p:'The same aging St. Mary/Milk delivery infrastructure that failed on Montana\u2019s Hi-Line in 2024 runs through Alberta too \u2014 a reminder that century-old international plumbing doesn\u2019t stop being fragile just because it crosses a border.'}
+        ]
+      },
+      quiz:[
+        {q:'What must Alberta guarantee Saskatchewan every year?',
+         opts:['Nothing \u2014 Alberta owns all its water','At least 50% of the natural flow of eastward rivers','25% of groundwater reserves','A fixed volume regardless of drought'], a:1,
+         why:'The 1969 Master Agreement on Apportionment requires at least half of natural flow to pass downstream, audited annually by the Prairie Provinces Water Board.'},
+        {q:'Snow Dome in the Columbia Icefield sends water toward which three oceans?',
+         opts:['Pacific, Atlantic, Southern','Pacific, Arctic, and Hudson Bay (Atlantic basin)','Arctic, Indian, Pacific','Atlantic, Gulf of Mexico, Pacific'], a:1,
+         why:'It\u2019s the only confirmed point in North America with a true three-ocean hydrological divide.'},
+        {q:'Why did Alberta close the South Saskatchewan basin to new water licenses in 2006?',
+         opts:['A treaty with the U.S. required it','Existing allocations left no reliable room for more, given the Saskatchewan commitment','A drought emergency forced a temporary freeze','The federal government mandated it'], a:1,
+         why:'It was a proactive provincial decision once the math stopped working, not a response to a single crisis or treaty deadline.'},
+        {q:'How does the 1997 Mackenzie agreement differ from the Saskatchewan apportionment rule?',
+         opts:['It sets a stricter percentage','It\u2019s cooperative and principle-based rather than a fixed percentage split','It only applies to groundwater','It doesn\u2019t include Alberta'], a:1,
+         why:'The Arctic-bound rivers are governed by a looser, cooperative framework among six governments rather than a quantified quota like the Saskatchewan system.'}
+      ]
+    }
+  };
+
+  /* =============== HELPERS =============== */
+  var app = document.getElementById('app');
+  var eyebrow = document.getElementById('eyebrowText');
+
+  document.querySelectorAll('.theme-dot').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.documentElement.setAttribute('data-theme', btn.getAttribute('data-set'));
+    });
+  });
+
+  function esc(s){ return s; } /* content is trusted internal data */
+
+  /* =============== HOME (MAP) VIEW =============== */
+  function renderHome(){
+    eyebrow.textContent = 'PMR Civic Tools \u00b7 No. 14 \u00b7 Water Series';
+    app.innerHTML =
+      '<h1>The Headwaters <span class="flow">Ledger</span></h1>' +
+      '<p class="thesis">Six regions own the roof of the continent. The snow that lands on them becomes the Columbia, the Missouri, the Colorado, the Rio Grande, the Saskatchewan, and the Mackenzie \u2014 and a tangle of compacts, treaties, and Supreme Court decrees decides who drinks it. <b>Tap a region to open its ledger.</b></p>' +
+      '<div class="map-card">' +
+      '<svg viewBox="0 0 660 800" role="img" aria-label="Clickable map of British Columbia, Alberta, Idaho, Montana, Wyoming, and Colorado">' +
+        /* British Columbia */
+        '<polygon class="state-shape" data-s="bc" tabindex="0" role="button" aria-label="Open the British Columbia water ledger" points="18,28 320,28 295,230 18,230"></polygon>' +
+        /* Alberta */
+        '<polygon class="state-shape" data-s="ab" tabindex="0" role="button" aria-label="Open the Alberta water ledger" points="320,28 606,28 606,230 295,230"></polygon>' +
+        /* Northern fade: provinces continue beyond the frame */
+        '<defs><linearGradient id="northFade" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0" style="stop-color:var(--card);stop-opacity:1"></stop>' +
+          '<stop offset="1" style="stop-color:var(--card);stop-opacity:0"></stop>' +
+        '</linearGradient></defs>' +
+        '<rect x="0" y="18" width="660" height="100" fill="url(#northFade)" style="pointer-events:none"></rect>' +
+        '<text class="state-tag" x="196" y="16">provinces continue north \u2014 not to scale</text>' +
+        /* Montana */
+        '<polygon class="state-shape" data-s="mt" tabindex="0" role="button" aria-label="Open the Montana water ledger" points="74,230 530,230 530,414 264,414 264,439 215,412 170,377 145,332 95,297"></polygon>' +
+        /* Idaho */
+        '<polygon class="state-shape" data-s="id" tabindex="0" role="button" aria-label="Open the Idaho water ledger" points="37,230 74,230 95,297 145,332 170,377 215,412 264,439 264,552 37,552 30,447 45,367 37,297"></polygon>' +
+        /* Wyoming */
+        '<polygon class="state-shape" data-s="wy" tabindex="0" role="button" aria-label="Open the Wyoming water ledger" points="264,414 530,414 530,598 264,598"></polygon>' +
+        /* Colorado */
+        '<polygon class="state-shape" data-s="co" tabindex="0" role="button" aria-label="Open the Colorado water ledger" points="340,598 606,598 606,782 340,782"></polygon>' +
+        /* Continental divide (stylized) */
+        '<path class="divide-line" d="M300,28 C 220,90 160,150 150,227 C 190,317 240,387 265,437 C 300,507 330,547 360,602 C 400,667 420,717 445,787"></path>' +
+        '<text class="state-name" x="110" y="110">BRITISH</text>' +
+        '<text class="state-name" x="110" y="130">COLUMBIA</text>' +
+        '<text class="state-tag" x="98" y="148">a treaty, not a compact</text>' +
+        '<text class="state-name" x="420" y="115">ALBERTA</text>' +
+        '<text class="state-tag" x="410" y="133">the 50% province</text>' +
+        '<text class="state-name" x="255" y="322">MONTANA</text>' +
+        '<text class="state-tag" x="255" y="340">water to 3 oceans</text>' +
+        '<text class="state-name" x="105" y="497">IDAHO</text>' +
+        '<text class="state-tag" x="93" y="515">the Snake funnel</text>' +
+        '<text class="state-name" x="335" y="502">WYOMING</text>' +
+        '<text class="state-tag" x="335" y="520">water to 3 seas</text>' +
+        '<text class="state-name" x="405" y="687">COLORADO</text>' +
+        '<text class="state-tag" x="398" y="705">nothing flows in</text>' +
+        '<text class="gulf-note dest-label" x="460" y="55">\u00b7\u00b7\u00b7 Continental Divide</text>' +
+      '</svg></div>' +
+      '<div class="map-hint" id="mapHint" aria-live="polite">' +
+        '<div class="meta">The headwaters club</div>' +
+        '<p>Between them these six regions are party to 20+ compacts and agreements, three treaties spanning Canada and Mexico, several Supreme Court decrees, and the two largest tribal water settlements in U.S. history. Hover or tap a region for its one-line r\u00e9sum\u00e9.</p>' +
+      '</div>' +
+      '<div class="stat-strip">' +
+        '<div class="stat"><div class="n">6</div><div class="l">headwaters regions \u2014 four states, two provinces, the continent\u2019s roof</div></div>' +
+        '<div class="stat"><div class="n">6</div><div class="l">seas receive their water: Pacific, Gulf of Mexico, Gulf of California, Hudson Bay, Atlantic, Arctic</div></div>' +
+        '<div class="stat"><div class="n">2</div><div class="l">big agreements in flux right now: Colorado River post-2026 rules &amp; the Columbia River Treaty</div></div>' +
+        '<div class="stat"><div class="n">1909</div><div class="l">the year the paperwork era began, with the U.S.\u2013Canada Boundary Waters Treaty</div></div>' +
+      '</div>';
+
+    var HINTS = {
+      bc:{m:'British Columbia \u00b7 Ledger 14-E', p:'The Columbia River\u2019s birthplace and Canada\u2019s side of a treaty currently on pause. Almost no interprovincial compacts \u2014 BC\u2019s water diplomacy is international.'},
+      ab:{m:'Alberta \u00b7 Ledger 14-F', p:'One icefield feeds three oceans. The one Canadian region here with a real, audited 50% flow-sharing rule to its downstream neighbor.'},
+      mt:{m:'Montana \u00b7 Ledger 14-C', p:'Triple Divide Peak sends water to the Pacific, the Gulf of Mexico, and Hudson Bay. Home of the longest undammed river in the lower 48 \u2014 and zero compacts on the Missouri.'},
+      id:{m:'Idaho \u00b7 Ledger 14-D', p:'The exception: rivers flow in as well as out, but nearly everything exits through one door \u2014 the Snake. Beneath it, an aquifer holding roughly a Lake Erie\u2020.'},
+      wy:{m:'Wyoming \u00b7 Ledger 14-B', p:'Three Waters Mountain splits snowmelt toward three seas. Seven compacts, one Supreme Court decree, and a 4% share of its own Snake River.'},
+      co:{m:'Colorado \u00b7 Ledger 14-A', p:'No major river flows in \u2014 every drop leaves, to 18 states and Mexico. Ground zero for the 2026 Colorado River reckoning.'}
+    };
+    var hint = document.getElementById('mapHint');
+    app.querySelectorAll('.state-shape').forEach(function(sh){
+      var key = sh.getAttribute('data-s');
+      sh.addEventListener('mouseenter', function(){
+        hint.innerHTML = '<div class="meta">' + HINTS[key].m + '</div><p>' + HINTS[key].p + '</p>';
+      });
+      sh.addEventListener('click', function(){ go(key); });
+      sh.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(key); } });
+    });
+  }
+
+  /* =============== FLOW SVG GENERATOR =============== */
+  function flowSvg(st){
+    var rows = st.rivers.length;
+    var rowH = 66, top = 60, H = top + rows*rowH + 40;
+    var srcH = H - 70;
+    var s = '<svg viewBox="0 0 900 ' + H + '" role="img" aria-label="Flow diagram of rivers leaving ' + st.name + '">';
+    s += '<rect class="src-box" x="30" y="35" width="150" height="' + srcH + '" rx="14"></rect>';
+    s += '<text class="src-label" x="50" y="72" font-size="15">' + st.name.toUpperCase() + '</text>';
+    s += '<text class="src-label" x="46" y="' + (25 + srcH) + '" font-size="8.5" opacity="0.75">' + st.srcNote + '</text>';
+    st.rivers.forEach(function(r, i){
+      var y = top + 40 + i*rowH;
+      var d = 'M180,' + y + ' C 340,' + (y-2) + ' 480,' + (y-5) + ' 640,' + (y-6);
+      s += '<path class="river-path" data-r="' + r.id + '" stroke-width="' + r.w + '" d="' + d + '"></path>';
+      s += '<path class="river-hit" data-r="' + r.id + '" d="' + d + '"></path>';
+      s += '<text class="river-name" data-r="' + r.id + '" x="250" y="' + (y - r.w/2 - 8) + '">' + r.name + '</text>';
+      s += '<text class="dest-label" x="652" y="' + (y-2) + '">' + r.dest + '</text>';
+    });
+    s += '</svg>';
+    return s;
+  }
+
+  /* =============== PIE (LEDGER BALANCE) GENERATOR =============== */
+  var PIE_COLORS = ['var(--river)','var(--canyon)','var(--sage)','var(--river-deep)','var(--ink-soft)','var(--ink)'];
+  function piePt(cx, cy, r, ang){
+    var a = (ang - 90) * Math.PI / 180;
+    return (cx + r * Math.cos(a)).toFixed(2) + ',' + (cy + r * Math.sin(a)).toFixed(2);
+  }
+  function pieSeg(cx, cy, r1, r2, a0, a1){
+    var large = (a1 - a0) > 180 ? 1 : 0;
+    return 'M' + piePt(cx,cy,r2,a0) + ' A' + r2 + ',' + r2 + ' 0 ' + large + ' 1 ' + piePt(cx,cy,r2,a1) +
+           ' L' + piePt(cx,cy,r1,a1) + ' A' + r1 + ',' + r1 + ' 0 ' + large + ' 0 ' + piePt(cx,cy,r1,a0) + ' Z';
+  }
+  function pieSvg(pie){
+    var cx = 110, cy = 110, r2 = 100, r1 = 62, ang = 0;
+    var s = '<svg class="pie-svg" viewBox="0 0 220 220" role="img" aria-label="Share of annual flow by destination">';
+    pie.slices.forEach(function(sl, i){
+      var a1 = Math.min(ang + sl.p * 3.6, 359.98);
+      s += '<path class="pie-slice" data-i="' + i + '" d="' + pieSeg(cx,cy,r1,r2,ang,a1) + '"' +
+           ' style="fill:' + PIE_COLORS[i % PIE_COLORS.length] + ';stroke:var(--card);stroke-width:1.5">' +
+           '<title>' + sl.l + ' \u2014 ' + sl.p + '%</title></path>';
+      ang = ang + sl.p * 3.6;
+    });
+    s += '<text x="110" y="106" text-anchor="middle" style="fill:var(--ink);font-family:ui-monospace,Consolas,monospace;font-weight:700;font-size:30px">' + pie.total + '</text>';
+    s += '<text x="110" y="127" text-anchor="middle" style="fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;font-size:11px;letter-spacing:.08em">MAF / YR\u2020</text>';
+    s += '</svg>';
+    return s;
+  }
+  function pieLegend(pie){
+    return pie.slices.map(function(sl, i){
+      return '<div class="leg-row" data-i="' + i + '">' +
+        '<span class="leg-sw" style="background:' + PIE_COLORS[i % PIE_COLORS.length] + '"></span>' +
+        '<span class="leg-pct">' + sl.p + '%</span>' +
+        '<span class="leg-lab">' + sl.l + '<span class="leg-sub">' + sl.s + '</span></span></div>';
+    }).join('');
+  }
+
+  /* =============== STATE VIEW =============== */
+  function renderState(key){
+    var st = STATES[key];
+    eyebrow.textContent = 'PMR Civic Tools \u00b7 No. ' + st.num + ' \u00b7 Water Series';
+
+    var thirdLabel = st.thirdTab.label;
+    var html =
+      '<button class="back" id="backBtn">\u2190 Back to the map</button>' +
+      '<h1>' + st.title + '</h1>' +
+      '<p class="thesis">' + st.thesis + '</p>' +
+      '<nav class="tabs" role="tablist" aria-label="Sections">' +
+        '<button class="tab active" data-tab="flow" role="tab" aria-selected="true">Where It Goes</button>' +
+        '<button class="tab" data-tab="compacts" role="tab" aria-selected="false">The Agreements</button>' +
+        '<button class="tab" data-tab="third" role="tab" aria-selected="false">' + thirdLabel + '</button>' +
+        '<button class="tab" data-tab="quiz" role="tab" aria-selected="false">Quiz</button>' +
+      '</nav>';
+
+    /* --- flow panel --- */
+    html += '<section class="panel active" id="panel-flow">' +
+      '<h2>' + st.flowH2 + '</h2><p class="sub">' + st.flowSub + '</p>' +
+      '<div class="flow-card" id="flowHolder">' + flowSvg(st) + '</div>' +
+      '<div class="detail" id="riverDetail" aria-live="polite">' +
+        '<div class="meta">' + st.riverIntro.meta + '</div><h3>' + st.riverIntro.h + '</h3><p>' + st.riverIntro.p + '</p>' +
+      '</div><div class="stat-strip">';
+    st.stats.forEach(function(x){ html += '<div class="stat"><div class="n">' + x.n + '</div><div class="l">' + x.l + '</div></div>'; });
+    html += '</div><div class="local"><span class="tag">' + st.local.tag + '</span><p>' + st.local.p + '</p></div>' +
+      '<h2 style="margin-top:24px">The ledger balance</h2>' +
+      '<p class="sub">' + st.pie.sub + '</p>' +
+      '<div class="pie-card" id="pieCard">' + pieSvg(st.pie) +
+        '<div class="pie-legend">' + pieLegend(st.pie) + '</div>' +
+      '</div>' +
+      '<p class="pie-note">\u2020 ' + st.pie.note + '</p>' +
+      '</section>';
+
+    /* --- compacts panel --- */
+    html += '<section class="panel" id="panel-compacts">' +
+      '<h2>The paperwork on the river</h2><p class="sub">' + st.compactsSub + '</p>' +
+      '<div class="filters" role="group" aria-label="Filter agreements">' +
+        '<button class="filter active" data-f="all">All agreements</button>' +
+        '<button class="filter" data-f="perp">Perpetual</button>' +
+        '<button class="filter" data-f="exp">Expiring / in limbo</button>' +
+      '</div><div class="cards" id="cardGrid"></div></section>';
+
+    /* --- third panel --- */
+    html += '<section class="panel" id="panel-third">';
+    if (st.thirdTab.type === 'crisis'){
+      html +=
+        '<h2>The 2026 reckoning</h2>' +
+        '<p class="sub">Three layers of Colorado River rules sunset at once \u2014 during one of the worst water years on record \u2014 and the seven states never reached consensus on what replaces them.</p>' +
+        '<div class="count-grid">' +
+          '<div class="count"><div class="big mono" id="cdOct">\u2014</div><div class="cap">days until <b>Oct 1, 2026</b>, when new federal operating guidelines for Lake Powell &amp; Lake Mead take effect</div></div>' +
+          '<div class="count"><div class="big mono" id="cdDec">\u2014</div><div class="cap">days until <b>Dec 31, 2026</b>, when the 2007 Guidelines, 2019 Drought Plans &amp; Minute 323 all lapse</div></div>' +
+          '<div class="count blue"><div class="big mono">0/7</div><div class="cap">basin states in consensus \u2014 the Upper and Lower Basins submitted <b>competing</b> proposals instead</div></div>' +
+        '</div><h2>How we got here</h2><ul class="timeline">' +
+        [ ['1922','Colorado River Compact splits the river 50/50 between Upper and Lower Basins \u2014 using flow estimates from unusually wet years.',0],
+          ['2007','Interim Guidelines adopted: shortage tiers and coordinated Powell\u2013Mead operations. Explicitly temporary \u2014 set to expire in 2026.',0],
+          ['2019','Drought Contingency Plans layer on deeper cuts at trigger elevations. Also expire in 2026.',0],
+          ['Mar 2024','Upper and Lower Basins submit separate, conflicting post-2026 proposals to the Bureau of Reclamation.',0],
+          ['Nov 2025','Deadline for seven-state consensus passes without a deal.',0],
+          ['Jan 9, 2026','Reclamation releases the Draft Environmental Impact Statement \u2014 with no preferred alternative identified.',0],
+          ['Feb 14, 2026','Extended consensus deadline missed. Federal government positioned to set terms itself.',0],
+          ['Mar 2, 2026','Public comment closes \u2014 18,000+ submissions.',0],
+          ['May 1, 2026','Lower Basin states (AZ, CA, NV) submit their own joint proposal for operations through 2028. Litigation risk rises \u2014 compact disputes go straight to the U.S. Supreme Court.',0],
+          ['Oct 1, 2026','New operating guidelines scheduled to take effect \u2014 with or without state agreement.',1],
+          ['Dec 31, 2026','2007 Guidelines, Drought Contingency Plans, and Minute 323 (Mexico) formally expire.',1]
+        ].map(function(e){ return '<li' + (e[2]?' class="future"':'') + '><span class="d">' + e[0] + '</span><div class="t">' + e[1] + '</div></li>'; }).join('') +
+        '</ul><h2>The math problem underneath it all</h2>' +
+        '<div class="math"><label for="flowSlider">Drag to set the river\u2019s actual annual flow \u2014 then compare it to what the paperwork promised.</label>' +
+        '<input type="range" id="flowSlider" min="8" max="20" step="0.1" value="12.4" aria-label="Actual annual flow in million acre-feet">' +
+        '<div class="bars"><div class="barrow"><div class="bl"><span>PROMISED ON PAPER (1922 Compact + Mexico Treaty)</span><span>16.5 MAF</span></div>' +
+        '<div class="bartrack"><div class="barfill paper-b" style="width:100%"></div></div></div>' +
+        '<div class="barrow"><div class="bl"><span>ACTUAL FLOW (your setting)</span><span class="mono" id="flowVal">12.4 MAF</span></div>' +
+        '<div class="bartrack"><div class="barfill flow-b" id="flowBar" style="width:75%"></div></div></div></div>' +
+        '<p class="deficit" id="deficitTxt"></p>' +
+        '<p class="sub" style="margin:10px 0 0">The 21st-century average has run roughly 12\u201313 MAF\u2020. The 1922 negotiators assumed closer to 16.5+. Nobody\u2019s water right is fake \u2014 there\u2019s just more paper than water.</p></div>';
+    } else {
+      html += '<h2>What\u2019s actually in play</h2><p class="sub">' + st.stakes.sub + '</p>';
+      st.stakes.items.forEach(function(it){
+        html += '<div class="stake"><span class="d">' + it.d + '</span><h3>' + it.h + '</h3><p>' + it.p + '</p></div>';
+      });
+    }
+    html += '</section>';
+
+    /* --- quiz panel --- */
+    html += '<section class="panel" id="panel-quiz">' +
+      '<h2>Council-chamber quiz</h2>' +
+      '<p class="sub">If you can pass this, you know more than most of the room at public comment.</p>' +
+      '<div id="quizBox"></div>' +
+      '<div class="score" id="scoreBox"><div>Your score</div><div class="mono" id="scoreNum"></div><div id="scoreMsg"></div></div></section>';
+
+    app.innerHTML = html;
+
+    /* wire back button */
+    document.getElementById('backBtn').addEventListener('click', function(){ go('home'); });
+
+    /* wire tabs */
+    var tabs = app.querySelectorAll('.tab');
+    tabs.forEach(function(t){
+      t.addEventListener('click', function(){
+        var name = t.getAttribute('data-tab');
+        tabs.forEach(function(x){
+          var on = x === t;
+          x.classList.toggle('active', on);
+          x.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        app.querySelectorAll('.panel').forEach(function(p){
+          p.classList.toggle('active', p.id === 'panel-' + name);
+        });
+      });
+    });
+
+    /* wire rivers */
+    var svgEl = document.getElementById('flowHolder').querySelector('svg');
+    var detail = document.getElementById('riverDetail');
+    var byId = {};
+    st.rivers.forEach(function(r){ byId[r.id] = r; });
+    svgEl.querySelectorAll('[data-r]').forEach(function(el){
+      function set(){
+        svgEl.classList.add('dim');
+        svgEl.querySelectorAll('.river-path').forEach(function(p){
+          p.classList.toggle('hot', p.getAttribute('data-r') === el.getAttribute('data-r'));
+        });
+        var r = byId[el.getAttribute('data-r')];
+        detail.innerHTML = '<div class="meta">' + r.meta + '</div><h3>' + r.h + '</h3><p>' + r.text + '</p>';
+      }
+      el.addEventListener('click', set);
+      el.addEventListener('mouseenter', set);
+    });
+
+    /* wire pie hover: slice and legend highlight together */
+    var pieCard = document.getElementById('pieCard');
+    if (pieCard){
+      function pieHot(i, on){
+        pieCard.classList.toggle('dimmed', on);
+        pieCard.querySelectorAll('[data-i]').forEach(function(el){
+          el.classList.toggle('hot', on && el.getAttribute('data-i') === String(i));
+        });
+      }
+      pieCard.querySelectorAll('[data-i]').forEach(function(el){
+        el.addEventListener('mouseenter', function(){ pieHot(el.getAttribute('data-i'), true); });
+        el.addEventListener('mouseleave', function(){ pieHot(0, false); });
+        el.addEventListener('click', function(){ pieHot(el.getAttribute('data-i'), true); });
+      });
+    }
+
+    /* wire compact cards */
+    var grid = document.getElementById('cardGrid');
+    function renderCards(filter){
+      grid.innerHTML = '';
+      st.compacts.forEach(function(c){
+        if (filter === 'perp' && c.kind !== 'perp') return;
+        if (filter === 'exp' && c.kind !== 'exp') return;
+        var card = document.createElement('div');
+        card.className = 'card';
+        var chips = c.states.map(function(x){ return '<span class="chip">' + x + '</span>'; }).join('');
+        var badge = c.kind === 'perp' ? '<span class="badge perp">Perpetual \u2014 no expiry</span>'
+                  : c.kind === 'exp'  ? '<span class="badge exp">Expiring / in limbo</span>'
+                  : '<span class="badge none">No compact \u2014 other law governs</span>';
+        card.innerHTML = '<div class="yr">EST. ' + c.yr + '</div><h3>' + c.name + '</h3>' +
+          '<div class="chips">' + chips + '</div><p>' + c.text + '</p>' + badge;
+        grid.appendChild(card);
+      });
+      if (!grid.children.length){
+        var empty = document.createElement('div');
+        empty.className = 'card';
+        empty.innerHTML = '<h3>Nothing expiring here</h3><p>' + st.name + '\u2019s compacts are all perpetual \u2014 its exposure to expiring agreements runs through the shared Colorado River or Columbia systems. See the ' + st.thirdTab.label + ' tab.</p><span class="badge perp">All perpetual</span>';
+        grid.appendChild(empty);
+      }
+    }
+    renderCards('all');
+    app.querySelectorAll('.filter').forEach(function(f){
+      f.addEventListener('click', function(){
+        app.querySelectorAll('.filter').forEach(function(x){ x.classList.remove('active'); });
+        f.classList.add('active');
+        renderCards(f.getAttribute('data-f'));
+      });
+    });
+
+    /* wire crisis extras (Colorado only) */
+    if (st.thirdTab.type === 'crisis'){
+      function daysUntil(iso){
+        return Math.ceil((new Date(iso + 'T00:00:00') - new Date()) / 86400000);
+      }
+      function fmtDays(d){ return d > 0 ? d : (d === 0 ? 'TODAY' : 'PASSED'); }
+      document.getElementById('cdOct').textContent = fmtDays(daysUntil('2026-10-01'));
+      document.getElementById('cdDec').textContent = fmtDays(daysUntil('2026-12-31'));
+      var PAPER = 16.5;
+      var slider = document.getElementById('flowSlider');
+      var flowVal = document.getElementById('flowVal');
+      var flowBar = document.getElementById('flowBar');
+      var deficitTxt = document.getElementById('deficitTxt');
+      function updMath(){
+        var f = parseFloat(slider.value);
+        flowVal.textContent = f.toFixed(1) + ' MAF';
+        flowBar.style.width = Math.min(100, (f / PAPER) * 100).toFixed(1) + '%';
+        var gap = PAPER - f;
+        if (gap > 0.05){
+          deficitTxt.innerHTML = 'The paperwork promises <b>' + gap.toFixed(1) + ' MAF</b> more water than the river is carrying \u2014 about ' +
+            Math.round(gap / 0.075) / 10 + 'x the amount Nevada is allocated each year.';
+        } else {
+          deficitTxt.innerHTML = 'At this flow the paper balances. The river hasn\u2019t averaged this since before the megadrought.';
+        }
+      }
+      slider.addEventListener('input', updMath);
+      updMath();
+    }
+
+    /* wire quiz */
+    var quizBox = document.getElementById('quizBox');
+    var answered = 0, correct = 0;
+    st.quiz.forEach(function(item, qi){
+      var qd = document.createElement('div');
+      qd.className = 'q';
+      qd.innerHTML = '<h3>' + (qi + 1) + '. ' + item.q + '</h3>';
+      var opts = document.createElement('div');
+      opts.className = 'opts';
+      var expl = document.createElement('div');
+      expl.className = 'expl';
+      expl.textContent = item.why;
+      item.opts.forEach(function(o, oi){
+        var b = document.createElement('button');
+        b.className = 'opt';
+        b.textContent = o;
+        b.addEventListener('click', function(){
+          if (qd.dataset.done) return;
+          qd.dataset.done = '1';
+          answered++;
+          if (oi === item.a){ b.classList.add('right'); correct++; }
+          else { b.classList.add('wrong'); opts.children[item.a].classList.add('right'); }
+          Array.prototype.forEach.call(opts.children, function(x){ x.disabled = true; });
+          expl.classList.add('show');
+          if (answered === st.quiz.length){
+            var box = document.getElementById('scoreBox');
+            document.getElementById('scoreNum').textContent = correct + ' / ' + st.quiz.length;
+            var frac = correct / st.quiz.length;
+            document.getElementById('scoreMsg').textContent =
+              frac === 1 ? 'Certified water buffalo. Go testify.' :
+              frac >= .6 ? 'Council-chamber ready \u2014 better than most of the room.' :
+              'The river forgives. Scroll back up and try the Compacts tab.';
+            box.classList.add('show');
+            box.scrollIntoView({ behavior:'smooth', block:'nearest' });
+          }
+        });
+        opts.appendChild(b);
+      });
+      qd.appendChild(opts);
+      qd.appendChild(expl);
+      quizBox.appendChild(qd);
+    });
+
+    window.scrollTo(0, 0);
+  }
+
+  /* =============== ROUTER =============== */
+  function go(key){
+    try { history.replaceState(null, '', '#' + key); } catch(e){}
+    route(key);
+  }
+  function route(key){
+    if (STATES[key]) renderState(key);
+    else renderHome();
+  }
+  window.addEventListener('hashchange', function(){
+    route((location.hash || '').replace('#',''));
+  });
+  route((location.hash || '').replace('#',''));
+})();
+</script>
+</body>
+</html>
