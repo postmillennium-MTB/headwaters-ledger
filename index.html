@@ -349,11 +349,31 @@
 (function(){
   "use strict";
 
+  /* =============== APP-WIDE CONSTANTS =============== */
+  /* Change these once here instead of hunting through every render function. */
+  var TOOL_NUMBER = '14';        // PMR Civic Tools catalog number for this tool (used to be hard-typed in 14 places)
+  var NEVADA_CO_RIVER_AF = 0.3;  // Nevada's annual Colorado River apportionment, in MAF (Boulder Canyon Project Act, 1928 \u2014 300,000 AF/yr). Used as a relatable comparison unit in the Colorado deficit math.
+
   /* =============== STATE DATA =============== */
+  /* Schema for each region object below \u2014 use this as the checklist when adding a 7th region:
+       name, abbr, num          display name, 2-letter code, tab-number suffix (combined with TOOL_NUMBER, e.g. "14-A")
+       title, thesis             home-page-style header HTML for this region's page
+       flowH2, flowSub, srcNote, riverIntro{meta,h,p}   "Where It Goes" tab intro + flow-diagram source box label
+       rivers[]                  {id, name, w (line weight in the flow diagram), dest, meta, h, text}
+       stats[]                   {n, l} shown in the stat-strip
+       local{tag,p}              the "local angle" callout box
+       pie{total,sub,note,slices[{p,l,s}]}   the ledger-balance donut chart
+       compactsSub, compacts[]   {yr, name, states[], kind:'perp'|'exp'|'none', text} for the Agreements tab
+       thirdTab{label,type}      type is a key into THIRD_TAB below ('crisis' or 'stakes'); label is the tab button text
+       crisis{...}               ONLY for type:'crisis' regions \u2014 see THIRD_TAB.crisis below for the exact shape
+       stakes{sub, items[{d,h,p}]}   ONLY for type:'stakes' regions
+       reservoirs[]              {name, river, yearBuilt, capacityAF, note?} for the Reservoirs tab (empty array is fine)
+       quiz[]                    {q, opts[], a (index of correct option), why}
+  */
   var STATES = {
 
     co: {
-      name:'Colorado', abbr:'CO', num:'14-A',
+      name:'Colorado', abbr:'CO', num:'A',
       title:'The Colorado <span class="flow">Water Ledger</span>',
       thesis:'No major river flows <b>into</b> Colorado. Every drop that falls here is already on its way to somebody else — and the paperwork that says who gets it is a century old, partly expiring, and headed for a reckoning in <b>2026</b>.',
       flowH2:'The headwaters state',
@@ -413,6 +433,46 @@
         {yr:'2019', name:'Drought Contingency Plans', states:['7 states','Reclamation'], kind:'exp', text:'Emergency overlay on the 2007 Guidelines: deeper cuts at trigger elevations, plus Upper Basin drought-response releases. Also expires in 2026.'}
       ],
       thirdTab:{label:'Countdown 2026', type:'crisis'},
+      /* Everything the 'crisis' tab type (see THIRD_TAB below) needs to render and wire up this tab.
+         Only regions with thirdTab.type==='crisis' need this object; 'stakes' regions use `stakes` instead. */
+      crisis:{
+        sub:'Three layers of Colorado River rules sunset at once \u2014 during one of the worst water years on record \u2014 and the seven states never reached consensus on what replaces them.',
+        /* Each target gets a live day-countdown. {date} in `cap` is replaced with the formatted dateISO at render time,
+           so the countdown number and its caption can never drift out of sync with each other. */
+        targets:[
+          {id:'cdOct', dateISO:'2026-10-01', cap:'days until <b>{date}</b>, when new federal operating guidelines for Lake Powell &amp; Lake Mead take effect'},
+          {id:'cdDec', dateISO:'2026-12-31', cap:'days until <b>{date}</b>, when the 2007 Guidelines, 2019 Drought Plans &amp; Minute 323 all lapse'}
+        ],
+        consensusStat:{big:'0/7', cap:'basin states in consensus \u2014 the Upper and Lower Basins submitted <b>competing</b> proposals instead'},
+        /* d is kept as authored display text (not every entry has a precise day \u2014 "Mar 2024" is intentionally imprecise).
+           The last two entries' dates intentionally mirror the two targets above \u2014 if those ISO dates ever change, update these too. */
+        timeline:[
+          {d:'1922', t:'Colorado River Compact splits the river 50/50 between Upper and Lower Basins \u2014 using flow estimates from unusually wet years.', future:false},
+          {d:'2007', t:'Interim Guidelines adopted: shortage tiers and coordinated Powell\u2013Mead operations. Explicitly temporary \u2014 set to expire in 2026.', future:false},
+          {d:'2019', t:'Drought Contingency Plans layer on deeper cuts at trigger elevations. Also expire in 2026.', future:false},
+          {d:'Mar 2024', t:'Upper and Lower Basins submit separate, conflicting post-2026 proposals to the Bureau of Reclamation.', future:false},
+          {d:'Nov 2025', t:'Deadline for seven-state consensus passes without a deal.', future:false},
+          {d:'Jan 9, 2026', t:'Reclamation releases the Draft Environmental Impact Statement \u2014 with no preferred alternative identified.', future:false},
+          {d:'Feb 14, 2026', t:'Extended consensus deadline missed. Federal government positioned to set terms itself.', future:false},
+          {d:'Mar 2, 2026', t:'Public comment closes \u2014 18,000+ submissions.', future:false},
+          {d:'May 1, 2026', t:'Lower Basin states (AZ, CA, NV) submit their own joint proposal for operations through 2028. Litigation risk rises \u2014 compact disputes go straight to the U.S. Supreme Court.', future:false},
+          {d:'Oct 1, 2026', t:'New operating guidelines scheduled to take effect \u2014 with or without state agreement.', future:true},
+          {d:'Dec 31, 2026', t:'2007 Guidelines, Drought Contingency Plans, and Minute 323 (Mexico) formally expire.', future:true}
+        ],
+        paper:16.5, paperLabel:'1922 Compact + Mexico Treaty',           // MAF/yr promised on paper \u2014 drives both the bar chart AND its "16.5 MAF" label, so they can't drift apart
+        sliderMin:8, sliderMax:20, sliderStep:0.1, sliderDefault:12.4,
+        recentAvgNote:'The 21st-century average has run roughly 12\u201313 MAF\u2020. The 1922 negotiators assumed closer to 16.5+. Nobody\u2019s water right is fake \u2014 there\u2019s just more paper than water.'
+      },
+      /* Stubbed for Colorado to prove the pattern; the other five regions start with an empty array.
+         Source: Wikipedia "List of largest reservoirs in Colorado" + individual dam pages / operator sites, checked Aug 2026. */
+      reservoirs:[
+        {name:'Blue Mesa Reservoir', river:'Gunnison River', yearBuilt:1966, capacityAF:940700, note:'Colorado\u2019s largest reservoir entirely within the state'},
+        {name:'Lake Granby', river:'Colorado River', yearBuilt:1950, capacityAF:539800, note:'Colorado-Big Thompson Project \u2014 moves West Slope water east'},
+        {name:'Dillon Reservoir', river:'Blue River', yearBuilt:1963, capacityAF:254000, note:'Denver Water\u2019s main West Slope supply, via the Roberts Tunnel'},
+        {name:'John Martin Reservoir', river:'Arkansas River', yearBuilt:1948, capacityAF:340771, note:'Operated under the 1948 Arkansas River Compact \u2014 see the Agreements tab'},
+        {name:'McPhee Reservoir', river:'Dolores River', yearBuilt:1984, capacityAF:381000, note:'Southwest Colorado\u2019s largest \u2014 irrigation for the Montezuma Valley'},
+        {name:'Navajo Reservoir', river:'San Juan River', yearBuilt:1963, capacityAF:1708600, note:'Dam sits just across the New Mexico line; reservoir backs up into Colorado'}
+      ],
       quiz:[
         {q:'Does the 1922 Colorado River Compact expire in 2026?',
          opts:['Yes \u2014 that\u2019s the whole crisis','No \u2014 the compact is perpetual; the operating rules on top of it expire','It expired in 2007','Only if Congress lets it'], a:1,
@@ -433,7 +493,7 @@
     },
 
     wy: {
-      name:'Wyoming', abbr:'WY', num:'14-B',
+      name:'Wyoming', abbr:'WY', num:'B',
       title:'The Wyoming <span class="flow">Water Ledger</span>',
       thesis:'Snow on one Wyoming mountain can end up in <b>three different seas</b> \u2014 the Pacific, the Gulf of Mexico, and the Gulf of California. Wyoming signs more water compacts per resident than any state in the country, and one of its rivers is governed by the Supreme Court itself.',
       flowH2:'The three-seas state',
@@ -503,6 +563,7 @@
            p:'The Big Horn adjudication confirmed tribal reserved rights dating to the 1868 treaty \u2014 senior to nearly every ranch in the basin. How those rights are developed and marketed remains one of Wyoming\u2019s biggest open water questions.'}
         ]
       },
+      reservoirs:[],  // stub \u2014 same shape as STATES.co.reservoirs, not yet populated
       quiz:[
         {q:'The Snake River Compact splits the river how?',
          opts:['50/50','75% Wyoming, 25% Idaho','96% Idaho, 4% Wyoming','It\u2019s unallocated'], a:2,
@@ -520,7 +581,7 @@
     },
 
     mt: {
-      name:'Montana', abbr:'MT', num:'14-C',
+      name:'Montana', abbr:'MT', num:'C',
       title:'The Montana <span class="flow">Water Ledger</span>',
       thesis:'On Triple Divide Peak in Glacier, a single rain cloud can send water to the <b>Pacific, the Gulf of Mexico, and Hudson Bay</b>. Montana\u2019s ledger includes the longest undammed river in the lower 48, the biggest tribal water settlement in U.S. history \u2014 and a treaty with Canada currently stuck in limbo.',
       flowH2:'Crown of the continent',
@@ -583,6 +644,7 @@
            p:'Every drop of the Missouri leaving Montana is governed by federal manual, not interstate contract. Downstream navigation interests and upstream storage interests renegotiate through politics and litigation each drought. Whether that\u2019s freedom or exposure depends on the year.'}
         ]
       },
+      reservoirs:[],  // stub \u2014 same shape as STATES.co.reservoirs, not yet populated
       quiz:[
         {q:'How many interstate compacts govern the Missouri River?',
          opts:['One \u2014 the 1944 Missouri Compact','Three','Zero','Seven'], a:2,
@@ -600,7 +662,7 @@
     },
 
     id: {
-      name:'Idaho', abbr:'ID', num:'14-D',
+      name:'Idaho', abbr:'ID', num:'D',
       title:'The Idaho <span class="flow">Water Ledger</span>',
       thesis:'Idaho is the exception on this map: water actually flows <b>in</b> \u2014 from Wyoming, Montana, and even Canada. But nearly every drop leaves through a single door: the Snake River, carrying the state\u2019s fortunes to the Columbia. Underneath it all sits an aquifer holding roughly a <b>Lake Erie\u2019s worth</b> of water\u2020.',
       flowH2:'One river to rule them all',
@@ -665,6 +727,7 @@
            p:'A 2023 federal agreement paused decades of salmon litigation and funded studies on replacing the four lower Snake dams\u2019 services \u2014 then was scrapped in 2025, and courts have since re-entered the picture. Breach or keep, the outcome reshapes barging, power, and salmon for every drop Idaho sends downstream.'}
         ]
       },
+      reservoirs:[],  // stub \u2014 same shape as STATES.co.reservoirs, not yet populated
       quiz:[
         {q:'How much of the Snake River does the 1949 compact give Idaho?',
          opts:['50%','75%','96%','100%'], a:2,
@@ -682,7 +745,7 @@
     },
 
     bc: {
-      name:'British Columbia', abbr:'BC', num:'14-E',
+      name:'British Columbia', abbr:'BC', num:'E',
       title:'The British Columbia <span class="flow">Water Ledger</span>',
       thesis:'British Columbia is where the Columbia River is born \u2014 and where Canada holds up its half of a sixty-year argument. There\u2019s no interprovincial compact system here at all; BC\u2019s real water diplomacy happens at the border, under a 1964 treaty that\u2019s currently stuck in <b>park</b>.',
       flowH2:'Where Canada\u2019s share begins',
@@ -745,6 +808,7 @@
            p:'Facing pressure from Montana, Glacier National Park, and conservation groups on both sides, BC chose to legislate a permanent ban rather than litigate \u2014 a rare case on this whole map where a transboundary water fight ended in agreement instead of a Supreme Court docket.'}
         ]
       },
+      reservoirs:[],  // stub \u2014 same shape as STATES.co.reservoirs, not yet populated
       quiz:[
         {q:'How does BC\u2019s water-sharing system differ from the American states on this map?',
          opts:['It has more interstate-style compacts','It has almost no interprovincial compacts \u2014 its water diplomacy happens internationally instead','It has no rivers crossing borders','Its rivers are all controlled by Ottawa'], a:1,
@@ -762,7 +826,7 @@
     },
 
     ab: {
-      name:'Alberta', abbr:'AB', num:'14-F',
+      name:'Alberta', abbr:'AB', num:'F',
       title:'The Alberta <span class="flow">Water Ledger</span>',
       thesis:'One icefield in the Rockies feeds three oceans \u2014 the only spot on this entire map that can say that. Alberta is also the one Canadian region here with a real, quantified water-sharing rule: pass at least half of what falls on you to the next province downstream, audited every single year.',
       flowH2:'Two rivers, two rulebooks',
@@ -824,6 +888,7 @@
            p:'The same aging St. Mary/Milk delivery infrastructure that failed on Montana\u2019s Hi-Line in 2024 runs through Alberta too \u2014 a reminder that century-old international plumbing doesn\u2019t stop being fragile just because it crosses a border.'}
         ]
       },
+      reservoirs:[],  // stub \u2014 same shape as STATES.co.reservoirs, not yet populated
       quiz:[
         {q:'What must Alberta guarantee Saskatchewan every year?',
          opts:['Nothing \u2014 Alberta owns all its water','At least 50% of the natural flow of eastward rivers','25% of groundwater reserves','A fixed volume regardless of drought'], a:1,
@@ -855,7 +920,7 @@
 
   /* =============== HOME (MAP) VIEW =============== */
   function renderHome(){
-    eyebrow.textContent = 'PMR Civic Tools \u00b7 No. 14 \u00b7 Water Series';
+    eyebrow.textContent = 'PMR Civic Tools \u00b7 No. ' + TOOL_NUMBER + ' \u00b7 Water Series';
     app.innerHTML =
       '<h1>The Headwaters <span class="flow">Ledger</span></h1>' +
       '<p class="thesis">Six regions own the roof of the continent. The snow that lands on them becomes the Columbia, the Missouri, the Colorado, the Rio Grande, the Saskatchewan, and the Mackenzie \u2014 and a tangle of compacts, treaties, and Supreme Court decrees decides who drinks it. <b>Tap a region to open its ledger.</b></p>' +
@@ -915,12 +980,12 @@
       '</div>';
 
     var HINTS = {
-      bc:{m:'British Columbia \u00b7 Ledger 14-E', p:'The Columbia River\u2019s birthplace and Canada\u2019s side of a treaty currently on pause. Almost no interprovincial compacts \u2014 BC\u2019s water diplomacy is international.'},
-      ab:{m:'Alberta \u00b7 Ledger 14-F', p:'One icefield feeds three oceans. The one Canadian region here with a real, audited 50% flow-sharing rule to its downstream neighbor.'},
-      mt:{m:'Montana \u00b7 Ledger 14-C', p:'Triple Divide Peak sends water to the Pacific, the Gulf of Mexico, and Hudson Bay. Home of the longest undammed river in the lower 48 \u2014 and zero compacts on the Missouri.'},
-      id:{m:'Idaho \u00b7 Ledger 14-D', p:'The exception: rivers flow in as well as out, but nearly everything exits through one door \u2014 the Snake. Beneath it, an aquifer holding roughly a Lake Erie\u2020.'},
-      wy:{m:'Wyoming \u00b7 Ledger 14-B', p:'Three Waters Mountain splits snowmelt toward three seas. Seven compacts, one Supreme Court decree, and a 4% share of its own Snake River.'},
-      co:{m:'Colorado \u00b7 Ledger 14-A', p:'No major river flows in \u2014 every drop leaves, to 18 states and Mexico. Ground zero for the 2026 Colorado River reckoning.'}
+      bc:{m:'British Columbia \u00b7 Ledger ' + TOOL_NUMBER + '-E', p:'The Columbia River\u2019s birthplace and Canada\u2019s side of a treaty currently on pause. Almost no interprovincial compacts \u2014 BC\u2019s water diplomacy is international.'},
+      ab:{m:'Alberta \u00b7 Ledger ' + TOOL_NUMBER + '-F', p:'One icefield feeds three oceans. The one Canadian region here with a real, audited 50% flow-sharing rule to its downstream neighbor.'},
+      mt:{m:'Montana \u00b7 Ledger ' + TOOL_NUMBER + '-C', p:'Triple Divide Peak sends water to the Pacific, the Gulf of Mexico, and Hudson Bay. Home of the longest undammed river in the lower 48 \u2014 and zero compacts on the Missouri.'},
+      id:{m:'Idaho \u00b7 Ledger ' + TOOL_NUMBER + '-D', p:'The exception: rivers flow in as well as out, but nearly everything exits through one door \u2014 the Snake. Beneath it, an aquifer holding roughly a Lake Erie\u2020.'},
+      wy:{m:'Wyoming \u00b7 Ledger ' + TOOL_NUMBER + '-B', p:'Three Waters Mountain splits snowmelt toward three seas. Seven compacts, one Supreme Court decree, and a 4% share of its own Snake River.'},
+      co:{m:'Colorado \u00b7 Ledger ' + TOOL_NUMBER + '-A', p:'No major river flows in \u2014 every drop leaves, to 18 states and Mexico. Ground zero for the 2026 Colorado River reckoning.'}
     };
     var hint = document.getElementById('mapHint');
     app.querySelectorAll('.state-shape').forEach(function(sh){
@@ -989,10 +1054,119 @@
     }).join('');
   }
 
+  /* =============== THIRD-TAB RENDERERS =============== */
+  /* Each region's third tab is rendered/wired by whichever entry here matches its thirdTab.type.
+     To add a new third-tab type later (a new kind of countdown, say), add one key here with
+     render(st) and wire(st) \u2014 renderState() itself never has to change. */
+  function fmtDate(iso){
+    var d = new Date(iso + 'T00:00:00');
+    var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+  }
+  function daysUntil(iso){
+    return Math.ceil((new Date(iso + 'T00:00:00') - new Date()) / 86400000);
+  }
+
+  var THIRD_TAB = {
+
+    stakes:{
+      render: function(st){
+        var html = '<h2>What\u2019s actually in play</h2><p class="sub">' + st.stakes.sub + '</p>';
+        st.stakes.items.forEach(function(it){
+          html += '<div class="stake"><span class="d">' + it.d + '</span><h3>' + it.h + '</h3><p>' + it.p + '</p></div>';
+        });
+        return html;
+      },
+      wire: function(){ /* static content \u2014 nothing to wire up */ }
+    },
+
+    crisis:{
+      render: function(st){
+        var c = st.crisis;
+        var html = '<h2>The 2026 reckoning</h2><p class="sub">' + c.sub + '</p><div class="count-grid">';
+        c.targets.forEach(function(t){
+          html += '<div class="count"><div class="big mono" id="' + t.id + '">\u2014</div><div class="cap">' +
+            t.cap.replace('{date}', fmtDate(t.dateISO)) + '</div></div>';
+        });
+        html += '<div class="count blue"><div class="big mono">' + c.consensusStat.big + '</div><div class="cap">' + c.consensusStat.cap + '</div></div>' +
+          '</div><h2>How we got here</h2><ul class="timeline">';
+        c.timeline.forEach(function(e){
+          html += '<li' + (e.future ? ' class="future"' : '') + '><span class="d">' + e.d + '</span><div class="t">' + e.t + '</div></li>';
+        });
+        html += '</ul><h2>The math problem underneath it all</h2>' +
+          '<div class="math"><label for="flowSlider">Drag to set the river\u2019s actual annual flow \u2014 then compare it to what the paperwork promised.</label>' +
+          '<input type="range" id="flowSlider" min="' + c.sliderMin + '" max="' + c.sliderMax + '" step="' + c.sliderStep + '" value="' + c.sliderDefault + '" aria-label="Actual annual flow in million acre-feet">' +
+          '<div class="bars"><div class="barrow"><div class="bl"><span>PROMISED ON PAPER (' + c.paperLabel + ')</span><span>' + c.paper + ' MAF</span></div>' +
+          '<div class="bartrack"><div class="barfill paper-b" style="width:100%"></div></div></div>' +
+          '<div class="barrow"><div class="bl"><span>ACTUAL FLOW (your setting)</span><span class="mono" id="flowVal">' + c.sliderDefault.toFixed(1) + ' MAF</span></div>' +
+          '<div class="bartrack"><div class="barfill flow-b" id="flowBar" style="width:' + Math.min(100, (c.sliderDefault / c.paper) * 100).toFixed(1) + '%"></div></div></div></div>' +
+          '<p class="deficit" id="deficitTxt"></p>' +
+          '<p class="sub" style="margin:10px 0 0">' + c.recentAvgNote + '</p></div>';
+        return html;
+      },
+      wire: function(st){
+        var c = st.crisis;
+        function fmtDays(d){ return d > 0 ? d : (d === 0 ? 'TODAY' : 'PASSED'); }
+        c.targets.forEach(function(t){
+          document.getElementById(t.id).textContent = fmtDays(daysUntil(t.dateISO));
+        });
+        var slider = document.getElementById('flowSlider');
+        var flowVal = document.getElementById('flowVal');
+        var flowBar = document.getElementById('flowBar');
+        var deficitTxt = document.getElementById('deficitTxt');
+        function updMath(){
+          var f = parseFloat(slider.value);
+          flowVal.textContent = f.toFixed(1) + ' MAF';
+          flowBar.style.width = Math.min(100, (f / c.paper) * 100).toFixed(1) + '%';
+          var gap = c.paper - f;
+          if (gap > 0.05){
+            /* NOTE: the original version of this line divided by 0.075 with an extra stray /10,
+               which understated the multiple substantially. Fixed to: gap \u00f7 Nevada's real
+               ~0.3 MAF/yr allocation, rounded to one decimal. */
+            deficitTxt.innerHTML = 'The paperwork promises <b>' + gap.toFixed(1) + ' MAF</b> more water than the river is carrying \u2014 about ' +
+              Math.round((gap / NEVADA_CO_RIVER_AF) * 10) / 10 + 'x the amount Nevada is allocated each year.';
+          } else {
+            deficitTxt.innerHTML = 'At this flow the paper balances. The river hasn\u2019t averaged this since before the megadrought.';
+          }
+        }
+        slider.addEventListener('input', updMath);
+        updMath();
+      }
+    }
+
+  };
+
+  /* =============== RESERVOIRS PANEL (generic \u2014 same renderer for every region) =============== */
+  function reservoirsPanel(st){
+    var list = st.reservoirs || [];
+    if (!list.length){
+      return '<h2>Reservoirs</h2><p class="sub">Storage data for ' + st.name + ' hasn\u2019t been added yet.</p>' +
+        '<div class="cards"><div class="card"><h3>Coming soon</h3><p>' + st.name + '\u2019s major reservoirs aren\u2019t in the Ledger yet \u2014 Colorado\u2019s tab shows the pattern this will follow.</p></div></div>';
+    }
+    var totalAF = 0, totalYear = 0;
+    list.forEach(function(r){ totalAF += r.capacityAF; totalYear += r.yearBuilt; });
+    var avgYear = Math.round(totalYear / list.length);
+    var avgAge = new Date().getFullYear() - avgYear;
+    var html = '<h2>Reservoirs</h2><p class="sub">' + list.length + ' major reservoirs in ' + st.name + ', built ' +
+      Math.min.apply(null, list.map(function(r){ return r.yearBuilt; })) + '\u2013' + Math.max.apply(null, list.map(function(r){ return r.yearBuilt; })) + '.</p>' +
+      '<div class="stat-strip">' +
+      '<div class="stat"><div class="n">' + avgYear + '</div><div class="l">average year built</div></div>' +
+      '<div class="stat"><div class="n">' + avgAge + '</div><div class="l">average age today, in years</div></div>' +
+      '<div class="stat"><div class="n">' + (totalAF / 1e6).toFixed(2) + 'M</div><div class="l">combined capacity, acre-feet</div></div>' +
+      '</div><div class="cards" style="margin-top:14px">';
+    list.forEach(function(r){
+      html += '<div class="card"><div class="yr">BUILT ' + r.yearBuilt + '</div><h3>' + r.name + '</h3>' +
+        '<div class="chips"><span class="chip">' + r.river + '</span></div>' +
+        '<p>' + Math.round(r.capacityAF).toLocaleString() + ' acre-feet capacity' + (r.note ? ' \u2014 ' + r.note : '') + '</p></div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
   /* =============== STATE VIEW =============== */
   function renderState(key){
     var st = STATES[key];
-    eyebrow.textContent = 'PMR Civic Tools \u00b7 No. ' + st.num + ' \u00b7 Water Series';
+    eyebrow.textContent = 'PMR Civic Tools \u00b7 No. ' + TOOL_NUMBER + '-' + st.num + ' \u00b7 Water Series';
 
     var thirdLabel = st.thirdTab.label;
     var html =
@@ -1003,6 +1177,7 @@
         '<button class="tab active" data-tab="flow" role="tab" aria-selected="true">Where It Goes</button>' +
         '<button class="tab" data-tab="compacts" role="tab" aria-selected="false">The Agreements</button>' +
         '<button class="tab" data-tab="third" role="tab" aria-selected="false">' + thirdLabel + '</button>' +
+        '<button class="tab" data-tab="reservoirs" role="tab" aria-selected="false">Reservoirs</button>' +
         '<button class="tab" data-tab="quiz" role="tab" aria-selected="false">Quiz</button>' +
       '</nav>';
 
@@ -1032,45 +1207,11 @@
         '<button class="filter" data-f="exp">Expiring / in limbo</button>' +
       '</div><div class="cards" id="cardGrid"></div></section>';
 
-    /* --- third panel --- */
-    html += '<section class="panel" id="panel-third">';
-    if (st.thirdTab.type === 'crisis'){
-      html +=
-        '<h2>The 2026 reckoning</h2>' +
-        '<p class="sub">Three layers of Colorado River rules sunset at once \u2014 during one of the worst water years on record \u2014 and the seven states never reached consensus on what replaces them.</p>' +
-        '<div class="count-grid">' +
-          '<div class="count"><div class="big mono" id="cdOct">\u2014</div><div class="cap">days until <b>Oct 1, 2026</b>, when new federal operating guidelines for Lake Powell &amp; Lake Mead take effect</div></div>' +
-          '<div class="count"><div class="big mono" id="cdDec">\u2014</div><div class="cap">days until <b>Dec 31, 2026</b>, when the 2007 Guidelines, 2019 Drought Plans &amp; Minute 323 all lapse</div></div>' +
-          '<div class="count blue"><div class="big mono">0/7</div><div class="cap">basin states in consensus \u2014 the Upper and Lower Basins submitted <b>competing</b> proposals instead</div></div>' +
-        '</div><h2>How we got here</h2><ul class="timeline">' +
-        [ ['1922','Colorado River Compact splits the river 50/50 between Upper and Lower Basins \u2014 using flow estimates from unusually wet years.',0],
-          ['2007','Interim Guidelines adopted: shortage tiers and coordinated Powell\u2013Mead operations. Explicitly temporary \u2014 set to expire in 2026.',0],
-          ['2019','Drought Contingency Plans layer on deeper cuts at trigger elevations. Also expire in 2026.',0],
-          ['Mar 2024','Upper and Lower Basins submit separate, conflicting post-2026 proposals to the Bureau of Reclamation.',0],
-          ['Nov 2025','Deadline for seven-state consensus passes without a deal.',0],
-          ['Jan 9, 2026','Reclamation releases the Draft Environmental Impact Statement \u2014 with no preferred alternative identified.',0],
-          ['Feb 14, 2026','Extended consensus deadline missed. Federal government positioned to set terms itself.',0],
-          ['Mar 2, 2026','Public comment closes \u2014 18,000+ submissions.',0],
-          ['May 1, 2026','Lower Basin states (AZ, CA, NV) submit their own joint proposal for operations through 2028. Litigation risk rises \u2014 compact disputes go straight to the U.S. Supreme Court.',0],
-          ['Oct 1, 2026','New operating guidelines scheduled to take effect \u2014 with or without state agreement.',1],
-          ['Dec 31, 2026','2007 Guidelines, Drought Contingency Plans, and Minute 323 (Mexico) formally expire.',1]
-        ].map(function(e){ return '<li' + (e[2]?' class="future"':'') + '><span class="d">' + e[0] + '</span><div class="t">' + e[1] + '</div></li>'; }).join('') +
-        '</ul><h2>The math problem underneath it all</h2>' +
-        '<div class="math"><label for="flowSlider">Drag to set the river\u2019s actual annual flow \u2014 then compare it to what the paperwork promised.</label>' +
-        '<input type="range" id="flowSlider" min="8" max="20" step="0.1" value="12.4" aria-label="Actual annual flow in million acre-feet">' +
-        '<div class="bars"><div class="barrow"><div class="bl"><span>PROMISED ON PAPER (1922 Compact + Mexico Treaty)</span><span>16.5 MAF</span></div>' +
-        '<div class="bartrack"><div class="barfill paper-b" style="width:100%"></div></div></div>' +
-        '<div class="barrow"><div class="bl"><span>ACTUAL FLOW (your setting)</span><span class="mono" id="flowVal">12.4 MAF</span></div>' +
-        '<div class="bartrack"><div class="barfill flow-b" id="flowBar" style="width:75%"></div></div></div></div>' +
-        '<p class="deficit" id="deficitTxt"></p>' +
-        '<p class="sub" style="margin:10px 0 0">The 21st-century average has run roughly 12\u201313 MAF\u2020. The 1922 negotiators assumed closer to 16.5+. Nobody\u2019s water right is fake \u2014 there\u2019s just more paper than water.</p></div>';
-    } else {
-      html += '<h2>What\u2019s actually in play</h2><p class="sub">' + st.stakes.sub + '</p>';
-      st.stakes.items.forEach(function(it){
-        html += '<div class="stake"><span class="d">' + it.d + '</span><h3>' + it.h + '</h3><p>' + it.p + '</p></div>';
-      });
-    }
-    html += '</section>';
+    /* --- third panel (crisis or stakes \u2014 delegated to THIRD_TAB) --- */
+    html += '<section class="panel" id="panel-third">' + THIRD_TAB[st.thirdTab.type].render(st) + '</section>';
+
+    /* --- reservoirs panel (same renderer for every region) --- */
+    html += '<section class="panel" id="panel-reservoirs">' + reservoirsPanel(st) + '</section>';
 
     /* --- quiz panel --- */
     html += '<section class="panel" id="panel-quiz">' +
@@ -1167,34 +1308,8 @@
       });
     });
 
-    /* wire crisis extras (Colorado only) */
-    if (st.thirdTab.type === 'crisis'){
-      function daysUntil(iso){
-        return Math.ceil((new Date(iso + 'T00:00:00') - new Date()) / 86400000);
-      }
-      function fmtDays(d){ return d > 0 ? d : (d === 0 ? 'TODAY' : 'PASSED'); }
-      document.getElementById('cdOct').textContent = fmtDays(daysUntil('2026-10-01'));
-      document.getElementById('cdDec').textContent = fmtDays(daysUntil('2026-12-31'));
-      var PAPER = 16.5;
-      var slider = document.getElementById('flowSlider');
-      var flowVal = document.getElementById('flowVal');
-      var flowBar = document.getElementById('flowBar');
-      var deficitTxt = document.getElementById('deficitTxt');
-      function updMath(){
-        var f = parseFloat(slider.value);
-        flowVal.textContent = f.toFixed(1) + ' MAF';
-        flowBar.style.width = Math.min(100, (f / PAPER) * 100).toFixed(1) + '%';
-        var gap = PAPER - f;
-        if (gap > 0.05){
-          deficitTxt.innerHTML = 'The paperwork promises <b>' + gap.toFixed(1) + ' MAF</b> more water than the river is carrying \u2014 about ' +
-            Math.round(gap / 0.075) / 10 + 'x the amount Nevada is allocated each year.';
-        } else {
-          deficitTxt.innerHTML = 'At this flow the paper balances. The river hasn\u2019t averaged this since before the megadrought.';
-        }
-      }
-      slider.addEventListener('input', updMath);
-      updMath();
-    }
+    /* wire the third tab (crisis or stakes) \u2014 delegated to THIRD_TAB, same as the render step above */
+    THIRD_TAB[st.thirdTab.type].wire(st);
 
     /* wire quiz */
     var quizBox = document.getElementById('quizBox');
@@ -1244,7 +1359,7 @@
 
   /* =============== ESSAY VIEW =============== */
   function renderEssay(){
-    eyebrow.textContent = 'PMR Civic Tools \u00b7 No. 14 \u00b7 Water Series \u00b7 Essay';
+    eyebrow.textContent = 'PMR Civic Tools \u00b7 No. ' + TOOL_NUMBER + ' \u00b7 Water Series \u00b7 Essay';
     var tpl = document.getElementById('essayContent');
     app.innerHTML =
       '<button class="back" id="backBtn">\u2190 Back to the map</button>' +
