@@ -260,6 +260,15 @@
   .essay-card h3{font-size:1.08rem;line-height:1.3;margin:5px 0 6px}
   .essay-card p{font-size:.9rem;color:var(--ink-soft);margin:0}
   .essay-card .read{display:inline-block;margin-top:9px;font-family:ui-monospace,Consolas,monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--canyon)}
+  /* .static = same visual language as the essay link card, but for informational (non-link) cards \u2014
+     no hover-lift, so it doesn't look clickable when it isn't. */
+  .essay-card.static{cursor:default}
+  .essay-card.static:hover{transform:none;box-shadow:var(--shadow)}
+
+  /* Two-up row for the essay card + a companion card (home page) */
+  .split-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;margin-top:14px}
+  .split-row .essay-card{margin-top:0}
+  @media(max-width:680px){.split-row{grid-template-columns:1fr}}
 
   /* ESSAY ARTICLE VIEW */
   .essay{max-width:720px}
@@ -964,6 +973,41 @@
     {n:'2', l:'big agreements in flux right now: Colorado River post-2026 rules &amp; the Columbia River Treaty'},
     {n:'1909', l:'the year the paperwork era began, with the U.S.\u2013Canada Boundary Waters Treaty'}
   ];
+  /* Regions with reservoirs[] data populated so far \u2014 update this one line as BC/AB get added later;
+     everything downstream (the card, the average, the sort order) follows automatically. */
+  var RESERVOIR_STATES = ['wy','id','mt','co'];
+
+  function infraCardHtml(){
+    var items = RESERVOIR_STATES
+      .map(function(key){ return { key:key, st:STATES[key], sum:reservoirSummary(STATES[key].reservoirs) }; })
+      .filter(function(x){ return x.sum; })
+      .sort(function(a,b){ return b.sum.avgAge - a.sum.avgAge; });
+    var overallAvg = Math.round(items.reduce(function(s,x){ return s + x.sum.avgAge; }, 0) / items.length);
+    var barItems = items.map(function(x){ return { label: x.st.name, value: x.sum.avgAge, display: x.sum.avgAge + ' yrs' }; });
+    return '<div class="essay-card static">' +
+      '<span class="etag">Data note \u00b7 Reservoir age</span>' +
+      '<h3>The West\u2019s Water Infrastructure Is Getting Old</h3>' +
+      '<p>Across the ' + items.length + ' states tracked so far, the reservoirs storing this water average <b>' + overallAvg + ' years old</b> \u2014 most built in a single federal dam-building window between the 1900s and the 1960s. Open a region\u2019s Reservoirs tab for the full list.</p>' +
+      barListHtml(barItems, {barClass:'paper-b'}) +
+    '</div>';
+  }
+
+  function retentionCardHtml(){
+    var items = ['co','wy','mt','id','ab','bc'].map(function(key){
+      var st = STATES[key];
+      var slice = st.pie.slices.filter(function(s){ return /^Stays in/.test(s.l); })[0];
+      /* BC's pie has no 'Stays in' slice \u2014 its own data note says consumptive use there is
+         under 1% and too small to slice. Shown honestly as <1%, not silently dropped. */
+      return { label: st.name, value: slice ? slice.p : 0.6, display: slice ? slice.p + '%' : '<1%' };
+    }).sort(function(a,b){ return b.value - a.value; });
+    return '<div class="essay-card static">' +
+      '<span class="etag">Water Series \u00b7 Ledger Balance</span>' +
+      '<h3>How Much Stays Home</h3>' +
+      '<p>Share of each region\u2019s average annual flow used there \u2014 cities, farms, evaporation \u2014 rather than leaving for somewhere else. See a region\u2019s own Ledger Balance tab for the full breakdown.</p>' +
+      barListHtml(items, {max:100, barClass:'flow-b'}) +
+    '</div>';
+  }
+
   function renderHome(){
     eyebrow.textContent = 'PMR Civic Tools \u00b7 No. ' + TOOL_NUMBER + ' \u00b7 Water Series';
     app.innerHTML =
@@ -1017,12 +1061,16 @@
         '<div class="meta">The headwaters club</div>' +
         '<p>Between them these six regions are party to 20+ compacts and agreements, three treaties spanning Canada and Mexico, several Supreme Court decrees, and the two largest tribal water settlements in U.S. history. Hover or tap a region for its one-line r\u00e9sum\u00e9.</p>' +
       '</div>' +
-      '<a class="essay-card" href="#essay">' +
-        '<span class="etag">From the Water Series \u00b7 Essay</span>' +
-        '<h3>Too Heavy, Too Cheap: Why America Pipes Oil and Not Water</h3>' +
-        '<p>We built pipelines that move crude from Alberta to the Gulf \u2014 so why not pipe Mississippi floodwater to Phoenix? The answer comes down to volume, value, physics, and politics \u2026 plus the continental water pipeline that already exists. (It ships as hay.)</p>' +
-        '<span class="read">Read the essay \u2192</span>' +
-      '</a>' +
+      infraCardHtml() +
+      '<div class="split-row">' +
+        '<a class="essay-card" href="#essay">' +
+          '<span class="etag">From the Water Series \u00b7 Essay</span>' +
+          '<h3>Too Heavy, Too Cheap: Why America Pipes Oil and Not Water</h3>' +
+          '<p>We built pipelines that move crude from Alberta to the Gulf \u2014 so why not pipe Mississippi floodwater to Phoenix? The answer comes down to volume, value, physics, and politics \u2026 plus the continental water pipeline that already exists. (It ships as hay.)</p>' +
+          '<span class="read">Read the essay \u2192</span>' +
+        '</a>' +
+        retentionCardHtml() +
+      '</div>' +
       '<div class="stat-strip">' +
         HOME_STATS.map(function(x){ return '<div class="stat"><div class="n">' + x.n + '</div><div class="l">' + x.l + '</div></div>'; }).join('') +
       '</div>';
@@ -1109,6 +1157,37 @@
         '<span class="leg-pct">' + sl.p + '%</span>' +
         '<span class="leg-lab">' + sl.l + '<span class="leg-sub">' + sl.s + '</span></span></div>';
     }).join('');
+  }
+
+  /* =============== SHARED SUMMARY / CHART HELPERS =============== */
+  /* Averages a region's reservoirs[] array once, in one place \u2014 used by both the per-region
+     Reservoirs tab and the home-page infrastructure-age card, so the two can never disagree. */
+  function reservoirSummary(list){
+    if (!list || !list.length) return null;
+    var totalYear = 0, totalAF = 0;
+    list.forEach(function(r){ totalYear += r.yearBuilt; totalAF += r.capacityAF; });
+    var avgYear = Math.round(totalYear / list.length);
+    return {
+      count: list.length,
+      avgYear: avgYear,
+      avgAge: new Date().getFullYear() - avgYear,
+      minYr: Math.min.apply(null, list.map(function(r){ return r.yearBuilt; })),
+      maxYr: Math.max.apply(null, list.map(function(r){ return r.yearBuilt; })),
+      totalAF: totalAF
+    };
+  }
+  /* A small labeled horizontal-bar chart, reusing the .bars/.bartrack/.barfill styling already
+     built for the Colorado countdown tab's flow-vs-promised chart, instead of inventing new chart
+     CSS. items: [{label, value, display}]. opts.max sets the scale (defaults to the largest value
+     present); opts.barClass picks which existing bar color to use ('flow-b' blue or 'paper-b' ink). */
+  function barListHtml(items, opts){
+    opts = opts || {};
+    var max = opts.max || Math.max.apply(null, items.map(function(i){ return i.value; }));
+    return '<div class="bars">' + items.map(function(it){
+      var w = Math.max(2, Math.min(100, (it.value / max) * 100)).toFixed(1);
+      return '<div class="barrow"><div class="bl"><span>' + it.label + '</span><span>' + it.display + '</span></div>' +
+        '<div class="bartrack"><div class="barfill ' + (opts.barClass || 'flow-b') + '" style="width:' + w + '%"></div></div></div>';
+    }).join('') + '</div>';
   }
 
   /* =============== THIRD-TAB RENDERERS =============== */
@@ -1201,24 +1280,19 @@
         '<div class="cards"><div class="card"><h3>Coming soon</h3><p>' + st.name + '\u2019s major reservoirs aren\u2019t in the Ledger yet \u2014 the other four U.S. states show the pattern this will follow.</p></div></div>';
     }
     var thisYear = new Date().getFullYear();
-    var totalAF = 0, totalYear = 0;
-    list.forEach(function(r){ totalAF += r.capacityAF; totalYear += r.yearBuilt; });
-    var avgYear = Math.round(totalYear / list.length);
-    var avgAge = thisYear - avgYear;
-    var minYr = Math.min.apply(null, list.map(function(r){ return r.yearBuilt; }));
-    var maxYr = Math.max.apply(null, list.map(function(r){ return r.yearBuilt; }));
+    var sum = reservoirSummary(list);
     /* Lead with average age, not reservoir count \u2014 that's the story this data actually tells:
        most of the West's biggest reservoirs date to a 30-year federal dam-building window. */
     var html = '<h2>Reservoirs</h2>' +
-      '<p class="sub">' + list.length + ' major reservoirs in ' + st.name + ', built ' + minYr + '\u2013' + maxYr + '.</p>' +
+      '<p class="sub">' + sum.count + ' major reservoirs in ' + st.name + ', built ' + sum.minYr + '\u2013' + sum.maxYr + '.</p>' +
       '<div class="count blue" style="max-width:340px;margin-bottom:16px">' +
-        '<div class="big mono">' + avgAge + '</div>' +
-        '<div class="cap">average age today, in years \u2014 built ' + avgYear + ' on average</div>' +
+        '<div class="big mono">' + sum.avgAge + '</div>' +
+        '<div class="cap">average age today, in years \u2014 built ' + sum.avgYear + ' on average</div>' +
       '</div>' +
       '<div class="stat-strip">' +
-        '<div class="stat"><div class="n">' + list.length + '</div><div class="l">major reservoirs tracked</div></div>' +
-        '<div class="stat"><div class="n">' + minYr + '\u2013' + maxYr + '</div><div class="l">built, oldest to newest</div></div>' +
-        '<div class="stat"><div class="n">' + (totalAF / 1e6).toFixed(2) + 'M</div><div class="l">combined capacity, acre-feet</div></div>' +
+        '<div class="stat"><div class="n">' + sum.count + '</div><div class="l">major reservoirs tracked</div></div>' +
+        '<div class="stat"><div class="n">' + sum.minYr + '\u2013' + sum.maxYr + '</div><div class="l">built, oldest to newest</div></div>' +
+        '<div class="stat"><div class="n">' + (sum.totalAF / 1e6).toFixed(2) + 'M</div><div class="l">combined capacity, acre-feet</div></div>' +
       '</div><div class="cards" style="margin-top:14px">';
     list.forEach(function(r){
       /* name/river/note are copied in from Wikipedia and operator sites, not hand-authored like the rest of
