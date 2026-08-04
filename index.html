@@ -49,13 +49,22 @@
     display:flex; justify-content:space-between; align-items:center; gap:10px;
     border-bottom:2px solid var(--ink); padding-bottom:8px; margin-bottom:14px;
   }
-  .theme-picker{display:flex;gap:6px}
-  .theme-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--ink);cursor:pointer;padding:0;background:transparent;position:relative}
-  .theme-dot span{position:absolute;inset:2px;border-radius:50%}
-  .theme-dot[data-set="snowmelt"] span{background:#23708A}
-  .theme-dot[data-set="canyon"] span{background:#A8562E}
-  .theme-dot[data-set="nightflow"] span{background:#12222C}
-  .theme-dot[data-set="survey"] span{background:#7B7248}
+  .theme-picker{display:flex;gap:0}
+  /* Swatch colors live here, once, separate from each theme's --river etc. above \u2014
+     the picker has to show all four themes' colors at once, so it can't just read
+     the currently-active theme's variables the way everything else on the page does. */
+  :root{
+    --swatch-snowmelt:#23708A; --swatch-canyon:#A8562E; --swatch-nightflow:#12222C; --swatch-survey:#7B7248;
+  }
+  .theme-dot{
+    width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;padding:0;background:transparent;
+    position:relative;display:inline-flex;align-items:center;justify-content:center;
+  }
+  .theme-dot span{width:18px;height:18px;border-radius:50%;border:2px solid var(--ink);display:block}
+  .theme-dot[data-set="snowmelt"] span{background:var(--swatch-snowmelt)}
+  .theme-dot[data-set="canyon"] span{background:var(--swatch-canyon)}
+  .theme-dot[data-set="nightflow"] span{background:var(--swatch-nightflow)}
+  .theme-dot[data-set="survey"] span{background:var(--swatch-survey)}
   .theme-dot:focus-visible{outline:3px solid var(--river);outline-offset:2px}
 
   h1{font-size:clamp(1.6rem,5.5vw,2.5rem);line-height:1.08;letter-spacing:-.01em;font-weight:700}
@@ -68,7 +77,7 @@
   .back{
     display:inline-flex;align-items:center;gap:6px;margin-bottom:14px;
     font-family:ui-monospace,Consolas,monospace;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;
-    padding:8px 13px;border:1.5px solid var(--ink);border-radius:999px;background:transparent;color:var(--ink);cursor:pointer;
+    padding:11px 16px;border:1.5px solid var(--ink);border-radius:999px;background:transparent;color:var(--ink);cursor:pointer;
   }
   .back:hover{background:var(--card)}
   .back:focus-visible{outline:3px solid var(--river);outline-offset:2px}
@@ -78,8 +87,8 @@
   svg{width:100%;height:auto;display:block}
   .state-shape{fill:var(--river);opacity:.28;stroke:var(--ink);stroke-width:2;cursor:pointer;transition:opacity .18s ease}
   .state-shape:hover,.state-shape:focus-visible{opacity:.62;outline:none}
-  .state-name{fill:var(--ink);font-family:ui-monospace,Consolas,monospace;font-weight:700;letter-spacing:.14em;font-size:17px;pointer-events:none}
-  .state-tag{fill:var(--ink-soft);font-size:11px;font-style:italic;pointer-events:none}
+  .state-name{fill:var(--ink);font-family:ui-monospace,Consolas,monospace;font-weight:700;letter-spacing:.14em;font-size:20px;pointer-events:none}
+  .state-tag{fill:var(--ink-soft);font-size:15px;font-style:italic;pointer-events:none}
   .divide-line{stroke:var(--canyon);stroke-width:2.5;stroke-dasharray:2 6;fill:none;opacity:.8;pointer-events:none}
   .map-hint{
     margin-top:12px;background:var(--card);border-left:4px solid var(--river);border-radius:0 12px 12px 0;
@@ -96,8 +105,8 @@
   .dim .river-path:not(.hot){opacity:.14}
   .src-box{fill:var(--ink)}
   .src-label{fill:var(--paper);font-family:ui-monospace,Consolas,monospace;font-weight:700;letter-spacing:.12em}
-  .river-name{fill:var(--ink);font-family:ui-monospace,Consolas,monospace;font-size:11px;letter-spacing:.04em;cursor:pointer}
-  .dest-label{fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;font-size:11px}
+  .river-name{fill:var(--ink);font-family:ui-monospace,Consolas,monospace;font-size:13px;letter-spacing:.04em;cursor:pointer}
+  .dest-label{fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;font-size:12px}
 
   .detail{
     margin-top:12px;background:var(--card);border-left:4px solid var(--river);border-radius:0 12px 12px 0;
@@ -120,7 +129,7 @@
   .tabs{display:flex;gap:6px;margin:22px 0 18px;flex-wrap:wrap}
   .tab{
     font-family:ui-monospace,Consolas,monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
-    padding:9px 13px;border:1.5px solid var(--ink);border-radius:999px;background:transparent;color:var(--ink);
+    padding:12px 15px;border:1.5px solid var(--ink);border-radius:999px;background:transparent;color:var(--ink);
     cursor:pointer;transition:all .15s ease;
   }
   .tab:hover{background:var(--card)}
@@ -134,7 +143,7 @@
   .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
   .filter{
     font-family:ui-monospace,Consolas,monospace;font-size:.68rem;letter-spacing:.06em;
-    padding:6px 11px;border:1.5px solid var(--line);border-radius:999px;background:var(--card);
+    padding:9px 13px;border:1.5px solid var(--line);border-radius:999px;background:var(--card);
     color:var(--ink-soft);cursor:pointer;transition:all .15s ease;
   }
   .filter.active{border-color:var(--ink);color:var(--ink);font-weight:700}
@@ -265,7 +274,11 @@
   footer{margin-top:34px;border-top:2px solid var(--ink);padding-top:12px;font-size:.78rem;color:var(--ink-soft)}
   footer h4{font-family:ui-monospace,Consolas,monospace;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-bottom:6px}
   footer p{margin-bottom:6px}
-  @media(max-width:560px){ .count .big{font-size:2rem} body{padding:14px 10px 50px} .state-name{font-size:20px} }
+  @media(max-width:560px){
+    .count .big{font-size:2rem}
+    body{padding:14px 10px 50px}
+    .map-card,.flow-card{padding-left:6px;padding-right:6px}
+  }
 </style>
 </head>
 <body>
@@ -563,7 +576,13 @@
            p:'The Big Horn adjudication confirmed tribal reserved rights dating to the 1868 treaty \u2014 senior to nearly every ranch in the basin. How those rights are developed and marketed remains one of Wyoming\u2019s biggest open water questions.'}
         ]
       },
-      reservoirs:[],  // stub \u2014 same shape as STATES.co.reservoirs, not yet populated
+      reservoirs:[
+        {name:'Pathfinder Reservoir', river:'North Platte River', yearBuilt:1909, capacityAF:1016500, note:'One of the oldest Reclamation dams in the state, still operating 117 years later'},
+        {name:'Seminoe Reservoir', river:'North Platte River', yearBuilt:1939, capacityAF:1017280},
+        {name:'Boysen Reservoir', river:'Wind River', yearBuilt:1952, capacityAF:952400, note:'Supplies the Bighorn Basin'},
+        {name:'Glendo Reservoir', river:'North Platte River', yearBuilt:1958, capacityAF:1170505},
+        {name:'Fontenelle Reservoir', river:'Green River', yearBuilt:1964, capacityAF:345360, note:'Suffered a near-failure in 1965; repaired with an internal concrete diaphragm wall'}
+      ],
       quiz:[
         {q:'The Snake River Compact splits the river how?',
          opts:['50/50','75% Wyoming, 25% Idaho','96% Idaho, 4% Wyoming','It\u2019s unallocated'], a:2,
@@ -644,7 +663,13 @@
            p:'Every drop of the Missouri leaving Montana is governed by federal manual, not interstate contract. Downstream navigation interests and upstream storage interests renegotiate through politics and litigation each drought. Whether that\u2019s freedom or exposure depends on the year.'}
         ]
       },
-      reservoirs:[],  // stub \u2014 same shape as STATES.co.reservoirs, not yet populated
+      reservoirs:[
+        {name:'Fort Peck Lake', river:'Missouri River', yearBuilt:1940, capacityAF:18463000, note:'Fifth-largest reservoir by volume in the U.S. \u2014 a New Deal-era project, still the largest hydraulically-filled dam in the country'},
+        {name:'Hungry Horse Reservoir', river:'South Fork Flathead River', yearBuilt:1953, capacityAF:3467179},
+        {name:'Canyon Ferry Lake', river:'Missouri River', yearBuilt:1954, capacityAF:1997900},
+        {name:'Tiber Reservoir (Lake Elwell)', river:'Marias River', yearBuilt:1956, capacityAF:1515000},
+        {name:'Clark Canyon Reservoir', river:'Beaverhead River', yearBuilt:1964, capacityAF:325324}
+      ],
       quiz:[
         {q:'How many interstate compacts govern the Missouri River?',
          opts:['One \u2014 the 1944 Missouri Compact','Three','Zero','Seven'], a:2,
@@ -727,7 +752,13 @@
            p:'A 2023 federal agreement paused decades of salmon litigation and funded studies on replacing the four lower Snake dams\u2019 services \u2014 then was scrapped in 2025, and courts have since re-entered the picture. Breach or keep, the outcome reshapes barging, power, and salmon for every drop Idaho sends downstream.'}
         ]
       },
-      reservoirs:[],  // stub \u2014 same shape as STATES.co.reservoirs, not yet populated
+      reservoirs:[
+        {name:'Arrowrock Reservoir', river:'Boise River', yearBuilt:1915, capacityAF:300850, note:'Designated a National Historic Civil Engineering Landmark; still operating at 110+ years old'},
+        {name:'American Falls Reservoir', river:'Snake River', yearBuilt:1978, capacityAF:1671300, note:'Rebuilt in 1978 after the original 1927 dam was found structurally unsound \u2014 a precedent for what aging Western dams eventually require'},
+        {name:'Anderson Ranch Reservoir', river:'South Fork Boise River', yearBuilt:1950, capacityAF:503500},
+        {name:'Lucky Peak Reservoir', river:'Boise River', yearBuilt:1955, capacityAF:307000},
+        {name:'Palisades Reservoir', river:'South Fork Snake River', yearBuilt:1957, capacityAF:1400000}
+      ],
       quiz:[
         {q:'How much of the Snake River does the 1949 compact give Idaho?',
          opts:['50%','75%','96%','100%'], a:2,
@@ -916,9 +947,23 @@
     });
   });
 
-  function esc(s){ return s; } /* content is trusted internal data */
+  /* This used to be a no-op called `esc()` (never actually called anywhere in the file) that claimed to
+     escape content "because it's trusted internal data." That was true for hand-authored fields like
+     `thesis` and `text`, which intentionally contain real HTML (<b>, <span class="flow">, etc.) for styling \u2014
+     escaping those would break the formatting throughout the whole tool. It stops being true for anything
+     copied in from an external source, like the reservoir data below. escapeHtml() is the real thing,
+     used only on those externally-sourced fields; the rest of the file's hand-authored HTML is untouched. */
+  function escapeHtml(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 
   /* =============== HOME (MAP) VIEW =============== */
+  var HOME_STATS = [
+    {n:'6', l:'headwaters regions \u2014 four states, two provinces, the continent\u2019s roof'},
+    {n:'6', l:'seas receive their water: Pacific, Gulf of Mexico, Gulf of California, Hudson Bay, Atlantic, Arctic'},
+    {n:'2', l:'big agreements in flux right now: Colorado River post-2026 rules &amp; the Columbia River Treaty'},
+    {n:'1909', l:'the year the paperwork era began, with the U.S.\u2013Canada Boundary Waters Treaty'}
+  ];
   function renderHome(){
     eyebrow.textContent = 'PMR Civic Tools \u00b7 No. ' + TOOL_NUMBER + ' \u00b7 Water Series';
     app.innerHTML =
@@ -960,7 +1005,13 @@
         '<text class="state-tag" x="335" y="520">water to 3 seas</text>' +
         '<text class="state-name" x="405" y="687">COLORADO</text>' +
         '<text class="state-tag" x="398" y="705">nothing flows in</text>' +
-        '<text class="gulf-note dest-label" x="460" y="55">\u00b7\u00b7\u00b7 Continental Divide</text>' +
+        /* Map key, bottom-left: this whole area (x<340, y>598) is empty once Idaho and Wyoming's
+           shapes end, so nothing below overlaps the divide line, a region shape, or its labels. */
+        '<line x1="34" y1="742" x2="34" y2="706" stroke="var(--ink)" stroke-width="2.5"></line>' +
+        '<polygon points="34,700 27,714 41,714" fill="var(--ink)"></polygon>' +
+        '<text class="state-tag" x="34" y="760" text-anchor="middle" style="font-style:normal;font-weight:700">N</text>' +
+        '<line x1="12" y1="784" x2="44" y2="784" class="divide-line"></line>' +
+        '<text class="dest-label" x="52" y="788">Continental Divide (stylized, not geographic)</text>' +
       '</svg></div>' +
       '<div class="map-hint" id="mapHint" aria-live="polite">' +
         '<div class="meta">The headwaters club</div>' +
@@ -973,10 +1024,7 @@
         '<span class="read">Read the essay \u2192</span>' +
       '</a>' +
       '<div class="stat-strip">' +
-        '<div class="stat"><div class="n">6</div><div class="l">headwaters regions \u2014 four states, two provinces, the continent\u2019s roof</div></div>' +
-        '<div class="stat"><div class="n">6</div><div class="l">seas receive their water: Pacific, Gulf of Mexico, Gulf of California, Hudson Bay, Atlantic, Arctic</div></div>' +
-        '<div class="stat"><div class="n">2</div><div class="l">big agreements in flux right now: Colorado River post-2026 rules &amp; the Columbia River Treaty</div></div>' +
-        '<div class="stat"><div class="n">1909</div><div class="l">the year the paperwork era began, with the U.S.\u2013Canada Boundary Waters Treaty</div></div>' +
+        HOME_STATS.map(function(x){ return '<div class="stat"><div class="n">' + x.n + '</div><div class="l">' + x.l + '</div></div>'; }).join('') +
       '</div>';
 
     var HINTS = {
@@ -999,14 +1047,23 @@
   }
 
   /* =============== FLOW SVG GENERATOR =============== */
+  /* This diagram is an SVG scaled to 100% of its container's width, which means every unit in the
+     viewBox below shrinks by the same ratio the container shrinks by \u2014 on a phone that's roughly a
+     third of a typical desktop width, so text sized for desktop comfort turns close to unreadable on
+     mobile. The font sizes below are bumped up from the original to help with that. A narrower mobile-only
+     viewBox was tried and reverted: the longest river name (39 characters, Wyoming's Yellowstone system)
+     and longest destination label (44 characters, in Alberta/BC) need the full current width to avoid
+     overlapping each other \u2014 shrinking the diagram sideways collides them. A real mobile-crisp version of
+     this diagram would need a different layout entirely (e.g. a stacked list below a breakpoint, or
+     truncating the longest labels) rather than just resizing this one. */
   function flowSvg(st){
     var rows = st.rivers.length;
     var rowH = 66, top = 60, H = top + rows*rowH + 40;
     var srcH = H - 70;
     var s = '<svg viewBox="0 0 900 ' + H + '" role="img" aria-label="Flow diagram of rivers leaving ' + st.name + '">';
     s += '<rect class="src-box" x="30" y="35" width="150" height="' + srcH + '" rx="14"></rect>';
-    s += '<text class="src-label" x="50" y="72" font-size="15">' + st.name.toUpperCase() + '</text>';
-    s += '<text class="src-label" x="46" y="' + (25 + srcH) + '" font-size="8.5" opacity="0.75">' + st.srcNote + '</text>';
+    s += '<text class="src-label" x="50" y="72" font-size="16">' + st.name.toUpperCase() + '</text>';
+    s += '<text class="src-label" x="46" y="' + (25 + srcH) + '" font-size="9.5" opacity="0.75">' + st.srcNote + '</text>';
     st.rivers.forEach(function(r, i){
       var y = top + 40 + i*rowH;
       var d = 'M180,' + y + ' C 340,' + (y-2) + ' 480,' + (y-5) + ' 640,' + (y-6);
@@ -1141,23 +1198,34 @@
     var list = st.reservoirs || [];
     if (!list.length){
       return '<h2>Reservoirs</h2><p class="sub">Storage data for ' + st.name + ' hasn\u2019t been added yet.</p>' +
-        '<div class="cards"><div class="card"><h3>Coming soon</h3><p>' + st.name + '\u2019s major reservoirs aren\u2019t in the Ledger yet \u2014 Colorado\u2019s tab shows the pattern this will follow.</p></div></div>';
+        '<div class="cards"><div class="card"><h3>Coming soon</h3><p>' + st.name + '\u2019s major reservoirs aren\u2019t in the Ledger yet \u2014 the other four U.S. states show the pattern this will follow.</p></div></div>';
     }
+    var thisYear = new Date().getFullYear();
     var totalAF = 0, totalYear = 0;
     list.forEach(function(r){ totalAF += r.capacityAF; totalYear += r.yearBuilt; });
     var avgYear = Math.round(totalYear / list.length);
-    var avgAge = new Date().getFullYear() - avgYear;
-    var html = '<h2>Reservoirs</h2><p class="sub">' + list.length + ' major reservoirs in ' + st.name + ', built ' +
-      Math.min.apply(null, list.map(function(r){ return r.yearBuilt; })) + '\u2013' + Math.max.apply(null, list.map(function(r){ return r.yearBuilt; })) + '.</p>' +
+    var avgAge = thisYear - avgYear;
+    var minYr = Math.min.apply(null, list.map(function(r){ return r.yearBuilt; }));
+    var maxYr = Math.max.apply(null, list.map(function(r){ return r.yearBuilt; }));
+    /* Lead with average age, not reservoir count \u2014 that's the story this data actually tells:
+       most of the West's biggest reservoirs date to a 30-year federal dam-building window. */
+    var html = '<h2>Reservoirs</h2>' +
+      '<p class="sub">' + list.length + ' major reservoirs in ' + st.name + ', built ' + minYr + '\u2013' + maxYr + '.</p>' +
+      '<div class="count blue" style="max-width:340px;margin-bottom:16px">' +
+        '<div class="big mono">' + avgAge + '</div>' +
+        '<div class="cap">average age today, in years \u2014 built ' + avgYear + ' on average</div>' +
+      '</div>' +
       '<div class="stat-strip">' +
-      '<div class="stat"><div class="n">' + avgYear + '</div><div class="l">average year built</div></div>' +
-      '<div class="stat"><div class="n">' + avgAge + '</div><div class="l">average age today, in years</div></div>' +
-      '<div class="stat"><div class="n">' + (totalAF / 1e6).toFixed(2) + 'M</div><div class="l">combined capacity, acre-feet</div></div>' +
+        '<div class="stat"><div class="n">' + list.length + '</div><div class="l">major reservoirs tracked</div></div>' +
+        '<div class="stat"><div class="n">' + minYr + '\u2013' + maxYr + '</div><div class="l">built, oldest to newest</div></div>' +
+        '<div class="stat"><div class="n">' + (totalAF / 1e6).toFixed(2) + 'M</div><div class="l">combined capacity, acre-feet</div></div>' +
       '</div><div class="cards" style="margin-top:14px">';
     list.forEach(function(r){
-      html += '<div class="card"><div class="yr">BUILT ' + r.yearBuilt + '</div><h3>' + r.name + '</h3>' +
-        '<div class="chips"><span class="chip">' + r.river + '</span></div>' +
-        '<p>' + Math.round(r.capacityAF).toLocaleString() + ' acre-feet capacity' + (r.note ? ' \u2014 ' + r.note : '') + '</p></div>';
+      /* name/river/note are copied in from Wikipedia and operator sites, not hand-authored like the rest of
+         the tool's prose \u2014 escaped so a stray '&' or '<' in a future paste can't break the page. */
+      html += '<div class="card"><div class="yr">BUILT ' + r.yearBuilt + ' \u00b7 ' + (thisYear - r.yearBuilt) + ' YRS OLD</div><h3>' + escapeHtml(r.name) + '</h3>' +
+        '<div class="chips"><span class="chip">' + escapeHtml(r.river) + '</span></div>' +
+        '<p>' + Math.round(r.capacityAF).toLocaleString() + ' acre-feet capacity' + (r.note ? ' \u2014 ' + escapeHtml(r.note) : '') + '</p></div>';
     });
     html += '</div>';
     return html;
