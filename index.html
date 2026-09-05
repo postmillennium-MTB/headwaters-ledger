@@ -24,7 +24,10 @@
     · THEMES registry ............ THE list of color themes
     · STATES ..................... the big data object — one entry per region,
                                    with a full field schema commented above it
-    · HOME_STATS / PIE_COLORS .... home-page stat strip, pie palette
+    · REGION_HINTS / HOME_STATS .. home-page copy and stat strip
+    · BASINS / SEAS .............. where every drop ends up + the fixed, validated
+                                   four-hue basin palette the flow charts paint with
+    · GLOSSARY / HOUSEHOLD ....... defined terms; household-calculator model
     ==== everything past "END OF DATA" is logic ====
     · tuning constants ........... breakpoints, timings (named, not buried)
     · applyTheme() ............... theme switch + persistence + browser chrome
@@ -95,6 +98,21 @@
     --river:#4A6B52; --river-deep:#33513C; --canyon:#9E4B24; --sage:#7B7248;
     --line:#D5CBB2; --badge-perp-bg:#E2DCC6; --badge-exp-bg:#EED8C4;
     --shadow:0 1px 3px rgba(46,42,32,.10), 0 4px 14px rgba(46,42,32,.06);
+  }
+  /* ==== BASIN COLORS — meaning-carrying, and therefore FIXED across all four themes. ====
+     Mirrors the BASINS registry in the script (see its comment for why these four hexes and
+     no others). Unlike every other color in this file these do NOT follow the theme: they
+     encode which ocean a drop of water reaches, and a reader who switches to Canyon must not
+     see the Pacific change color. Only the three that need it are re-stepped for the dark
+     surface, and only for legibility on it — same hues, different lightness.
+     Validated all-pairs, both modes, against all four theme surfaces. Re-run the checker if
+     you touch one; these are not eyeball-tunable. ==================================== */
+  :root{
+    --basin-pacific:#0a8fd1; --basin-arctic:#9e4aa4; --basin-atlantic:#269e5f;
+    --basin-gulfcal:#be5a0a; --basin-home:#55707e;   --basin-none:#7d8a91;
+  }
+  [data-theme="nightflow"]{
+    --basin-arctic:#b066b4; --basin-gulfcal:#c7692c; --basin-home:#8fa8b4; --basin-none:#9fb0b8;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
@@ -361,18 +379,42 @@
   .home-link:hover{color:var(--river-deep);border-bottom-style:solid}
   .home-link:focus-visible{outline:3px solid var(--river);outline-offset:3px}
 
-  /* PIE / LEDGER BALANCE */
+  /* FLOW CHARTS (Sankey ribbons + mobile stacked bar) */
   .pie-card{
     background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;
-    box-shadow:var(--shadow);display:grid;grid-template-columns:minmax(190px,250px) 1fr;gap:20px;align-items:center;
+    box-shadow:var(--shadow);
   }
-  @media(max-width:620px){.pie-card{grid-template-columns:1fr;justify-items:center}}
-  .pie-svg{width:100%;max-width:250px;height:auto}
-  .pie-slice{cursor:pointer;transition:opacity .15s ease}
-  .pie-card.dimmed .pie-slice:not(.hot){opacity:.22}
-  .pie-legend{display:flex;flex-direction:column;gap:6px;width:100%}
-  /* Legend rows are real <button>s so the pie is reachable by keyboard and screen reader, not
-     just by hovering a slice. The reset here is what a button needs to still look like a row. */
+  .sankey-wrap{display:none}
+  .sankey-svg{width:100%;height:auto;display:block}
+  .sk-band{
+    fill-opacity:.72;cursor:pointer;transition:fill-opacity .16s ease;
+    /* A 1px surface-colored edge is the 2px-gap rule at this scale: it keeps two ribbons of
+       the same basin color from fusing into one shape where they run side by side. */
+    stroke:var(--card);stroke-width:1;
+  }
+  .sk-band:hover,.sk-band.hot{fill-opacity:1}
+  .sk-band:focus-visible{outline:3px solid var(--river);outline-offset:2px}
+  .pie-card.dimmed .sk-band:not(.hot){fill-opacity:.16}
+  .sk-node{fill-opacity:.95}
+  .sk-leader{fill:none;stroke:var(--ink-soft);stroke-width:1;opacity:.5}
+  .sk-lab{fill:var(--ink);font-family:ui-monospace,Consolas,monospace;font-size:13px;font-weight:700}
+  .sk-sub{fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;font-size:11px}
+
+  /* Mobile proportional bar. 4px rounded ends anchored to the track, 2px surface gaps between
+     segments — the same mark spec the ribbons follow, at a size a phone can actually render. */
+  .stackbar{display:flex;width:100%;height:34px;border-radius:6px;overflow:hidden;gap:2px;background:var(--paper)}
+  .sb-seg{display:block;min-width:3px;transition:opacity .16s ease,filter .16s ease}
+  .sb-seg:first-child{border-radius:6px 0 0 6px}
+  .sb-seg:last-child{border-radius:0 6px 6px 0}
+  .sb-seg.hatched,.leg-sw.hatched{
+    background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.55) 0 3px,transparent 3px 7px);
+  }
+  .pie-card.dimmed .sb-seg:not(.hot){opacity:.22}
+  .stack-note{font-size:.72rem;color:var(--ink-soft);margin-top:7px;font-family:ui-monospace,Consolas,monospace}
+
+  .pie-legend{display:flex;flex-direction:column;gap:6px;width:100%;margin-top:14px}
+  /* Legend rows are real <button>s so the chart is reachable by keyboard and screen reader, not
+     just by hovering a ribbon. The reset here is what a button needs to still look like a row. */
   .leg-row{
     display:flex;gap:9px;align-items:flex-start;padding:8px;min-height:40px;border-radius:8px;
     cursor:pointer;transition:background .15s ease;width:100%;text-align:left;
@@ -385,6 +427,21 @@
   .leg-lab{font-size:.88rem;line-height:1.3}
   .leg-sub{display:block;font-size:.72rem;color:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;margin-top:1px}
   .pie-note{font-size:.78rem;color:var(--ink-soft);margin-top:10px}
+
+  .cont-card .etag{font-family:ui-monospace,Consolas,monospace;font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;color:var(--canyon);font-weight:700}
+  .cont-card .cont-h{font-size:1.18rem;line-height:1.25;margin:6px 0 7px}
+  .cont-card .cont-p{font-size:.92rem;color:var(--ink-soft);margin-bottom:14px;max-width:62ch}
+  .cont-card .cont-p b{color:var(--ink)}
+
+  /* Basin key — the four ocean hues plus the two non-ocean treatments, spelled out in words. */
+  .basin-key{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0 2px}
+  .bk{display:inline-flex;align-items:center;gap:6px;font-family:ui-monospace,Consolas,monospace;font-size:.68rem;color:var(--ink-soft)}
+  .bk i{width:12px;height:12px;border-radius:3px;display:block;border:1px solid var(--line)}
+
+  @media(min-width:700px){
+    .sankey-wrap{display:block}
+    .stackbar,.stack-note{display:none}
+  }
 
   /* ESSAY CARD (home page) */
   .essay-card{
@@ -635,7 +692,7 @@
   <footer>
     <h4>Data notes &amp; confidence</h4>
     <p><b>Solid:</b> compact parties, dates, and allocation terms come from compact texts, state engineer offices, and the Bureau of Reclamation and State Department dockets. Colorado River 2026 process dates from Reclamation's Post-2026 NEPA docket. Columbia River Treaty status from the U.S. State Department and Province of B.C.</p>
-    <p><b>Estimates (†):</b> flow averages, aquifer-volume comparisons, and "longest undammed river" style superlatives are widely cited figures that vary by source and measurement method. Percentage splits within tributary compacts are summarized, not quoted. The Ledger Balance pie charts are rough proportions assembled from state and provincial water plans plus long-term gauge averages, rounded to whole percents — reliable as shares, not as gauge readings, and annual totals swing enormously between wet and dry years.</p>
+    <p><b>Estimates (†):</b> flow averages, aquifer-volume comparisons, and "longest undammed river" style superlatives are widely cited figures that vary by source and measurement method. Percentage splits within tributary compacts are summarized, not quoted. The flow charts are rough proportions assembled from state and provincial water plans plus long-term gauge averages, rounded to whole percents — reliable as shares, not as gauge readings, and annual totals swing enormously between wet and dry years.</p>
     <p><b>Not legal advice:</b> built by a trail advocate, not a water attorney. The Law of the River keeps actual water attorneys extremely busy.</p>
     <!-- Filled from LAST_REVIEWED in the constants block. A tool whose subject is a set
          of live deadlines has to say when it was last checked, or a reader can't tell a
@@ -755,11 +812,11 @@
         sub:'Roughly 14 million acre-feet\u2020 of streamflow rises in Colorado in an average year. Over half rides one river out \u2014 and Colorado keeps a bigger share of its own water than any other region on this map.',
         note:'Rough proportions built from the Colorado Water Plan\u2019s ~5.3 MAF consumptive-use figure and long-term state-line gauge averages, rounded to whole percents. Yearly totals swing wildly \u2014 read these as shares, not gauge readings.',
         slices:[
-          {p:53, l:'Colorado River system', s:'\u2192 UT \u00b7 AZ \u00b7 NV \u00b7 CA \u00b7 Mexico'},
-          {p:38, l:'Stays in Colorado', s:'cities, farms & evaporation', home:true},
-          {p:6, l:'Platte & Republican rivers', s:'\u2192 WY \u00b7 NE \u00b7 KS \u2192 Missouri R.'},
-          {p:2, l:'Rio Grande', s:'\u2192 NM \u00b7 TX \u00b7 Mexico'},
-          {p:1, l:'Arkansas River', s:'\u2192 KS \u00b7 OK \u00b7 AR \u2192 Mississippi R.'}
+          {p:53, l:'Colorado River system', s:'\u2192 UT \u00b7 AZ \u00b7 NV \u00b7 CA \u00b7 Mexico', sea:'gulfcal'},
+          {p:38, l:'Stays in Colorado', s:'cities, farms & evaporation', home:true, sea:'home'},
+          {p:6, l:'Platte & Republican rivers', s:'\u2192 WY \u00b7 NE \u00b7 KS \u2192 Missouri R.', sea:'gulfmex'},
+          {p:2, l:'Rio Grande', s:'\u2192 NM \u00b7 TX \u00b7 Mexico', sea:'gulfmex'},
+          {p:1, l:'Arkansas River', s:'\u2192 KS \u00b7 OK \u00b7 AR \u2192 Mississippi R.', sea:'gulfmex'}
         ]
       },
       compactsSub:'The key distinction most coverage blurs: the <b>compacts are perpetual</b> \u2014 no expiration date. What expires in 2026 is the <b>operating layer</b> stacked on top of the biggest one.',
@@ -897,12 +954,12 @@
         sub:'About 15 million acre-feet\u2020 leaves the roof of the continent through seven exits in an average year. Wyoming keeps roughly a seventh \u2014 most of the rest is spoken for before it reaches the state line.',
         note:'Rough proportions from long-term gauge averages near each exit point, rounded to whole percents. The Yellowstone system includes the Bighorn, Tongue, Powder, and Clarks Fork.',
         slices:[
-          {p:36, l:'Yellowstone system', s:'\u2192 MT \u2192 Missouri R.'},
-          {p:29, l:'Snake River', s:'\u2192 ID \u2192 Columbia \u2192 Pacific'},
-          {p:15, l:'Stays in Wyoming', s:'ranches, towns & evaporation', home:true},
-          {p:11, l:'Green River', s:'\u2192 UT \u2192 Colorado R. system'},
-          {p:6, l:'North Platte', s:'\u2192 NE \u2192 Missouri R.'},
-          {p:3, l:'Bear, Belle Fourche & Niobrara', s:'\u2192 ID \u00b7 UT \u00b7 SD \u00b7 NE'}
+          {p:36, l:'Yellowstone system', s:'\u2192 MT \u2192 Missouri R.', sea:'gulfmex'},
+          {p:29, l:'Snake River', s:'\u2192 ID \u2192 Columbia \u2192 Pacific', sea:'pacific'},
+          {p:15, l:'Stays in Wyoming', s:'ranches, towns & evaporation', home:true, sea:'home'},
+          {p:11, l:'Green River', s:'\u2192 UT \u2192 Colorado R. system', sea:'gulfcal'},
+          {p:6, l:'North Platte', s:'\u2192 NE \u2192 Missouri R.', sea:'gulfmex'},
+          {p:3, l:'Bear, Belle Fourche & Niobrara', s:'\u2192 ID \u00b7 UT \u00b7 SD \u00b7 NE', sea:'mixed'}
         ]
       },
       compactsSub:'Wyoming\u2019s ledger is all perpetual compacts \u2014 plus one river where the states never agreed and the <b>Supreme Court wrote the rules</b> itself. The expiring-agreement drama reaches Wyoming through the Colorado River system.',
@@ -987,11 +1044,11 @@
         sub:'Around 45 million acre-feet\u2020 in an average year \u2014 triple Colorado\u2019s yield \u2014 and more than half of it heads west for the Pacific, not east down the Missouri like most people picture.',
         note:'Rough proportions from long-term gauge averages near each border crossing, rounded to whole percents. The Clark Fork alone carries more water out of Montana than the Missouri and Yellowstone combined.',
         slices:[
-          {p:56, l:'Clark Fork & Kootenai', s:'\u2192 ID \u00b7 B.C. \u2192 Columbia \u2192 Pacific'},
-          {p:19, l:'Yellowstone River', s:'\u2192 ND \u2192 Missouri R. \u2192 Gulf'},
-          {p:16, l:'Missouri River', s:'\u2192 ND \u2192 Gulf of Mexico'},
-          {p:8, l:'Stays in Montana', s:'farms, ranches & evaporation', home:true},
-          {p:1, l:'St. Mary River', s:'\u2192 Alberta \u2192 Hudson Bay'}
+          {p:56, l:'Clark Fork & Kootenai', s:'\u2192 ID \u00b7 B.C. \u2192 Columbia \u2192 Pacific', sea:'pacific'},
+          {p:19, l:'Yellowstone River', s:'\u2192 ND \u2192 Missouri R. \u2192 Gulf', sea:'gulfmex'},
+          {p:16, l:'Missouri River', s:'\u2192 ND \u2192 Gulf of Mexico', sea:'gulfmex'},
+          {p:8, l:'Stays in Montana', s:'farms, ranches & evaporation', home:true, sea:'home'},
+          {p:1, l:'St. Mary River', s:'\u2192 Alberta \u2192 Hudson Bay', sea:'hudson'}
         ]
       },
       compactsSub:'Montana\u2019s ledger is short on interstate compacts and long on <b>everything else</b>: an international treaty from 1909, another from 1964 currently in limbo, a federal manual standing in for a Missouri compact, and the biggest tribal settlement ever signed.',
@@ -1076,12 +1133,12 @@
         sub:'Idaho\u2019s ledger runs on volume: roughly 70 million acre-feet\u2020 in an average year, with the Snake \u2014 fattened by the Salmon and Clearwater \u2014 carrying almost half of it out at Lewiston.',
         note:'Rough proportions from long-term gauge averages, rounded to whole percents. The Snake figure includes the Salmon and Clearwater, which join it right at the exit. Nearly everything here ends in the Pacific.',
         slices:[
-          {p:43, l:'Snake (+ Salmon & Clearwater)', s:'\u2192 WA/OR \u2192 Columbia \u2192 Pacific'},
-          {p:27, l:'Pend Oreille (Clark Fork)', s:'\u2192 WA \u2192 Columbia \u2192 Pacific'},
-          {p:14, l:'Kootenai River', s:'\u2192 back to B.C. \u2192 Columbia'},
-          {p:8, l:'Stays in Idaho', s:'irrigation, cities & evaporation', home:true},
-          {p:7, l:'Spokane River', s:'\u2192 WA \u2192 Columbia'},
-          {p:1, l:'Bear River', s:'\u2192 UT \u2192 Great Salt Lake'}
+          {p:43, l:'Snake (+ Salmon & Clearwater)', s:'\u2192 WA/OR \u2192 Columbia \u2192 Pacific', sea:'pacific'},
+          {p:27, l:'Pend Oreille (Clark Fork)', s:'\u2192 WA \u2192 Columbia \u2192 Pacific', sea:'pacific'},
+          {p:14, l:'Kootenai River', s:'\u2192 back to B.C. \u2192 Columbia', sea:'pacific'},
+          {p:8, l:'Stays in Idaho', s:'irrigation, cities & evaporation', home:true, sea:'home'},
+          {p:7, l:'Spokane River', s:'\u2192 WA \u2192 Columbia', sea:'pacific'},
+          {p:1, l:'Bear River', s:'\u2192 UT \u2192 Great Salt Lake', sea:'greatsalt'}
         ]
       },
       compactsSub:'Idaho\u2019s ledger tilts international and internal: only <b>two interstate compacts</b>, but a superpower treaty in limbo, the largest water-rights adjudication ever completed, and a landmark deal that saved the Snake from itself.',
@@ -1165,10 +1222,10 @@
         sub:'The ledger\u2019s BC rivers alone move roughly 200 million acre-feet\u2020 a year \u2014 more than the other five regions combined. Consumption barely registers; nearly every drop reaches an ocean.',
         note:'Rough proportions from long-term gauge averages for the rivers in this ledger only \u2014 BC\u2019s many other coastal rivers (Skeena, Stikine, and more) would add far more. Consumptive use in BC is under 1% and too small to slice.',
         slices:[
-          {p:44, l:'Fraser River', s:'never leaves BC \u2192 Pacific at Vancouver'},
-          {p:35, l:'Columbia & Kootenay', s:'\u2192 USA \u2192 Pacific'},
-          {p:20, l:'Peace River', s:'\u2192 AB \u2192 Mackenzie \u2192 Arctic Ocean'},
-          {p:1, l:'Skagit, Flathead & Okanagan', s:'\u2192 WA \u00b7 MT'}
+          {p:44, l:'Fraser River', s:'never leaves BC \u2192 Pacific at Vancouver', sea:'pacific'},
+          {p:35, l:'Columbia & Kootenay', s:'\u2192 USA \u2192 Pacific', sea:'pacific'},
+          {p:20, l:'Peace River', s:'\u2192 AB \u2192 Mackenzie \u2192 Arctic Ocean', sea:'arctic'},
+          {p:1, l:'Skagit, Flathead & Okanagan', s:'\u2192 WA \u00b7 MT', sea:'pacific'}
         ]
       },
       compactsSub:'Canada doesn\u2019t run an interprovincial compact system the way the U.S. does \u2014 provinces largely own their water outright. BC\u2019s real "paperwork" is almost entirely international, negotiated directly with Washington, D.C. and individual U.S. states.',
@@ -1246,10 +1303,10 @@
         sub:'Roughly 85 million acre-feet\u2020 crosses Alberta in an average year \u2014 and more than four-fifths of it is headed for the Arctic, not the prairie farms most people picture when they think of Alberta water.',
         note:'Rough proportions from long-term gauge averages, rounded to whole percents. The Peace arrives from BC already carrying most of the Arctic-bound volume; the fights, ironically, are all over the small Saskatchewan-bound slice.',
         slices:[
-          {p:83, l:'Peace, Athabasca & northern rivers', s:'\u2192 Mackenzie \u2192 Arctic Ocean'},
-          {p:13, l:'Saskatchewan rivers', s:'\u2192 SK \u2192 Hudson Bay'},
-          {p:3, l:'Stays in Alberta', s:'irrigation, cities & evaporation', home:true},
-          {p:1, l:'Milk River', s:'\u2192 back to MT \u2192 Missouri R.'}
+          {p:83, l:'Peace, Athabasca & northern rivers', s:'\u2192 Mackenzie \u2192 Arctic Ocean', sea:'arctic'},
+          {p:13, l:'Saskatchewan rivers', s:'\u2192 SK \u2192 Hudson Bay', sea:'hudson'},
+          {p:3, l:'Stays in Alberta', s:'irrigation, cities & evaporation', home:true, sea:'home'},
+          {p:1, l:'Milk River', s:'\u2192 back to MT \u2192 Missouri R.', sea:'gulfmex'}
         ]
       },
       compactsSub:'Alberta is the one Canadian region here with something that actually functions like a U.S. compact: a quantified, audited flow-sharing rule with its downstream neighbor. Everything else runs on cooperative frameworks and a very old international treaty.',
@@ -1313,11 +1370,63 @@
     {n:'1909', l:'the year the paperwork era began, with the U.S.–Canada Boundary Waters Treaty'}
   ];
 
-  /* Pie palette. Six entries against a maximum of six slices in any region's ledger
-     balance, so no region ever repeats a color on its own chart. If a future region
-     needs a seventh slice, lengthen this rather than letting the modulo wrap — two
-     identical slices on one donut are indistinguishable except by reading the legend. */
-  var PIE_COLORS = ['var(--river)','var(--canyon)','var(--sage)','var(--river-deep)','var(--ink-soft)','var(--ink)'];
+  /* ==== DESTINATIONS + BASINS — where every drop in this tool finally ends up. ========
+     Each pie slice carries a `sea` key into SEAS. Each sea belongs to a BASIN, and the
+     BASIN is what carries color. That split is deliberate and load-bearing:
+
+     WHY COLOR GROUPS BY BASIN INSTEAD OF NAMING EACH SEA. Six or seven mutually
+     distinguishable categorical hues do not exist — not as a matter of taste, but
+     measurably: no six-hue set clears the colorblind-separation and normal-vision floors
+     on BOTH the light and the dark theme surface (searched, not guessed). Four does. So
+     hue encodes the ocean basin (four of them), and the EXACT destination is carried by
+     the directly-labeled node every ribbon lands on. Nothing in these charts depends on
+     color alone, which is also what makes the four-hue set legal at its measured
+     colorblind separation.
+
+     The two non-ocean outcomes deliberately get no hue at all, because they are not seas:
+     water used where it falls, and water that reaches no ocean ever. They read as ink and
+     as hatching, which is a real semantic distinction rather than a workaround.
+
+     PALETTE PROVENANCE: validated with the dataviz skill's checker against all four theme
+     surfaces (Snowmelt #F7FAF8, Canyon #FBF6EE, Survey #F7F2E6, Nightflow #1B303C), all
+     pairs, both modes. Every check passes. These hexes are FIXED across themes on purpose
+     — they carry meaning, and the PMR rule is that meaning-carrying color does not follow
+     the theme the way decorative chrome does. Do not swap them for var(--river) etc.
+     If you change one, re-run the validator; do not eyeball it.
+     ==================================================================================== */
+  /* `v` is the CSS custom property each basin paints with. The charts reference the VARIABLE,
+     never the hex, so switching theme repaints every ribbon with no re-render — the theme dots
+     only set an attribute on <html>. The hexes below are the source of truth for the CSS block
+     in the stylesheet, which (like the theme palettes) has to be written by hand because custom
+     properties cannot be generated from JS. Change one here, change it there, re-run the
+     validator. */
+  var BASINS = {
+    pacific:  {label:'Pacific',             v:'--basin-pacific',  light:'#0a8fd1', dark:'#0a8fd1'},
+    arctic:   {label:'Arctic',              v:'--basin-arctic',   light:'#9e4aa4', dark:'#b066b4'},
+    atlantic: {label:'Atlantic drainage',   v:'--basin-atlantic', light:'#269e5f', dark:'#269e5f'},
+    gulfcal:  {label:'Gulf of California',  v:'--basin-gulfcal',  light:'#be5a0a', dark:'#c7692c'},
+    /* No hue: neither is an ocean. `home` is solid ink; `none` and `mixed` are hatched. */
+    home:     {label:'Used where it falls', v:'--basin-home',     light:'#55707e', dark:'#8fa8b4', noHue:true},
+    none:     {label:'Reaches no ocean',    v:'--basin-none',     light:'#7d8a91', dark:'#9fb0b8', noHue:true, hatch:true},
+    mixed:    {label:'Splits several ways', v:'--basin-none',     light:'#7d8a91', dark:'#9fb0b8', noHue:true, hatch:true}
+  };
+  /* The named endpoints. `short` is what fits on a chart node; `label` is the full name.
+     Hudson Bay and the Gulf of Mexico share the Atlantic hue because they are both Atlantic
+     drainage — Hudson Bay reaches it through Hudson Strait — but they stay separate NODES
+     with their own labels and volumes, so no precision is lost to the grouping. */
+  var SEAS = {
+    pacific:   {short:'Pacific Ocean',    label:'the Pacific Ocean',    basin:'pacific'},
+    arctic:    {short:'Arctic Ocean',     label:'the Arctic Ocean, via the Mackenzie', basin:'arctic'},
+    gulfmex:   {short:'Gulf of Mexico',   label:'the Gulf of Mexico, via the Missouri and Mississippi', basin:'atlantic'},
+    hudson:    {short:'Hudson Bay',       label:'Hudson Bay, and from there the Atlantic', basin:'atlantic'},
+    gulfcal:   {short:'Gulf of California', label:'the Gulf of California — in most years the Colorado no longer reaches it', basin:'gulfcal'},
+    greatsalt: {short:'Great Salt Lake',  label:'the Great Salt Lake, which drains to no ocean at all', basin:'none'},
+    home:      {short:'Used at home',     label:'cities, farms and evaporation in the region itself', basin:'home'},
+    mixed:     {short:'Several ways',     label:'a split between the Great Salt Lake and the Missouri', basin:'mixed'}
+  };
+  /* Display order for destination nodes — roughly west to east, ending with the two
+     non-ocean outcomes, so a reader's eye travels the continent rather than a ranking. */
+  var SEA_ORDER = ['pacific','arctic','hudson','gulfmex','gulfcal','greatsalt','mixed','home'];
 
   /* ==== GLOSSARY REGISTRY — the single source of truth for every defined term. =========
      TO ADD A TERM: add ONE entry here. It appears in the glossary page, and every place the
@@ -1536,8 +1645,57 @@
     return '<div class="essay-card static">' +
       '<span class="etag">Water Series \u00b7 Ledger Balance</span>' +
       '<h3>How Much Stays Home</h3>' +
-      '<p>Share of each region\u2019s average annual flow used there \u2014 cities, farms, evaporation \u2014 rather than leaving for somewhere else. See a region\u2019s own Ledger Balance tab for the full breakdown.</p>' +
+      '<p>Share of each region\u2019s average annual flow used there \u2014 cities, farms, evaporation \u2014 rather than leaving for somewhere else. See a region\u2019s own Where It Goes tab for the full breakdown.</p>' +
       barListHtml(items, {max:100, barClass:'flow-b'}) +
+    '</div>';
+  }
+
+  /* The continental card. Sized by real volume rather than per-region percentages, which is the
+     whole point of it — see continentalChart(). The headline sentence is computed from the same
+     numbers that draw the ribbons, so it can never claim something the chart contradicts. */
+  function continentalCardHtml(){
+    var c = continentalChart();
+    var total = c.dests.reduce(function(a, d){ return a + d.value; }, 0);
+    var ranked = c.dests.slice().sort(function(a, b){ return b.value - a.value; });
+    var top2 = ranked.slice(0, 2);
+    var top2Share = Math.round((top2[0].value + top2[1].value) / total * 100);
+    var gulfcal = c.dests.filter(function(d){ return d.id === 'gulfcal'; })[0];
+    var gulfcalShare = gulfcal ? (gulfcal.value / total * 100) : 0;
+
+    var segs = ranked.map(function(d){
+      return {key:'d-' + d.id, value:d.value, basin:d.basin,
+              title:d.label + ' — ' + d.value.toFixed(1) + ' MAF/yr'};
+    });
+    var rows = ranked.map(function(d){
+      return {key:'d-' + d.id, pct:(d.value / total * 100).toFixed(d.value / total < 0.01 ? 1 : 0) + '%',
+              label:d.label, basin:d.basin,
+              sub:d.value.toFixed(1) + ' MAF/yr† · ' + BASINS[d.basin].label};
+    });
+    /* The ribbon keys are per-region-per-slice, but the mobile bar and legend are per-destination.
+       Re-key the ribbons to their destination so all three views highlight together. */
+    var links = c.links.map(function(k){
+      return {s:k.s, d:k.d, value:k.value, basin:k.basin, key:'d-' + k.d, title:k.title};
+    });
+
+    return '<div class="pie-card cont-card" id="contCard" style="margin-top:14px">' +
+      '<span class="etag">Water Series · The whole ledger</span>' +
+      '<h3 class="cont-h">Where It All Ends Up</h3>' +
+      '<p class="cont-p">Every other chart here normalises a region to 100%, which quietly implies the six are the same size. They are not. Sized by actual annual flow, <b>' +
+        top2Share + '% of the water off the roof of the continent goes to just two places</b> — ' +
+        top2[0].label + ' and ' + top2[1].label + ' — while the Colorado, the river the entire 2026 fight is about, carries about <b>' +
+        gulfcalShare.toFixed(1) + '%</b>.</p>' +
+      '<div class="sankey-wrap">' +
+        sankeySvg(c.sources, c.dests, links, {
+          height: 430,
+          aria: 'Ribbons from each of the six headwaters regions to each final destination, sized by annual flow in millions of acre-feet'
+        }) +
+      '</div>' +
+      stackedBarHtml(segs) +
+      '<div class="stack-note">All six regions combined, by final destination.</div>' +
+      basinKeyHtml(basinsUsed(c.dests)) +
+      '<div class="pie-legend">' + flowLegend(rows) + '</div>' +
+      '<p class="pie-note">† Flow totals are rough annual averages and are not all measured the same way — see the note on the ' +
+        '<a href="#compare" style="color:var(--river)">comparison page</a>. Read the ranking with confidence and the decimals with care.</p>' +
     '</div>';
   }
 
@@ -1564,8 +1722,8 @@
       '<div class="map-card">' +
       /* role="group", not role="img": an img role tells assistive tech to treat the whole SVG as
          a single graphic and ignore what's inside it — which would have hidden all six focusable
-         region buttons. The pie chart below legitimately keeps role="img", because its slices are
-         decorative duplicates of a legend that is already real text. */
+         region buttons. The flow charts use role="group" for the same reason — their ribbons are
+         focusable. */
       '<svg viewBox="0 0 660 800" role="group" aria-label="Clickable map of British Columbia, Alberta, Idaho, Montana, Wyoming, and Colorado">' +
         /* British Columbia */
         '<polygon class="state-shape" data-s="bc" tabindex="0" role="button" aria-label="Open the British Columbia water ledger" points="18,28 320,28 295,230 18,230"></polygon>' +
@@ -1626,6 +1784,7 @@
         '<div class="meta">The headwaters club</div>' +
         '<p>Between them these six regions are party to 20+ compacts and agreements, three treaties spanning Canada and Mexico, several Supreme Court decrees, and the two largest tribal water settlements in U.S. history. Hover a region for its one-line r\u00e9sum\u00e9, or pick one from the list.</p>' +
       '</div>' +
+      continentalCardHtml() +
       infraCardHtml() +
       '<div class="split-row">' +
         '<a class="essay-card" href="#compare">' +
@@ -1682,6 +1841,7 @@
     app.querySelectorAll('#regionList .pickbtn').forEach(function(b){
       b.addEventListener('click', function(){ go(b.getAttribute('data-s')); });
     });
+    wireFlowCard(document.getElementById('contCard'));
 
     /* wire search */
     var box = document.getElementById('siteSearch');
@@ -1768,39 +1928,346 @@
     '</div>';
   }
 
-  /* =============== PIE (LEDGER BALANCE) GENERATOR =============== */
-  var PIE_COLORS = ['var(--river)','var(--canyon)','var(--sage)','var(--river-deep)','var(--ink-soft)','var(--ink)'];
-  function piePt(cx, cy, r, ang){
-    var a = (ang - 90) * Math.PI / 180;
-    return (cx + r * Math.cos(a)).toFixed(2) + ',' + (cy + r * Math.sin(a)).toFixed(2);
+  /* =============== FLOW CHARTS — SHARED SANKEY RENDERER =============== */
+  /* Replaces the old donut. A donut answers "what share?" and throws the destination away
+     into a sub-label; the whole subject of this tool is water ARRIVING SOMEWHERE ELSE. A
+     ribbon diagram encodes share and destination in one mark, which is why the form changed
+     rather than just the colors.
+
+     One renderer serves both charts in the tool — a region's outflow (one source) and the
+     continental view (six sources) — because they are the same shape with different inputs.
+
+       sources  [{id, label, sub, value}]         stacked down the left edge
+       dests    [{id, label, sub, value, basin}]  stacked down the right edge
+       links    [{s, d, value, key, title}]       s/d are ids; value sets ribbon thickness
+     Every ribbon is drawn from the same value scale, so thickness is comparable across the
+     whole chart, and every destination node is directly labeled — which is what lets the
+     four-hue basin palette carry grouping without carrying identity on its own. */
+  var SANKEY_W = 900;            // viewBox width; the SVG scales to its container
+  var SANKEY_NODE_W = 13;        // thickness of the source/destination bars, in viewBox units
+  var SANKEY_GAP = 5;            // vertical gap between stacked nodes — the 2px surface gap rule
+  var SANKEY_MIN_BAND = 3.5;     // floor on ribbon thickness so a 1% sliver stays visible and hoverable
+  var SANKEY_LABEL_PAD = 12;     // gap between a node bar and its text
+  /* Label metrics. The labels are 13px/11px monospace, so width is predictable from character
+     count — the same trick FLOW_W uses, and for the same reason: SVG clips silently when text
+     runs past the viewBox, so the frame is sized from the longest string rather than guessed. */
+  var SANKEY_CHAR_W = 7.9;       // approx advance of one 13px monospace char, in viewBox units
+  var SANKEY_SUB_CHAR_W = 6.7;   // ditto for the 11px sub-label
+  var SANKEY_LINE_H = 16;        // minimum baseline-to-baseline spacing between two labels
+  var SANKEY_TWO_LINE_MIN_H = 30;// node height below which the sub-label is dropped
+
+  function sankeyBand(x0, y0, x1, y1, h0, h1){
+    /* Two cubic curves — top edge out, bottom edge back — closed into one filled band.
+       Control points at the horizontal midpoint give the even S-curve that reads as flow. */
+    var mx = (x0 + x1) / 2;
+    return 'M' + x0 + ',' + y0 +
+           ' C' + mx + ',' + y0 + ' ' + mx + ',' + y1 + ' ' + x1 + ',' + y1 +
+           ' L' + x1 + ',' + (y1 + h1) +
+           ' C' + mx + ',' + (y1 + h1) + ' ' + mx + ',' + (y0 + h0) + ' ' + x0 + ',' + (y0 + h0) + ' Z';
   }
-  function pieSeg(cx, cy, r1, r2, a0, a1){
-    var large = (a1 - a0) > 180 ? 1 : 0;
-    return 'M' + piePt(cx,cy,r2,a0) + ' A' + r2 + ',' + r2 + ' 0 ' + large + ' 1 ' + piePt(cx,cy,r2,a1) +
-           ' L' + piePt(cx,cy,r1,a1) + ' A' + r1 + ',' + r1 + ' 0 ' + large + ' 0 ' + piePt(cx,cy,r1,a0) + ' Z';
-  }
-  function pieSvg(pie){
-    var cx = 110, cy = 110, r2 = 100, r1 = 62, ang = 0;
-    var s = '<svg class="pie-svg" viewBox="0 0 220 220" role="img" aria-label="Share of annual flow by destination">';
-    pie.slices.forEach(function(sl, i){
-      var a1 = Math.min(ang + sl.p * 3.6, 359.98);
-      s += '<path class="pie-slice" data-i="' + i + '" d="' + pieSeg(cx,cy,r1,r2,ang,a1) + '"' +
-           ' style="fill:' + PIE_COLORS[i % PIE_COLORS.length] + ';stroke:var(--card);stroke-width:1.5">' +
-           '<title>' + sl.l + ' \u2014 ' + sl.p + '%</title></path>';
-      ang = ang + sl.p * 3.6;
+
+  /* Pushes overlapping labels apart.
+     WHY THIS IS NEEDED: node height is proportional to volume, and the real data has nodes three
+     orders of magnitude apart — the Great Salt Lake takes 0.2% of the continental flow, so its bar
+     is a hairline while its label is still 13px tall. Centring every label on its own node stacks
+     four of them on top of each other at the bottom of the chart. This lays the labels out as
+     intervals instead: each wants its node's centre, none may overlap its neighbour, and the whole
+     column is nudged back inside the frame if the last one runs off the end. A label that ends up
+     more than a couple of units from its node gets a leader line so the pairing stays unambiguous. */
+  function deCollide(items, top, bottom){
+    items.sort(function(a, b){ return a.want - b.want; });
+    var y = top;
+    items.forEach(function(it){
+      it.y = Math.max(it.want, y);
+      y = it.y + it.h + 2;
     });
-    s += '<text x="110" y="106" text-anchor="middle" style="fill:var(--ink);font-family:ui-monospace,Consolas,monospace;font-weight:700;font-size:30px">' + pie.total + '</text>';
-    s += '<text x="110" y="127" text-anchor="middle" style="fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;font-size:11px;letter-spacing:.08em">MAF / YR\u2020</text>';
+    var over = y - 2 - bottom;
+    if (over > 0){
+      /* Ran past the bottom: sweep back up, which is always possible because the caller sizes
+         the plot area to fit every label at minimum spacing. */
+      var limit = bottom;
+      for (var i = items.length - 1; i >= 0; i--){
+        items[i].y = Math.min(items[i].y, limit - items[i].h);
+        limit = items[i].y - 2;
+      }
+      if (items.length && items[0].y < top){
+        var shift = top - items[0].y, prev = -Infinity;
+        items.forEach(function(it){
+          it.y = Math.max(it.y + shift, prev + 2);
+          prev = it.y + it.h;
+        });
+      }
+    }
+    return items;
+  }
+
+  function sankeySvg(sources, dests, links, opts){
+    opts = opts || {};
+    function labelW(nodes){
+      var w = 0;
+      nodes.forEach(function(n){
+        w = Math.max(w, String(n.label).length * SANKEY_CHAR_W,
+                        String(n.sub || '').length * SANKEY_SUB_CHAR_W);
+      });
+      return Math.ceil(w) + SANKEY_LABEL_PAD + 6;
+    }
+    /* Frame sized from the actual strings, never from a guessed constant. */
+    var leftLabelW = labelW(sources), rightLabelW = labelW(dests);
+    /* And tall enough that every label fits at minimum spacing even if every node were a hairline
+       — which is what stops deCollide() from ever being handed an impossible layout. */
+    var needed = Math.max(sources.length, dests.length) * (SANKEY_LINE_H + 12);
+    var plotH = Math.max(opts.height || 300, needed);
+    var top = 18;
+    var H = plotH + top * 2;
+    var xS = leftLabelW, xD = SANKEY_W - rightLabelW - SANKEY_NODE_W;
+
+    var totalV = sources.reduce(function(a, n){ return a + n.value; }, 0) || 1;
+    function stack(nodes){
+      var gaps = SANKEY_GAP * Math.max(0, nodes.length - 1);
+      var avail = plotH - gaps;
+      var y = top, out = {}, order = [];
+      nodes.forEach(function(n){
+        var h = Math.max(SANKEY_MIN_BAND, (n.value / totalV) * avail);
+        out[n.id] = {y:y, h:h, cursor:y, node:n};
+        order.push(n.id);
+        y += h + SANKEY_GAP;
+      });
+      out.__order = order;
+      return out;
+    }
+    var S = stack(sources), D = stack(dests);
+
+    var s = '<svg class="sankey-svg" viewBox="0 0 ' + SANKEY_W + ' ' + H + '" role="group" aria-label="' +
+            escapeHtml(opts.aria || 'Flow diagram') + '">';
+    /* Hatch pattern for the two non-ocean outcomes. Texture, not hue — so they stay distinct
+       in print, in forced-colors mode, and for a reader who cannot separate the greys. */
+    s += '<defs><pattern id="skHatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
+         '<rect width="7" height="7" fill="var(--basin-none)" opacity="0.30"></rect>' +
+         '<line x1="0" y1="0" x2="0" y2="7" stroke="var(--basin-none)" stroke-width="3.4"></line>' +
+         '</pattern></defs>';
+
+    links.forEach(function(k){
+      var a = S[k.s], b = D[k.d];
+      if (!a || !b) return;
+      var ha = Math.max(SANKEY_MIN_BAND, (k.value / totalV) * (plotH - SANKEY_GAP * Math.max(0, sources.length - 1)));
+      var hb = Math.max(SANKEY_MIN_BAND, (k.value / totalV) * (plotH - SANKEY_GAP * Math.max(0, dests.length - 1)));
+      var basin = BASINS[k.basin] || BASINS.home;
+      var fill = basin.hatch ? 'url(#skHatch)' : 'var(' + basin.v + ')';
+      s += '<path class="sk-band" data-k="' + k.key + '" tabindex="0" role="button"' +
+           ' aria-label="' + escapeHtml(k.title) + '"' +
+           ' d="' + sankeyBand(xS + SANKEY_NODE_W, a.cursor, xD, b.cursor, ha, hb) + '"' +
+           ' style="fill:' + fill + '"><title>' + escapeHtml(k.title) + '</title></path>';
+      a.cursor += ha; b.cursor += hb;
+    });
+
+    function bars(map, x, anchorRight){
+      var out = '', items = [];
+      map.__order.forEach(function(id){
+        var e = map[id], n = e.node;
+        var basin = n.basin ? (BASINS[n.basin] || BASINS.home) : null;
+        var fill = basin ? (basin.hatch ? 'url(#skHatch)' : 'var(' + basin.v + ')') : 'var(--ink)';
+        out += '<rect class="sk-node" data-n="' + id + '" x="' + x + '" y="' + e.y.toFixed(1) + '" width="' + SANKEY_NODE_W +
+               '" height="' + e.h.toFixed(1) + '" rx="3" style="fill:' + fill + '"></rect>';
+        var twoLine = e.h >= SANKEY_TWO_LINE_MIN_H && n.sub;
+        var blockH = twoLine ? SANKEY_LINE_H + 13 : SANKEY_LINE_H;
+        items.push({id:id, n:n, e:e, twoLine:twoLine, h:blockH, want:e.y + e.h / 2 - blockH / 2});
+      });
+      deCollide(items, top, top + plotH);
+      items.forEach(function(it){
+        var tx = anchorRight ? x - SANKEY_LABEL_PAD : x + SANKEY_NODE_W + SANKEY_LABEL_PAD;
+        var anchor = anchorRight ? 'end' : 'start';
+        var baseY = it.y + 12;
+        var nodeMid = it.e.y + it.e.h / 2;
+        var labMid = it.y + it.h / 2;
+        /* Leader line only when the label had to move — otherwise it is visual noise. */
+        if (Math.abs(labMid - nodeMid) > 3){
+          var lx0 = anchorRight ? x - 3 : x + SANKEY_NODE_W + 3;
+          var lx1 = anchorRight ? tx + 3 : tx - 3;
+          out += '<path class="sk-leader" d="M' + lx0 + ',' + nodeMid.toFixed(1) +
+                 ' L' + ((lx0 + lx1) / 2).toFixed(1) + ',' + nodeMid.toFixed(1) +
+                 ' L' + ((lx0 + lx1) / 2).toFixed(1) + ',' + labMid.toFixed(1) +
+                 ' L' + lx1 + ',' + labMid.toFixed(1) + '"></path>';
+        }
+        out += '<text class="sk-lab" x="' + tx + '" y="' + baseY.toFixed(1) + '" text-anchor="' + anchor + '">' +
+               escapeHtml(it.n.label) + '</text>';
+        if (it.twoLine){
+          out += '<text class="sk-sub" x="' + tx + '" y="' + (baseY + 13).toFixed(1) + '" text-anchor="' + anchor + '">' +
+                 escapeHtml(it.n.sub) + '</text>';
+        }
+      });
+      return out;
+    }
+    s += bars(S, xS, true) + bars(D, xD, false);
     s += '</svg>';
     return s;
   }
-  function pieLegend(pie){
-    return pie.slices.map(function(sl, i){
-      return '<button class="leg-row" type="button" data-i="' + i + '" aria-pressed="false">' +
-        '<span class="leg-sw" style="background:' + PIE_COLORS[i % PIE_COLORS.length] + '"></span>' +
-        '<span class="leg-pct">' + sl.p + '%</span>' +
-        '<span class="leg-lab">' + sl.l + '<span class="leg-sub">' + sl.s + '</span></span></button>';
+
+  /* The mobile counterpart: one full-width proportional bar. Same numbers, same basin colors,
+     same data-k hooks, no 4px type. The Sankey's geometry is its whole value and it does not
+     survive being squeezed to 330px, so below the breakpoint it is replaced rather than
+     shrunk — the same decision already taken for the river diagram. */
+  function stackedBarHtml(segs){
+    return '<div class="stackbar" role="img" aria-label="Proportional bar of the same shares">' +
+      segs.map(function(g){
+        var basin = BASINS[g.basin] || BASINS.home;
+        var cls = basin.hatch ? ' hatched' : '';
+        return '<span class="sb-seg' + cls + '" data-k="' + g.key + '" style="flex:' + g.value.toFixed(4) +
+               ';background:var(' + basin.v + ')" title="' + escapeHtml(g.title) + '"></span>';
+      }).join('') + '</div>';
+  }
+
+  /* Legend row: basin swatch + share + label + the named destination. The destination chip is
+     what makes the four-hue grouping safe — identity is spelled out in text on every row. */
+  function flowLegend(rows){
+    return rows.map(function(r){
+      var basin = BASINS[r.basin] || BASINS.home;
+      return '<button class="leg-row" type="button" data-k="' + r.key + '" aria-pressed="false">' +
+        '<span class="leg-sw' + (basin.hatch ? ' hatched' : '') + '" style="background:var(' + basin.v + ')"></span>' +
+        '<span class="leg-pct">' + r.pct + '</span>' +
+        '<span class="leg-lab">' + r.label + '<span class="leg-sub">' + r.sub + '</span></span></button>';
     }).join('');
+  }
+
+  /* ---- region outflow: one source, one node per destination it actually reaches ---- */
+  function regionFlowChart(st){
+    var seen = {}, order = [];
+    st.pie.slices.forEach(function(sl){
+      var id = sl.sea || 'home';
+      if (!seen[id]){ seen[id] = 0; order.push(id); }
+      seen[id] += sl.p;
+    });
+    order.sort(function(a,b){ return SEA_ORDER.indexOf(a) - SEA_ORDER.indexOf(b); });
+    var sources = [{id:'src', label:st.name, sub:st.pie.total + ' MAF/yr†', value:100}];
+    var dests = order.map(function(id){
+      return {id:id, label:SEAS[id].short, sub:Math.round(seen[id]) + '% of the flow',
+              value:seen[id], basin:SEAS[id].basin};
+    });
+    var links = st.pie.slices.map(function(sl, i){
+      var id = sl.sea || 'home';
+      return {s:'src', d:id, value:sl.p, key:'k' + i, basin:SEAS[id].basin,
+              title:sl.l + ' — ' + sl.p + '% — ' + SEAS[id].label};
+    });
+    return {sources:sources, dests:dests, links:links};
+  }
+
+  /* ---- continental view: six regions, weighted by ACTUAL VOLUME, not by share ----
+     This is the chart the tool did not have. Every other view normalises each region to 100%,
+     which quietly implies the six are comparable in size. Weighting by real annual flow says
+     the thing the percentages hide: the Colorado — the river the whole 2026 fight is about —
+     is a small fraction of what the roof of the continent actually sheds. */
+  function continentalChart(){
+    var vol = {}, order = [];
+    var sources = Object.keys(STATES).map(function(k){
+      var st = STATES[k];
+      var total = parseFloat(String(st.pie.total).replace(/[^0-9.]/g,'')) || 0;
+      st.pie.slices.forEach(function(sl){
+        var id = sl.sea || 'home';
+        if (!(id in vol)){ vol[id] = 0; order.push(id); }
+        vol[id] += total * sl.p / 100;
+      });
+      return {id:k, label:st.name, sub:st.pie.total + ' MAF†', value:total, key:k};
+    }).sort(function(a,b){ return b.value - a.value; });
+    order.sort(function(a,b){ return SEA_ORDER.indexOf(a) - SEA_ORDER.indexOf(b); });
+    var dests = order.map(function(id){
+      return {id:id, label:SEAS[id].short, sub:vol[id].toFixed(1) + ' MAF†',
+              value:vol[id], basin:SEAS[id].basin};
+    });
+    var links = [];
+    Object.keys(STATES).forEach(function(k){
+      var st = STATES[k];
+      var total = parseFloat(String(st.pie.total).replace(/[^0-9.]/g,'')) || 0;
+      st.pie.slices.forEach(function(sl, i){
+        var id = sl.sea || 'home';
+        links.push({s:k, d:id, value:total * sl.p / 100, key:k + i, basin:SEAS[id].basin,
+                    title:st.name + ' — ' + sl.l + ' — ' + (total * sl.p / 100).toFixed(1) + ' MAF to ' + SEAS[id].label});
+      });
+    });
+    /* Ribbons drawn thickest-first so a hairline never disappears under a fat one. */
+    links.sort(function(a,b){ return b.value - a.value; });
+    return {sources:sources, dests:dests, links:links, volumes:vol};
+  }
+
+  /* The basin key, spelled out in words. Required, not decorative: the four-hue palette groups
+     destinations by ocean basin, and a reader has no way to know that unless it is stated. */
+  function basinKeyHtml(ids){
+    return '<div class="basin-key">' + ids.map(function(id){
+      var b = BASINS[id];
+      return '<span class="bk"><i class="' + (b.hatch ? 'hatched ' : '') + '" style="background:var(' + b.v + ')"></i>' +
+        b.label + '</span>';
+    }).join('') + '</div>';
+  }
+  /* Which basins a given set of destination nodes actually uses, in registry order — so the key
+     never advertises a color the chart in front of the reader doesn't contain. */
+  function basinsUsed(dests){
+    var out = [];
+    Object.keys(BASINS).forEach(function(id){
+      if (dests.some(function(d){ return d.basin === id; }) && out.indexOf(id) === -1) out.push(id);
+    });
+    return out;
+  }
+
+  function regionFlowCardHtml(st){
+    var c = regionFlowChart(st);
+    var segs = st.pie.slices.map(function(sl, i){
+      var id = sl.sea || 'home';
+      return {key:'k' + i, value:sl.p, basin:SEAS[id].basin, title:sl.l + ' — ' + sl.p + '% — ' + SEAS[id].label};
+    });
+    var rows = st.pie.slices.map(function(sl, i){
+      var id = sl.sea || 'home';
+      return {key:'k' + i, pct:sl.p + '%', label:sl.l, basin:SEAS[id].basin,
+              sub:sl.s + ' · ' + SEAS[id].short};
+    });
+    return '<div class="pie-card" id="pieCard">' +
+      '<div class="sankey-wrap">' +
+        sankeySvg(c.sources, c.dests, c.links, {
+          height: Math.max(210, c.dests.length * 62),
+          aria: 'Where ' + st.name + '’s water ends up: ribbons from the region to each destination, sized by share of annual flow'
+        }) +
+      '</div>' +
+      stackedBarHtml(segs) +
+      '<div class="stack-note">Left to right: share of ' + st.name + '’s annual flow, by where it ends up.</div>' +
+      basinKeyHtml(basinsUsed(c.dests)) +
+      '<div class="pie-legend">' + flowLegend(rows) + '</div>' +
+    '</div>';
+  }
+
+  /* Ribbon, bar segment and legend row for the same flow all carry the same data-k, so one
+     handler highlights all three views of it at once — hover the ribbon on a laptop, tap the
+     legend on a phone, same result.
+
+     TOUCH TRAP, PRESERVED FROM THE OLD DONUT: highlighting used to be set by click and cleared
+     only by mouseleave, which never fires on a touchscreen — tapping a slice on a phone dimmed
+     the chart permanently with no gesture that would undo it. Click is a TOGGLE; hover is
+     layered on top of, not tangled with, the sticky selection. */
+  function wireFlowCard(card){
+    if (!card) return;
+    var locked = null;
+    function hot(key, on){
+      card.classList.toggle('dimmed', on);
+      card.querySelectorAll('[data-k]').forEach(function(el){
+        var is = on && el.getAttribute('data-k') === key;
+        el.classList.toggle('hot', is);
+        if (el.hasAttribute('aria-pressed')) el.setAttribute('aria-pressed', is ? 'true' : 'false');
+      });
+    }
+    card.querySelectorAll('[data-k]').forEach(function(el){
+      var key = el.getAttribute('data-k');
+      el.addEventListener('mouseenter', function(){ if (locked === null) hot(key, true); });
+      el.addEventListener('mouseleave', function(){ if (locked === null) hot(null, false); });
+      el.addEventListener('click', function(){
+        locked = (locked === key) ? null : key;
+        hot(key, locked !== null);
+      });
+      /* The ribbons are focusable <path>s with role=button, so Enter/Space have to be
+         handled by hand; the legend rows are real buttons and need none of this. */
+      el.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          locked = (locked === key) ? null : key;
+          hot(key, locked !== null);
+        }
+      });
+    });
   }
 
   /* =============== SHARED SUMMARY / CHART HELPERS =============== */
@@ -1986,11 +2453,9 @@
       '</div><div class="stat-strip">';
     st.stats.forEach(function(x){ html += '<div class="stat"><div class="n">' + x.n + '</div><div class="l">' + x.l + '</div></div>'; });
     return html + '</div><div class="local"><span class="tag">' + st.local.tag + '</span><p>' + st.local.p + '</p></div>' +
-      '<h2 style="margin-top:24px">The ledger balance</h2>' +
+      '<h2 style="margin-top:24px">Where the water ends up</h2>' +
       '<p class="sub">' + st.pie.sub + '</p>' +
-      '<div class="pie-card" id="pieCard">' + pieSvg(st.pie) +
-        '<div class="pie-legend">' + pieLegend(st.pie) + '</div>' +
-      '</div>' +
+      regionFlowCardHtml(st) +
       '<p class="pie-note">\u2020 ' + st.pie.note + '</p>';
   }
   function compactsPanel(st){
@@ -2139,33 +2604,7 @@
       });
     });
 
-    /* wire pie: slice and legend highlight together.
-       TOUCH TRAP, FIXED: highlighting used to be set by click and cleared only by mouseleave,
-       which never fires on a touchscreen. Tapping a slice on a phone dimmed the entire chart
-       permanently, with no gesture that would undo it short of leaving the tab. Click is now a
-       TOGGLE, so the same tap that dims the chart clears it; hover still works on desktop and
-       is layered on top of, not tangled with, the sticky selection. */
-    var pieCard = document.getElementById('pieCard');
-    if (pieCard){
-      var pieLocked = null;   // index the reader tapped/clicked, or null. Survives mouseleave.
-      function pieHot(i, on){
-        pieCard.classList.toggle('dimmed', on);
-        pieCard.querySelectorAll('[data-i]').forEach(function(el){
-          var hot = on && el.getAttribute('data-i') === String(i);
-          el.classList.toggle('hot', hot);
-          if (el.hasAttribute('aria-pressed')) el.setAttribute('aria-pressed', hot ? 'true' : 'false');
-        });
-      }
-      pieCard.querySelectorAll('[data-i]').forEach(function(el){
-        var i = el.getAttribute('data-i');
-        el.addEventListener('mouseenter', function(){ if (pieLocked === null) pieHot(i, true); });
-        el.addEventListener('mouseleave', function(){ if (pieLocked === null) pieHot(0, false); });
-        el.addEventListener('click', function(){
-          pieLocked = (pieLocked === i) ? null : i;
-          pieHot(i, pieLocked !== null);
-        });
-      });
-    }
+    wireFlowCard(document.getElementById('pieCard'));
 
     /* wire compact cards */
     var grid = document.getElementById('cardGrid');
