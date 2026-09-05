@@ -1,12 +1,76 @@
 <!DOCTYPE html>
+<!--
+==================================================================================
+  THE HEADWATERS LEDGER  —  single-file, zero-dependency tool
+  Post Millennium Renaissance  ·  postmillenniumrenaissance.com
+==================================================================================
+
+  FILE MAP  (line numbers drift as the file is edited — search the ALL-CAPS
+             section labels below to jump reliably)
+
+  <head> / <style> ............... top of file
+    · THEME PALETTES (CSS) ....... the 4 color themes; DEFAULT (snowmelt) IS FIRST
+                                   and carries the bare :root — see the THEMES
+                                   registry comment for why moving it breaks things
+    · BASE + LAYOUT .............. body, wrap, eyebrow, theme picker
+    · MAP / FLOW DIAGRAM ......... the home map SVG + per-region river diagram
+    · FLOW LIST (MOBILE) ......... the stacked river list that replaces the SVG
+                                   diagram below FLOW_LIST_BREAKPOINT
+    · TABS / CARDS / QUIZ / PIE .. per-region page components
+
+  <script>
+    ==== ALL DATA LIVES IN ONE CONTIGUOUS BLOCK AT THE TOP ====
+    · APP-WIDE CONSTANTS ......... TOOL_NUMBER, LAST_REVIEWED, share/site URLs
+    · THEMES registry ............ THE list of color themes
+    · STATES ..................... the big data object — one entry per region,
+                                   with a full field schema commented above it
+    · HOME_STATS / PIE_COLORS .... home-page stat strip, pie palette
+    ==== everything past "END OF DATA" is logic ====
+    · tuning constants ........... breakpoints, timings (named, not buried)
+    · applyTheme() ............... theme switch + persistence + browser chrome
+    · renderHome() ............... the clickable map view
+    · flowSvg() / flowList() ..... desktop diagram + mobile stacked list
+    · THIRD_TAB registry ......... 'crisis' (Colorado countdown) vs 'stakes'
+    · TABS registry .............. the five per-region tabs
+    · renderState() .............. builds and wires a region page
+    · route() / go() ............. hash router (real back-button support)
+
+  TO ADD A REGION:    add one entry to STATES + one polygon/label pair in
+                      renderHome()'s map SVG (the shapes must tile — see notes).
+  TO ADD A TAB:       write a render function, add ONE line to the TABS registry.
+  TO ADD A THEME:     add ONE line to the THEMES registry + one CSS palette block.
+  TO ADD A RESERVOIR: add one line to that region's reservoirs[] — the home-page
+                      infrastructure card picks it up automatically.
+==================================================================================
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="An interactive ledger of where the Rocky Mountains' water goes and who controls it — six headwaters regions, 20+ compacts and treaties, and the Colorado River rules that turned over in 2026.">
+<!-- The tool ships four themes, one of them dark (Nightflow), so it opts into both
+     schemes rather than pinning to light. applyTheme() keeps the theme-color tag and
+     the root color-scheme in step with whichever theme is actually active, so mobile
+     browser chrome and native form controls (the flow slider) match the page. -->
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#EDF2EF">
 <link rel="icon" href="favicon.ico">
 <link rel="icon" type="image/png" href="favicon-32x32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>The Headwaters Ledger — Where the Rockies' Water Goes</title>
+<!-- Social unfurl. og:url and og:image must be absolute, so they point at the
+     GitHub Pages origin that actually serves this file, not at the PMR wrapper page
+     that iframes it. If the tool is ever moved to another host, these two lines and
+     SITE_URL in the constants block are the only places the origin is written down. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="The Headwaters Ledger — Where the Rockies' Water Goes">
+<meta property="og:description" content="Six headwaters regions own the roof of the continent. A century of compacts, treaties, and Supreme Court decrees decides who drinks it.">
+<meta property="og:url" content="https://postmillennium-mtb.github.io/headwaters-ledger/">
+<meta property="og:image" content="https://postmillennium-mtb.github.io/headwaters-ledger/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="The Headwaters Ledger">
+<meta name="twitter:description" content="Where the Rockies' water goes, and who controls it.">
+<meta name="twitter:image" content="https://postmillennium-mtb.github.io/headwaters-ledger/apple-touch-icon.png">
 <style>
   :root{
     --paper:#EDF2EF; --card:#F7FAF8; --ink:#1C3644; --ink-soft:#4A6272;
@@ -50,21 +114,20 @@
     border-bottom:2px solid var(--ink); padding-bottom:8px; margin-bottom:14px;
   }
   .theme-picker{display:flex;gap:0}
-  /* Swatch colors live here, once, separate from each theme's --river etc. above \u2014
-     the picker has to show all four themes' colors at once, so it can't just read
-     the currently-active theme's variables the way everything else on the page does. */
-  :root{
-    --swatch-snowmelt:#23708A; --swatch-canyon:#A8562E; --swatch-nightflow:#12222C; --swatch-survey:#7B7248;
-  }
+  /* The dots are BUILT FROM THE `THEMES` REGISTRY in the script below, and each one's
+     swatch color is set inline from that registry's `swatch` field. The picker has to
+     show all four themes at once, so it can't read the active theme's --river the way
+     the rest of the page does \u2014 but keeping those four colors in the registry (rather
+     than in a second :root block down here) means a theme is still a ONE-LINE edit.
+     40px square, not the old 32px: below 40 these are a genuinely hard tap target. */
   .theme-dot{
-    width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;padding:0;background:transparent;
+    width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;padding:0;background:transparent;
     position:relative;display:inline-flex;align-items:center;justify-content:center;
   }
-  .theme-dot span{width:18px;height:18px;border-radius:50%;border:2px solid var(--ink);display:block}
-  .theme-dot[data-set="snowmelt"] span{background:var(--swatch-snowmelt)}
-  .theme-dot[data-set="canyon"] span{background:var(--swatch-canyon)}
-  .theme-dot[data-set="nightflow"] span{background:var(--swatch-nightflow)}
-  .theme-dot[data-set="survey"] span{background:var(--swatch-survey)}
+  .theme-dot span{width:18px;height:18px;border-radius:50%;border:2px solid var(--ink);display:block;transition:transform .15s ease}
+  /* The active theme's dot grows and gains a ring \u2014 aria-pressed carries the same fact
+     to screen readers, so the selection is never signalled by size alone. */
+  .theme-dot[aria-pressed="true"] span{transform:scale(1.34);box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px var(--ink)}
   .theme-dot:focus-visible{outline:3px solid var(--river);outline-offset:2px}
 
   h1{font-size:clamp(1.6rem,5.5vw,2.5rem);line-height:1.08;letter-spacing:-.01em;font-weight:700}
@@ -77,7 +140,7 @@
   .back{
     display:inline-flex;align-items:center;gap:6px;margin-bottom:14px;
     font-family:ui-monospace,Consolas,monospace;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;
-    padding:11px 16px;border:1.5px solid var(--ink);border-radius:999px;background:transparent;color:var(--ink);cursor:pointer;
+    padding:11px 16px;min-height:44px;border:1.5px solid var(--ink);border-radius:999px;background:transparent;color:var(--ink);cursor:pointer;
   }
   .back:hover{background:var(--card)}
   .back:focus-visible{outline:3px solid var(--river);outline-offset:2px}
@@ -106,7 +169,52 @@
   .src-box{fill:var(--ink)}
   .src-label{fill:var(--paper);font-family:ui-monospace,Consolas,monospace;font-weight:700;letter-spacing:.12em}
   .river-name{fill:var(--ink);font-family:ui-monospace,Consolas,monospace;font-size:13px;letter-spacing:.04em;cursor:pointer}
+  .river-name:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   .dest-label{fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;font-size:12px}
+
+  /* PICK LIST (MOBILE) — the fix for the trap recorded above flowSvg().
+     Both SVGs in this tool are fixed-unit viewBoxes scaled to container width, so on a
+     ~330px phone their labels land around 4-8 CSS px: legible on a laptop, unreadable in
+     hand. For the river diagram, shrinking the viewBox was tried and reverted (the longest
+     river name and the longest destination label collide). This is the layout change that
+     comment called for: below FLOW_LIST_BREAKPOINT each SVG gains a stacked list of real
+     <button>s at full body font size beneath it. Same data, same handlers, same selected
+     state — a second VIEW of the data, never a second copy of it.
+     Used by two lists: the region index under the home map, and the river list under each
+     region's flow diagram. .pick-list and .flow-svg-wrap are mutually exclusive; the
+     region index is additive (the map stays, it just stops being the only way in). */
+  .pick-list{display:flex;flex-direction:column;gap:8px;padding:4px 0 2px;margin-top:12px}
+  .flow-svg-wrap{display:none}
+  .pick-list .lead{
+    font-family:ui-monospace,Consolas,monospace;font-size:.66rem;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--ink-soft);margin-bottom:2px;
+  }
+  .pickbtn{
+    display:flex;flex-direction:column;gap:3px;align-items:flex-start;width:100%;
+    min-height:52px;padding:11px 13px;text-align:left;cursor:pointer;
+    background:var(--paper);border:1.5px solid var(--line);border-left:5px solid var(--river);
+    border-radius:0 10px 10px 0;color:var(--ink);font-family:inherit;
+    transition:border-color .15s ease,background .15s ease;
+  }
+  .pickbtn .rn{font-family:ui-monospace,Consolas,monospace;font-size:.8rem;letter-spacing:.04em;font-weight:700;line-height:1.25}
+  .pickbtn .rd{font-family:ui-monospace,Consolas,monospace;font-size:.72rem;color:var(--ink-soft);line-height:1.3}
+  .pickbtn[aria-pressed="true"]{background:var(--card);border-color:var(--river);border-left-color:var(--river-deep);border-left-width:8px}
+  .pickbtn[aria-pressed="true"] .rn{color:var(--river-deep)}
+  .pickbtn:focus-visible{outline:3px solid var(--river);outline-offset:2px}
+  /* Map labels are sized for the desktop render; below the breakpoint they scale down with
+     the viewBox to roughly 7-10 CSS px. Bumped here rather than in the SVG so the desktop
+     layout is untouched. These values are the ceiling — the longest label ("provinces
+     continue north — not to scale") and the widest region name still clear their shapes at
+     this size; going further collides them. */
+  @media(max-width:699px){
+    .state-name{font-size:24px}
+    .state-tag{font-size:18px}
+    .dest-label{font-size:15px}
+  }
+  @media(min-width:700px){
+    .pick-list{display:none}
+    .flow-svg-wrap{display:block}
+  }
 
   .detail{
     margin-top:12px;background:var(--card);border-left:4px solid var(--river);border-radius:0 12px 12px 0;
@@ -177,6 +285,15 @@
   .count .big{font-family:ui-monospace,Consolas,monospace;font-size:2.4rem;font-weight:700;line-height:1;color:var(--canyon)}
   .count.blue .big{color:var(--river)}
   .count .cap{font-size:.82rem;color:var(--ink-soft);margin-top:6px;line-height:1.4}
+  /* A deadline that has passed is still a live number ("112 days since"), so it keeps
+     the same card — but in the settled ink color rather than the alarm orange, and with
+     a word so the before/after distinction is never carried by color alone. */
+  .count.past{border-top-color:var(--ink-soft)}
+  .count.past .big{color:var(--ink)}
+  .count .phase{
+    font-family:ui-monospace,Consolas,monospace;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;
+    font-weight:700;color:var(--ink-soft);display:block;margin-bottom:5px;
+  }
   .timeline{list-style:none;border-left:2.5px solid var(--line);margin:8px 0 26px 8px;padding-left:20px}
   .timeline li{position:relative;padding:0 0 16px}
   .timeline li::before{
@@ -219,6 +336,15 @@
   .score{display:none;text-align:center;background:var(--ink);color:var(--paper);border-radius:14px;padding:18px;font-size:1.05rem;margin-top:6px}
   .score.show{display:block}
   .score .mono{font-size:1.9rem;font-weight:700}
+  /* Retaking the quiz used to require a full page reload, which on a phone means losing
+     your place in the article that embedded this. */
+  .retry{
+    margin-top:12px;font-family:ui-monospace,Consolas,monospace;font-size:.72rem;letter-spacing:.1em;
+    text-transform:uppercase;padding:11px 18px;min-height:44px;border:1.5px solid var(--paper);
+    border-radius:999px;background:transparent;color:var(--paper);cursor:pointer;
+  }
+  .retry:hover{background:var(--paper);color:var(--ink)}
+  .retry:focus-visible{outline:3px solid var(--paper);outline-offset:2px}
 
   .home-link-row{text-align:right;margin:-4px 0 12px}
   .home-link{
@@ -239,8 +365,15 @@
   .pie-slice{cursor:pointer;transition:opacity .15s ease}
   .pie-card.dimmed .pie-slice:not(.hot){opacity:.22}
   .pie-legend{display:flex;flex-direction:column;gap:6px;width:100%}
-  .leg-row{display:flex;gap:9px;align-items:flex-start;padding:6px 8px;border-radius:8px;cursor:pointer;transition:background .15s ease}
+  /* Legend rows are real <button>s so the pie is reachable by keyboard and screen reader, not
+     just by hovering a slice. The reset here is what a button needs to still look like a row. */
+  .leg-row{
+    display:flex;gap:9px;align-items:flex-start;padding:8px;min-height:40px;border-radius:8px;
+    cursor:pointer;transition:background .15s ease;width:100%;text-align:left;
+    background:transparent;border:none;color:inherit;font:inherit;
+  }
   .leg-row.hot{background:var(--paper)}
+  .leg-row:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   .leg-sw{width:13px;height:13px;border-radius:4px;flex:none;margin-top:3px;border:1px solid var(--line)}
   .leg-pct{font-family:ui-monospace,Consolas,monospace;font-weight:700;width:46px;flex:none}
   .leg-lab{font-size:.88rem;line-height:1.3}
@@ -294,15 +427,15 @@
 <div class="wrap">
   <div class="eyebrow">
     <span id="eyebrowText">PMR Civic Tools · No. 14 · Water Series</span>
-    <span class="theme-picker" role="group" aria-label="Color theme">
-      <button class="theme-dot" data-set="snowmelt" title="Snowmelt theme" aria-label="Snowmelt theme"><span></span></button>
-      <button class="theme-dot" data-set="canyon" title="Canyon theme" aria-label="Canyon theme"><span></span></button>
-      <button class="theme-dot" data-set="nightflow" title="Nightflow theme" aria-label="Nightflow theme"><span></span></button>
-      <button class="theme-dot" data-set="survey" title="Survey theme" aria-label="Survey theme"><span></span></button>
-    </span>
+    <!-- Theme dots are BUILT FROM THE `THEMES` REGISTRY in the script below. -->
+    <span class="theme-picker" id="themePicker" role="group" aria-label="Color theme"></span>
   </div>
   <div class="home-link-row">
-    <a class="home-link" href="https://www.postmillenniumrenaissance.com">postmillenniumrenaissance.com &#8599;</a>
+    <!-- target="_top" is required, not cosmetic: this tool is served inside a
+         cross-origin iframe on the PMR site and in Pinkbike articles. Without it the
+         link loads postmillenniumrenaissance.com INSIDE its own embed — a page nested
+         in its own tool frame, with no way back out. -->
+    <a class="home-link" href="https://www.postmillenniumrenaissance.com" target="_top">postmillenniumrenaissance.com &#8599;</a>
   </div>
   <div id="app"></div>
 
@@ -363,7 +496,10 @@
     <p><b>Solid:</b> compact parties, dates, and allocation terms come from compact texts, state engineer offices, and the Bureau of Reclamation and State Department dockets. Colorado River 2026 process dates from Reclamation's Post-2026 NEPA docket. Columbia River Treaty status from the U.S. State Department and Province of B.C.</p>
     <p><b>Estimates (†):</b> flow averages, aquifer-volume comparisons, and "longest undammed river" style superlatives are widely cited figures that vary by source and measurement method. Percentage splits within tributary compacts are summarized, not quoted. The Ledger Balance pie charts are rough proportions assembled from state and provincial water plans plus long-term gauge averages, rounded to whole percents — reliable as shares, not as gauge readings, and annual totals swing enormously between wet and dry years.</p>
     <p><b>Not legal advice:</b> built by a trail advocate, not a water attorney. The Law of the River keeps actual water attorneys extremely busy.</p>
-    <p class="mono" style="margin-top:8px">Post Millennium Renaissance · postmillenniumrenaissance.com · built 2026</p>
+    <!-- Filled from LAST_REVIEWED in the constants block. A tool whose subject is a set
+         of live deadlines has to say when it was last checked, or a reader can't tell a
+         current page from an abandoned one. Bump that one constant on every content edit. -->
+    <p class="mono" style="margin-top:8px" id="footStamp">Post Millennium Renaissance · postmillenniumrenaissance.com</p>
   </footer>
 </div>
 
@@ -375,6 +511,44 @@
   /* Change these once here instead of hunting through every render function. */
   var TOOL_NUMBER = '14';        // PMR Civic Tools catalog number for this tool (used to be hard-typed in 14 places)
   var NEVADA_CO_RIVER_AF = 0.3;  // Nevada's annual Colorado River apportionment, in MAF (Boulder Canyon Project Act, 1928 \u2014 300,000 AF/yr). Used as a relatable comparison unit in the Colorado deficit math.
+  /* BUMP THIS ON EVERY CONTENT EDIT. It is the only place the freshness date is written,
+     and it prints in the footer. This tool's whole subject is expiring paperwork, so a
+     page with no visible review date reads as abandoned regardless of how current it is. */
+  var LAST_REVIEWED = 'September 2026';
+
+  /* ==== THEMES REGISTRY \u2014 the single source of truth for every color theme. =====
+     TO ADD A THEME: add ONE entry here, then add ONE matching CSS block up in the
+     <style> section, selected by [data-theme="<id>"].
+
+     The CSS block genuinely cannot be generated from JS \u2014 custom properties have to
+     be declared in a stylesheet \u2014 so that second edit is unavoidable. Everything else
+     (the picker dot, its swatch color, its label, persistence, the mobile browser
+     chrome color, the native control color scheme) derives from this array.
+
+     THE SPECIFICITY TRAP: :root and [data-theme="canyon"] have IDENTICAL specificity
+     (0,1,0), so whichever is declared LAST wins. The DEFAULT theme's block therefore
+     uses the bare :root selector and sits FIRST in the stylesheet \u2014 it has to style
+     first paint before this script runs. Changing the default means four edits: move
+     the bare :root onto the new default's block, move that block to the top of the
+     stylesheet, change DEFAULT_THEME below, and change the <meta name="theme-color">
+     fallback in the <head>.
+
+       id      matches the [data-theme] value and the CSS block
+       label   the visible tooltip / screen-reader name
+       swatch  the picker dot's color (this theme's --river, or --paper when the
+               theme's whole point is its darkness, as Nightflow's is)
+       paper   this theme's --paper, pushed to <meta name="theme-color"> so mobile
+               browser chrome matches the page
+       scheme  'light' or 'dark' \u2014 sets root color-scheme so native controls (the
+               flow slider on Colorado's countdown tab) render correctly
+     ============================================================================= */
+  var THEMES = [
+    {id:'snowmelt',  label:'Snowmelt', swatch:'#23708A', paper:'#EDF2EF', scheme:'light'},
+    {id:'canyon',    label:'Canyon',   swatch:'#A8562E', paper:'#F3EBE0', scheme:'light'},
+    {id:'nightflow', label:'Nightflow',swatch:'#12222C', paper:'#12222C', scheme:'dark'},
+    {id:'survey',    label:'Survey',   swatch:'#7B7248', paper:'#EFE9DA', scheme:'light'}
+  ];
+  var DEFAULT_THEME = 'snowmelt';
 
   /* =============== STATE DATA =============== */
   /* Schema for each region object below \u2014 use this as the checklist when adding a 7th region:
@@ -384,9 +558,17 @@
        rivers[]                  {id, name, w (line weight in the flow diagram), dest, meta, h, text}
        stats[]                   {n, l} shown in the stat-strip
        local{tag,p}              the "local angle" callout box
-       pie{total,sub,note,slices[{p,l,s}]}   the ledger-balance donut chart
+       pie{total,sub,note,slices[{p,l,s,home?}]}   the ledger-balance donut chart.
+                                 Mark the region's OWN-USE slice with home:true — the
+                                 home-page "How Much Stays Home" card reads that flag.
+                                 A region with no own-use slice (BC, whose consumptive
+                                 use is under 1%) simply has no flagged slice and is
+                                 rendered as "<1%".
        compactsSub, compacts[]   {yr, name, states[], kind:'perp'|'exp'|'none', text} for the Agreements tab
-       thirdTab{label,type}      type is a key into THIRD_TAB below ('crisis' or 'stakes'); label is the tab button text
+       thirdTab{type,label,labelAfter?}   type is a key into THIRD_TAB below ('crisis' or 'stakes').
+                                 label is the tab button text; a 'crisis' region can also
+                                 give labelAfter, used once every dated target has passed
+                                 so the tab stops advertising a countdown that is over.
        crisis{...}               ONLY for type:'crisis' regions \u2014 see THIRD_TAB.crisis below for the exact shape
        stakes{sub, items[{d,h,p}]}   ONLY for type:'stakes' regions
        reservoirs[]              {name, river, yearBuilt, capacityAF, note?} for the Reservoirs tab (empty array is fine)
@@ -433,7 +615,7 @@
         note:'Rough proportions built from the Colorado Water Plan\u2019s ~5.3 MAF consumptive-use figure and long-term state-line gauge averages, rounded to whole percents. Yearly totals swing wildly \u2014 read these as shares, not gauge readings.',
         slices:[
           {p:53, l:'Colorado River system', s:'\u2192 UT \u00b7 AZ \u00b7 NV \u00b7 CA \u00b7 Mexico'},
-          {p:38, l:'Stays in Colorado', s:'cities, farms & evaporation'},
+          {p:38, l:'Stays in Colorado', s:'cities, farms & evaporation', home:true},
           {p:6, l:'Platte & Republican rivers', s:'\u2192 WY \u00b7 NE \u00b7 KS \u2192 Missouri R.'},
           {p:2, l:'Rio Grande', s:'\u2192 NM \u00b7 TX \u00b7 Mexico'},
           {p:1, l:'Arkansas River', s:'\u2192 KS \u00b7 OK \u00b7 AR \u2192 Mississippi R.'}
@@ -454,32 +636,54 @@
         {yr:'2007', name:'Interim Operating Guidelines', states:['7 states','Reclamation'], kind:'exp', text:'The rulebook for shortages: tiered cuts and coordinated Lake Powell\u2013Lake Mead operations. Explicitly temporary \u2014 expires end of 2026, replacement effective Oct 1, 2026.'},
         {yr:'2019', name:'Drought Contingency Plans', states:['7 states','Reclamation'], kind:'exp', text:'Emergency overlay on the 2007 Guidelines: deeper cuts at trigger elevations, plus Upper Basin drought-response releases. Also expires in 2026.'}
       ],
-      thirdTab:{label:'Countdown 2026', type:'crisis'},
+      thirdTab:{type:'crisis', label:'Countdown 2026', labelAfter:'The 2026 Reckoning'},
       /* Everything the 'crisis' tab type (see THIRD_TAB below) needs to render and wire up this tab.
          Only regions with thirdTab.type==='crisis' need this object; 'stakes' regions use `stakes` instead. */
       crisis:{
+        /* headingBefore/headingAfter and sub/subAfter are the tab's two phases. Nothing in this
+           object is allowed to assume the deadlines are still in the future \u2014 see the note on
+           `targets` below for why that mattered. */
+        headingBefore:'The 2026 reckoning', headingAfter:'The 2026 reckoning, after the fact',
         sub:'Three layers of Colorado River rules sunset at once \u2014 during one of the worst water years on record \u2014 and the seven states never reached consensus on what replaces them.',
-        /* Each target gets a live day-countdown. {date} in `cap` is replaced with the formatted dateISO at render time,
-           so the countdown number and its caption can never drift out of sync with each other. */
+        subAfter:'Three layers of Colorado River rules sunset together, and the seven states never reached consensus on what replaced them. The federal government set the terms instead \u2014 which is what the compacts always said would happen if the states couldn\u2019t agree.',
+        /* Each target renders as a live day counter. {date} in the caption is replaced with the
+           formatted dateISO at render time, so the number and its caption can never drift apart.
+
+           WHY EVERY TARGET NEEDS BOTH CAPTIONS: the first version of this tab only had the
+           "days until" caption and printed the literal word PASSED in the 2.4rem number slot
+           once the date arrived \u2014 a card reading "PASSED days until Oct 1, 2026" that made the
+           whole tool look abandoned the morning after the deadline it was built to track. A
+           deadline that has passed is still a live, interesting number, so the card flips to
+           counting up instead: same data, opposite preposition, no dead state to maintain.
+           `capAfter` is REQUIRED on every target \u2014 THIRD_TAB.crisis will throw without it
+           rather than silently fall back to a caption in the wrong tense. */
         targets:[
-          {id:'cdOct', dateISO:'2026-10-01', cap:'days until <b>{date}</b>, when new federal operating guidelines for Lake Powell &amp; Lake Mead take effect'},
-          {id:'cdDec', dateISO:'2026-12-31', cap:'days until <b>{date}</b>, when the 2007 Guidelines, 2019 Drought Plans &amp; Minute 323 all lapse'}
+          {id:'cdOct', dateISO:'2026-10-01',
+           cap:'days until <b>{date}</b>, when new federal operating guidelines for Lake Powell &amp; Lake Mead take effect',
+           capAfter:'days since <b>{date}</b>, when new federal operating guidelines for Lake Powell &amp; Lake Mead took effect'},
+          {id:'cdDec', dateISO:'2026-12-31',
+           cap:'days until <b>{date}</b>, when the 2007 Guidelines, 2019 Drought Plans &amp; Minute 323 all lapse',
+           capAfter:'days since <b>{date}</b>, when the 2007 Guidelines, 2019 Drought Plans &amp; Minute 323 all lapsed'}
         ],
         consensusStat:{big:'0/7', cap:'basin states in consensus \u2014 the Upper and Lower Basins submitted <b>competing</b> proposals instead'},
-        /* d is kept as authored display text (not every entry has a precise day \u2014 "Mar 2024" is intentionally imprecise).
-           The last two entries' dates intentionally mirror the two targets above \u2014 if those ISO dates ever change, update these too. */
+        /* `d` is authored display text, because not every entry has a precise day ("Mar 2024" is
+           deliberately imprecise). `iso` is the machine date used ONLY to decide whether an entry
+           draws as a past (filled) or future (hollow) dot. These used to be hand-set future:true
+           flags, which meant the timeline kept showing passed events as upcoming until someone
+           remembered to edit them; now the dots simply cannot be wrong. For an imprecise entry,
+           use the first of the month \u2014 the dot only needs to land on the right side of today. */
         timeline:[
-          {d:'1922', t:'Colorado River Compact splits the river 50/50 between Upper and Lower Basins \u2014 using flow estimates from unusually wet years.', future:false},
-          {d:'2007', t:'Interim Guidelines adopted: shortage tiers and coordinated Powell\u2013Mead operations. Explicitly temporary \u2014 set to expire in 2026.', future:false},
-          {d:'2019', t:'Drought Contingency Plans layer on deeper cuts at trigger elevations. Also expire in 2026.', future:false},
-          {d:'Mar 2024', t:'Upper and Lower Basins submit separate, conflicting post-2026 proposals to the Bureau of Reclamation.', future:false},
-          {d:'Nov 2025', t:'Deadline for seven-state consensus passes without a deal.', future:false},
-          {d:'Jan 9, 2026', t:'Reclamation releases the Draft Environmental Impact Statement \u2014 with no preferred alternative identified.', future:false},
-          {d:'Feb 14, 2026', t:'Extended consensus deadline missed. Federal government positioned to set terms itself.', future:false},
-          {d:'Mar 2, 2026', t:'Public comment closes \u2014 18,000+ submissions.', future:false},
-          {d:'May 1, 2026', t:'Lower Basin states (AZ, CA, NV) submit their own joint proposal for operations through 2028. Litigation risk rises \u2014 compact disputes go straight to the U.S. Supreme Court.', future:false},
-          {d:'Oct 1, 2026', t:'New operating guidelines scheduled to take effect \u2014 with or without state agreement.', future:true},
-          {d:'Dec 31, 2026', t:'2007 Guidelines, Drought Contingency Plans, and Minute 323 (Mexico) formally expire.', future:true}
+          {d:'1922', iso:'1922-11-24', t:'Colorado River Compact splits the river 50/50 between Upper and Lower Basins \u2014 using flow estimates from unusually wet years.'},
+          {d:'2007', iso:'2007-12-13', t:'Interim Guidelines adopted: shortage tiers and coordinated Powell\u2013Mead operations. Explicitly temporary \u2014 set to expire in 2026.'},
+          {d:'2019', iso:'2019-05-20', t:'Drought Contingency Plans layer on deeper cuts at trigger elevations. Also expire in 2026.'},
+          {d:'Mar 2024', iso:'2024-03-01', t:'Upper and Lower Basins submit separate, conflicting post-2026 proposals to the Bureau of Reclamation.'},
+          {d:'Nov 2025', iso:'2025-11-11', t:'Deadline for seven-state consensus passes without a deal.'},
+          {d:'Jan 9, 2026', iso:'2026-01-09', t:'Reclamation releases the Draft Environmental Impact Statement \u2014 with no preferred alternative identified.'},
+          {d:'Feb 14, 2026', iso:'2026-02-14', t:'Extended consensus deadline missed. Federal government positioned to set terms itself.'},
+          {d:'Mar 2, 2026', iso:'2026-03-02', t:'Public comment closes \u2014 18,000+ submissions.'},
+          {d:'May 1, 2026', iso:'2026-05-01', t:'Lower Basin states (AZ, CA, NV) submit their own joint proposal for operations through 2028. Litigation risk rises \u2014 compact disputes go straight to the U.S. Supreme Court.'},
+          {d:'Oct 1, 2026', iso:'2026-10-01', t:'New operating guidelines scheduled to take effect \u2014 with or without state agreement.'},
+          {d:'Dec 31, 2026', iso:'2026-12-31', t:'2007 Guidelines, Drought Contingency Plans, and Minute 323 (Mexico) formally expire.'}
         ],
         paper:16.5, paperLabel:'1922 Compact + Mexico Treaty',           // MAF/yr promised on paper \u2014 drives both the bar chart AND its "16.5 MAF" label, so they can't drift apart
         sliderMin:8, sliderMax:20, sliderStep:0.1, sliderDefault:12.4,
@@ -554,7 +758,7 @@
         slices:[
           {p:36, l:'Yellowstone system', s:'\u2192 MT \u2192 Missouri R.'},
           {p:29, l:'Snake River', s:'\u2192 ID \u2192 Columbia \u2192 Pacific'},
-          {p:15, l:'Stays in Wyoming', s:'ranches, towns & evaporation'},
+          {p:15, l:'Stays in Wyoming', s:'ranches, towns & evaporation', home:true},
           {p:11, l:'Green River', s:'\u2192 UT \u2192 Colorado R. system'},
           {p:6, l:'North Platte', s:'\u2192 NE \u2192 Missouri R.'},
           {p:3, l:'Bear, Belle Fourche & Niobrara', s:'\u2192 ID \u00b7 UT \u00b7 SD \u00b7 NE'}
@@ -645,7 +849,7 @@
           {p:56, l:'Clark Fork & Kootenai', s:'\u2192 ID \u00b7 B.C. \u2192 Columbia \u2192 Pacific'},
           {p:19, l:'Yellowstone River', s:'\u2192 ND \u2192 Missouri R. \u2192 Gulf'},
           {p:16, l:'Missouri River', s:'\u2192 ND \u2192 Gulf of Mexico'},
-          {p:8, l:'Stays in Montana', s:'farms, ranches & evaporation'},
+          {p:8, l:'Stays in Montana', s:'farms, ranches & evaporation', home:true},
           {p:1, l:'St. Mary River', s:'\u2192 Alberta \u2192 Hudson Bay'}
         ]
       },
@@ -734,7 +938,7 @@
           {p:43, l:'Snake (+ Salmon & Clearwater)', s:'\u2192 WA/OR \u2192 Columbia \u2192 Pacific'},
           {p:27, l:'Pend Oreille (Clark Fork)', s:'\u2192 WA \u2192 Columbia \u2192 Pacific'},
           {p:14, l:'Kootenai River', s:'\u2192 back to B.C. \u2192 Columbia'},
-          {p:8, l:'Stays in Idaho', s:'irrigation, cities & evaporation'},
+          {p:8, l:'Stays in Idaho', s:'irrigation, cities & evaporation', home:true},
           {p:7, l:'Spokane River', s:'\u2192 WA \u2192 Columbia'},
           {p:1, l:'Bear River', s:'\u2192 UT \u2192 Great Salt Lake'}
         ]
@@ -903,7 +1107,7 @@
         slices:[
           {p:83, l:'Peace, Athabasca & northern rivers', s:'\u2192 Mackenzie \u2192 Arctic Ocean'},
           {p:13, l:'Saskatchewan rivers', s:'\u2192 SK \u2192 Hudson Bay'},
-          {p:3, l:'Stays in Alberta', s:'irrigation, cities & evaporation'},
+          {p:3, l:'Stays in Alberta', s:'irrigation, cities & evaporation', home:true},
           {p:1, l:'Milk River', s:'\u2192 back to MT \u2192 Missouri R.'}
         ]
       },
@@ -946,15 +1150,108 @@
     }
   };
 
+  /* =============== HOME-PAGE COPY =============== */
+  /* One-line résumé per region, shown in the map's hover panel on desktop and in the region
+     index list on mobile. Prose only — the heading above each ("Colorado · Ledger 14-A") is
+     built from that region's own name and num fields, so it can't fall out of step. Keys
+     must match STATES; the index list iterates STATES, so a region missing an entry here
+     renders an empty subtitle rather than breaking. */
+  var REGION_HINTS = {
+    co:'No major river flows in — every drop leaves, to 18 states and Mexico. Ground zero for the post-2026 Colorado River reckoning.',
+    wy:'Three Waters Mountain splits snowmelt toward three seas. Seven compacts, one Supreme Court decree, and a 4% share of its own Snake River.',
+    mt:'Triple Divide Peak sends water to the Pacific, the Gulf of Mexico, and Hudson Bay. Home of the longest undammed river in the lower 48 — and zero compacts on the Missouri.',
+    id:'The exception: rivers flow in as well as out, but nearly everything exits through one door — the Snake. Beneath it, an aquifer holding roughly a Lake Erie†.',
+    bc:'The Columbia River’s birthplace and Canada’s side of a treaty currently on pause. Almost no interprovincial compacts — BC’s water diplomacy is international.',
+    ab:'One icefield feeds three oceans. The one Canadian region here with a real, audited 50% flow-sharing rule to its downstream neighbor.'
+  };
+
+  var HOME_STATS = [
+    {n:'6', l:'headwaters regions — four states, two provinces, the continent’s roof'},
+    {n:'6', l:'seas receive their water: Pacific, Gulf of Mexico, Gulf of California, Hudson Bay, Atlantic, Arctic'},
+    {n:'2', l:'big agreements in flux right now: the post-2026 Colorado River rules &amp; the Columbia River Treaty'},
+    {n:'1909', l:'the year the paperwork era began, with the U.S.–Canada Boundary Waters Treaty'}
+  ];
+
+  /* Pie palette. Six entries against a maximum of six slices in any region's ledger
+     balance, so no region ever repeats a color on its own chart. If a future region
+     needs a seventh slice, lengthen this rather than letting the modulo wrap — two
+     identical slices on one donut are indistinguishable except by reading the legend. */
+  var PIE_COLORS = ['var(--river)','var(--canyon)','var(--sage)','var(--river-deep)','var(--ink-soft)','var(--ink)'];
+
+  /* ================== END OF DATA — everything below is logic ================== */
+
+  /* ---------- tuning constants (named so they're findable, not buried in functions) ---------- */
+  var FLOW_LIST_BREAKPOINT = 700;  // px; below this the river SVG is swapped for the stacked
+                                   // button list. MUST match the @media(min-width:700px) rule
+                                   // on .flow-list / .flow-svg-wrap in the stylesheet.
+  var THEME_STORAGE_KEY = 'pmrHeadwatersTheme';  // theme choice only — the tool must work with this empty
+
+  /* ---------- flow-diagram geometry ----------
+     The diagram's viewBox width is DERIVED from the longest destination label in the whole
+     data set rather than hard-coded at 900.
+
+     BUG THIS FIXES: at 900 units, Wyoming's Bear River label ("UT → Great Salt Lake (never
+     reaches the sea)", 44 characters starting at x=652) ran past the right edge and was
+     silently cut off mid-word — SVG raises nothing when content overflows its viewBox, so
+     nobody notices until they read that one row on that one region. Alberta and BC have
+     labels nearly as long. Deriving the width means a longer label added later widens the
+     diagram instead of quietly losing its own tail.
+     One width is computed across ALL regions, not per region, so every diagram renders at
+     the same scale — a per-region width would make Colorado's text visibly larger than
+     Alberta's for no reason a reader could explain. */
+  var FLOW_DEST_X = 652;       // x where the destination label column starts (used by flowSvg)
+  var FLOW_DEST_CHAR_W = 7.3;  // approx advance of one char of the 12px monospace .dest-label, in viewBox units
+  var FLOW_RIGHT_PAD = 18;     // breathing room past the longest label
+  var FLOW_W = (function(){
+    var longest = 0;
+    Object.keys(STATES).forEach(function(k){
+      STATES[k].rivers.forEach(function(r){ longest = Math.max(longest, r.dest.length); });
+    });
+    return Math.max(900, Math.ceil(FLOW_DEST_X + longest * FLOW_DEST_CHAR_W + FLOW_RIGHT_PAD));
+  })();
+
   /* =============== HELPERS =============== */
   var app = document.getElementById('app');
   var eyebrow = document.getElementById('eyebrowText');
+  var themeById = {};
+  THEMES.forEach(function(t){ themeById[t.id] = t; });
 
-  document.querySelectorAll('.theme-dot').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      document.documentElement.setAttribute('data-theme', btn.getAttribute('data-set'));
+  document.getElementById('footStamp').textContent =
+    'Post Millennium Renaissance · postmillenniumrenaissance.com · last reviewed ' + LAST_REVIEWED;
+
+  /* ---------- theme engine ----------
+     Everything here is driven by the THEMES registry above. Three things move together on
+     a theme change and it is easy to forget the last two: the [data-theme] attribute the
+     CSS palettes hang off, the <meta name="theme-color"> that colors mobile browser chrome
+     (without it a Nightflow reader gets a dark page under a pale toolbar), and the root
+     color-scheme that tells the browser how to paint native controls — the range slider on
+     Colorado's countdown tab renders as a light widget on a dark card otherwise. */
+  var themeMeta = document.querySelector('meta[name="theme-color"]');
+  function applyTheme(id, persist){
+    var t = themeById[id] || themeById[DEFAULT_THEME];
+    document.documentElement.setAttribute('data-theme', t.id);
+    document.documentElement.style.colorScheme = t.scheme;
+    if (themeMeta) themeMeta.setAttribute('content', t.paper);
+    document.querySelectorAll('.theme-dot').forEach(function(b){
+      b.setAttribute('aria-pressed', b.getAttribute('data-set') === t.id ? 'true' : 'false');
     });
+    /* Preference only. If storage is unavailable (private browsing, or a cross-origin
+       iframe with third-party storage blocked — which is exactly how this tool is served
+       on the PMR site and Pinkbike) the theme still applies for the session; it just
+       won't be remembered. Never let a storage failure break the page. */
+    if (persist) { try { localStorage.setItem(THEME_STORAGE_KEY, t.id); } catch(e){} }
+  }
+  document.getElementById('themePicker').innerHTML = THEMES.map(function(t){
+    return '<button class="theme-dot" data-set="' + t.id + '" type="button" aria-pressed="false"' +
+      ' title="' + t.label + ' theme" aria-label="' + t.label + ' theme">' +
+      '<span style="background:' + t.swatch + '"></span></button>';
+  }).join('');
+  document.querySelectorAll('.theme-dot').forEach(function(btn){
+    btn.addEventListener('click', function(){ applyTheme(btn.getAttribute('data-set'), true); });
   });
+  var savedTheme = null;
+  try { savedTheme = localStorage.getItem(THEME_STORAGE_KEY); } catch(e){}
+  applyTheme(savedTheme || DEFAULT_THEME, false);
 
   /* This used to be a no-op called `esc()` (never actually called anywhere in the file) that claimed to
      escape content "because it's trusted internal data." That was true for hand-authored fields like
@@ -967,21 +1264,28 @@
   }
 
   /* =============== HOME (MAP) VIEW =============== */
-  var HOME_STATS = [
-    {n:'6', l:'headwaters regions \u2014 four states, two provinces, the continent\u2019s roof'},
-    {n:'6', l:'seas receive their water: Pacific, Gulf of Mexico, Gulf of California, Hudson Bay, Atlantic, Arctic'},
-    {n:'2', l:'big agreements in flux right now: Colorado River post-2026 rules &amp; the Columbia River Treaty'},
-    {n:'1909', l:'the year the paperwork era began, with the U.S.\u2013Canada Boundary Waters Treaty'}
-  ];
-  /* Regions with reservoirs[] data populated so far \u2014 update this one line as BC/AB get added later;
-     everything downstream (the card, the average, the sort order) follows automatically. */
-  var RESERVOIR_STATES = ['wy','id','mt','co'];
+  /* Which regions have reservoir data is now DERIVED from the data itself rather than
+     maintained as a separate ['wy','id','mt','co'] list. That list was a second source of
+     truth for a fact STATES already knew, and the README had to carry a standing reminder
+     to update it when BC and Alberta get populated. Adding a reservoir to any region's
+     reservoirs[] array is now the whole edit \u2014 this card, its average, and its sort order
+     all follow. */
+  /* Guards the one field the index list and the hover panel share, so a region added to
+     STATES without a REGION_HINTS entry renders a blank subtitle instead of "undefined". */
+  function regionHint(key){ return REGION_HINTS[key] || ''; }
+
+  function regionsWithReservoirs(){
+    return Object.keys(STATES).filter(function(k){
+      return STATES[k].reservoirs && STATES[k].reservoirs.length;
+    });
+  }
 
   function infraCardHtml(){
-    var items = RESERVOIR_STATES
+    var items = regionsWithReservoirs()
       .map(function(key){ return { key:key, st:STATES[key], sum:reservoirSummary(STATES[key].reservoirs) }; })
       .filter(function(x){ return x.sum; })
       .sort(function(a,b){ return b.sum.avgAge - a.sum.avgAge; });
+    if (!items.length) return '';
     var overallAvg = Math.round(items.reduce(function(s,x){ return s + x.sum.avgAge; }, 0) / items.length);
     var barItems = items.map(function(x){ return { label: x.st.name, value: x.sum.avgAge, display: x.sum.avgAge + ' yrs' }; });
     return '<div class="essay-card static">' +
@@ -992,13 +1296,25 @@
     '</div>';
   }
 
+  /* A region whose own-use share is real but below the 1% rounding floor of its pie (BC \u2014
+     see its pie note) still has to draw a bar, or it reads as "no data" rather than
+     "vanishingly little". This is the nominal value that bar is drawn at; the label always
+     says "<1%" so the chart never implies a precision the data doesn't have. */
+  var SUB_ONE_PERCENT_BAR = 0.6;
+
   function retentionCardHtml(){
-    var items = ['co','wy','mt','id','ab','bc'].map(function(key){
+    /* Reads the home:true flag on each region's pie slices rather than regex-matching the
+       slice's display label for "Stays in\u2026". The old version silently fell through to the
+       sub-1% case if anyone reworded a label \u2014 a prose edit could quietly corrupt a chart.
+       Region order comes from STATES, so a seventh region joins this card automatically. */
+    var items = Object.keys(STATES).map(function(key){
       var st = STATES[key];
-      var slice = st.pie.slices.filter(function(s){ return /^Stays in/.test(s.l); })[0];
-      /* BC's pie has no 'Stays in' slice \u2014 its own data note says consumptive use there is
-         under 1% and too small to slice. Shown honestly as <1%, not silently dropped. */
-      return { label: st.name, value: slice ? slice.p : 0.6, display: slice ? slice.p + '%' : '<1%' };
+      var slice = st.pie.slices.filter(function(s){ return s.home; })[0];
+      return {
+        label: st.name,
+        value: slice ? slice.p : SUB_ONE_PERCENT_BAR,
+        display: slice ? slice.p + '%' : '<1%'
+      };
     }).sort(function(a,b){ return b.value - a.value; });
     return '<div class="essay-card static">' +
       '<span class="etag">Water Series \u00b7 Ledger Balance</span>' +
@@ -1014,7 +1330,11 @@
       '<h1>The Headwaters <span class="flow">Ledger</span></h1>' +
       '<p class="thesis">Six regions own the roof of the continent. The snow that lands on them becomes the Columbia, the Missouri, the Colorado, the Rio Grande, the Saskatchewan, and the Mackenzie \u2014 and a tangle of compacts, treaties, and Supreme Court decrees decides who drinks it. <b>Tap a region to open its ledger.</b></p>' +
       '<div class="map-card">' +
-      '<svg viewBox="0 0 660 800" role="img" aria-label="Clickable map of British Columbia, Alberta, Idaho, Montana, Wyoming, and Colorado">' +
+      /* role="group", not role="img": an img role tells assistive tech to treat the whole SVG as
+         a single graphic and ignore what's inside it — which would have hidden all six focusable
+         region buttons. The pie chart below legitimately keeps role="img", because its slices are
+         decorative duplicates of a legend that is already real text. */
+      '<svg viewBox="0 0 660 800" role="group" aria-label="Clickable map of British Columbia, Alberta, Idaho, Montana, Wyoming, and Colorado">' +
         /* British Columbia */
         '<polygon class="state-shape" data-s="bc" tabindex="0" role="button" aria-label="Open the British Columbia water ledger" points="18,28 320,28 295,230 18,230"></polygon>' +
         /* Alberta */
@@ -1056,10 +1376,23 @@
         '<text class="state-tag" x="34" y="760" text-anchor="middle" style="font-style:normal;font-weight:700">N</text>' +
         '<line x1="12" y1="784" x2="44" y2="784" class="divide-line"></line>' +
         '<text class="dest-label" x="52" y="788">Continental Divide (stylized, not geographic)</text>' +
-      '</svg></div>' +
+      '</svg>' +
+      /* Region index \u2014 the map's tap targets are large enough on a phone, but its
+         one-line r\u00e9sum\u00e9s live in a hover panel that touch users never see, and the
+         labels inside the SVG shrink with the viewBox. This list carries the same
+         r\u00e9sum\u00e9 text at real font size, and it is the keyboard/screen-reader route
+         into each region as well. Hidden at >=700px, where hovering the map works. */
+      '<div class="pick-list" id="regionList">' +
+        '<div class="lead">The six regions</div>' +
+        Object.keys(STATES).map(function(k){
+          return '<button class="pickbtn" type="button" data-s="' + k + '">' +
+            '<span class="rn">' + STATES[k].name.toUpperCase() + '</span>' +
+            '<span class="rd">' + regionHint(k) + '</span></button>';
+        }).join('') +
+      '</div></div>' +
       '<div class="map-hint" id="mapHint" aria-live="polite">' +
         '<div class="meta">The headwaters club</div>' +
-        '<p>Between them these six regions are party to 20+ compacts and agreements, three treaties spanning Canada and Mexico, several Supreme Court decrees, and the two largest tribal water settlements in U.S. history. Hover or tap a region for its one-line r\u00e9sum\u00e9.</p>' +
+        '<p>Between them these six regions are party to 20+ compacts and agreements, three treaties spanning Canada and Mexico, several Supreme Court decrees, and the two largest tribal water settlements in U.S. history. Hover a region for its one-line r\u00e9sum\u00e9, or pick one from the list.</p>' +
       '</div>' +
       infraCardHtml() +
       '<div class="split-row">' +
@@ -1075,40 +1408,54 @@
         HOME_STATS.map(function(x){ return '<div class="stat"><div class="n">' + x.n + '</div><div class="l">' + x.l + '</div></div>'; }).join('') +
       '</div>';
 
-    var HINTS = {
-      bc:{m:'British Columbia \u00b7 Ledger ' + TOOL_NUMBER + '-E', p:'The Columbia River\u2019s birthplace and Canada\u2019s side of a treaty currently on pause. Almost no interprovincial compacts \u2014 BC\u2019s water diplomacy is international.'},
-      ab:{m:'Alberta \u00b7 Ledger ' + TOOL_NUMBER + '-F', p:'One icefield feeds three oceans. The one Canadian region here with a real, audited 50% flow-sharing rule to its downstream neighbor.'},
-      mt:{m:'Montana \u00b7 Ledger ' + TOOL_NUMBER + '-C', p:'Triple Divide Peak sends water to the Pacific, the Gulf of Mexico, and Hudson Bay. Home of the longest undammed river in the lower 48 \u2014 and zero compacts on the Missouri.'},
-      id:{m:'Idaho \u00b7 Ledger ' + TOOL_NUMBER + '-D', p:'The exception: rivers flow in as well as out, but nearly everything exits through one door \u2014 the Snake. Beneath it, an aquifer holding roughly a Lake Erie\u2020.'},
-      wy:{m:'Wyoming \u00b7 Ledger ' + TOOL_NUMBER + '-B', p:'Three Waters Mountain splits snowmelt toward three seas. Seven compacts, one Supreme Court decree, and a 4% share of its own Snake River.'},
-      co:{m:'Colorado \u00b7 Ledger ' + TOOL_NUMBER + '-A', p:'No major river flows in \u2014 every drop leaves, to 18 states and Mexico. Ground zero for the 2026 Colorado River reckoning.'}
-    };
     var hint = document.getElementById('mapHint');
+    /* The hint's heading line ("Colorado \u00b7 Ledger 14-A") is derived from STATES rather than
+       typed out beside each r\u00e9sum\u00e9 \u2014 the region's display name and its ledger letter already
+       live there, and a hand-typed copy is a copy that can drift. */
+    function hintHead(key){
+      return STATES[key].name + ' \u00b7 Ledger ' + TOOL_NUMBER + '-' + STATES[key].num;
+    }
+    function showHint(key){
+      hint.innerHTML = '<div class="meta">' + hintHead(key) + '</div><p>' + regionHint(key) + '</p>';
+    }
     app.querySelectorAll('.state-shape').forEach(function(sh){
       var key = sh.getAttribute('data-s');
-      sh.addEventListener('mouseenter', function(){
-        hint.innerHTML = '<div class="meta">' + HINTS[key].m + '</div><p>' + HINTS[key].p + '</p>';
-      });
+      sh.addEventListener('mouseenter', function(){ showHint(key); });
+      /* focus as well as mouseenter: tabbing the map used to move the highlight without
+         ever updating the r\u00e9sum\u00e9 panel, so keyboard users navigated blind. */
+      sh.addEventListener('focus', function(){ showHint(key); });
       sh.addEventListener('click', function(){ go(key); });
       sh.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(key); } });
+    });
+    app.querySelectorAll('#regionList .pickbtn').forEach(function(b){
+      b.addEventListener('click', function(){ go(b.getAttribute('data-s')); });
     });
   }
 
   /* =============== FLOW SVG GENERATOR =============== */
-  /* This diagram is an SVG scaled to 100% of its container's width, which means every unit in the
-     viewBox below shrinks by the same ratio the container shrinks by \u2014 on a phone that's roughly a
-     third of a typical desktop width, so text sized for desktop comfort turns close to unreadable on
-     mobile. The font sizes below are bumped up from the original to help with that. A narrower mobile-only
-     viewBox was tried and reverted: the longest river name (39 characters, Wyoming's Yellowstone system)
-     and longest destination label (44 characters, in Alberta/BC) need the full current width to avoid
-     overlapping each other \u2014 shrinking the diagram sideways collides them. A real mobile-crisp version of
-     this diagram would need a different layout entirely (e.g. a stacked list below a breakpoint, or
-     truncating the longest labels) rather than just resizing this one. */
+  /* This diagram is an SVG scaled to 100% of its container's width, so every unit in the viewBox
+     shrinks by the same ratio the container does \u2014 on a phone that's roughly a third of a typical
+     desktop width, putting the 13px river names at about 4.7 CSS px. Unreadable.
+
+     TRAP, RECORDED: a narrower mobile-only viewBox was tried and reverted. The longest river name
+     (39 characters, Wyoming's Yellowstone system) and the longest destination label (44 characters,
+     in Alberta/BC) need the full current width to avoid overlapping each other \u2014 shrinking the
+     diagram sideways collides them. Do not try that again.
+
+     RESOLVED: rather than resize the diagram, the mobile layout replaces it. Below
+     FLOW_LIST_BREAKPOINT the SVG is hidden by CSS and flowList() renders the same rivers as a
+     stacked list of real buttons at body font size (see PICK LIST in the stylesheet). Both are
+     always in the DOM, both carry data-r, and wireRivers() below binds them together \u2014 so the two
+     views cannot show different rivers or disagree about which one is selected.
+
+     The SVG keeps its desktop font sizes. Its river-name labels are focusable (tabindex + role) so
+     keyboard users on desktop, where the list is hidden, can still reach every river; before this
+     the entire flow diagram was mouse-only. */
   function flowSvg(st){
     var rows = st.rivers.length;
     var rowH = 66, top = 60, H = top + rows*rowH + 40;
     var srcH = H - 70;
-    var s = '<svg viewBox="0 0 900 ' + H + '" role="img" aria-label="Flow diagram of rivers leaving ' + st.name + '">';
+    var s = '<svg viewBox="0 0 ' + FLOW_W + ' ' + H + '" role="group" aria-label="Flow diagram of rivers leaving ' + st.name + '">';
     s += '<rect class="src-box" x="30" y="35" width="150" height="' + srcH + '" rx="14"></rect>';
     s += '<text class="src-label" x="50" y="72" font-size="16">' + st.name.toUpperCase() + '</text>';
     s += '<text class="src-label" x="46" y="' + (25 + srcH) + '" font-size="9.5" opacity="0.75">' + st.srcNote + '</text>';
@@ -1117,11 +1464,24 @@
       var d = 'M180,' + y + ' C 340,' + (y-2) + ' 480,' + (y-5) + ' 640,' + (y-6);
       s += '<path class="river-path" data-r="' + r.id + '" stroke-width="' + r.w + '" d="' + d + '"></path>';
       s += '<path class="river-hit" data-r="' + r.id + '" d="' + d + '"></path>';
-      s += '<text class="river-name" data-r="' + r.id + '" x="250" y="' + (y - r.w/2 - 8) + '">' + r.name + '</text>';
-      s += '<text class="dest-label" x="652" y="' + (y-2) + '">' + r.dest + '</text>';
+      s += '<text class="river-name" data-r="' + r.id + '" x="250" y="' + (y - r.w/2 - 8) + '"' +
+           ' tabindex="0" role="button" aria-label="' + r.name + ', flows to ' + r.dest + '">' + r.name + '</text>';
+      s += '<text class="dest-label" x="' + FLOW_DEST_X + '" y="' + (y-2) + '">' + r.dest + '</text>';
     });
     s += '</svg>';
     return s;
+  }
+
+  /* The mobile counterpart to flowSvg() \u2014 same st.rivers array, read once more, never copied. */
+  function flowList(st){
+    return '<div class="pick-list">' +
+      '<div class="lead">Rivers leaving ' + st.name + '</div>' +
+      st.rivers.map(function(r){
+        return '<button class="pickbtn" type="button" data-r="' + r.id + '" aria-pressed="false">' +
+          '<span class="rn">' + r.name + '</span>' +
+          '<span class="rd">\u2192 ' + r.dest + '</span></button>';
+      }).join('') +
+    '</div>';
   }
 
   /* =============== PIE (LEDGER BALANCE) GENERATOR =============== */
@@ -1152,10 +1512,10 @@
   }
   function pieLegend(pie){
     return pie.slices.map(function(sl, i){
-      return '<div class="leg-row" data-i="' + i + '">' +
+      return '<button class="leg-row" type="button" data-i="' + i + '" aria-pressed="false">' +
         '<span class="leg-sw" style="background:' + PIE_COLORS[i % PIE_COLORS.length] + '"></span>' +
         '<span class="leg-pct">' + sl.p + '%</span>' +
-        '<span class="leg-lab">' + sl.l + '<span class="leg-sub">' + sl.s + '</span></span></div>';
+        '<span class="leg-lab">' + sl.l + '<span class="leg-sub">' + sl.s + '</span></span></button>';
     }).join('');
   }
 
@@ -1199,8 +1559,18 @@
     var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
   }
+  /* Positive = that many days still to run; 0 = today; negative = that many days ago.
+     Both dates are read in the reader's own local time, which is what "days until" means to
+     a person looking at a screen. */
   function daysUntil(iso){
     return Math.ceil((new Date(iso + 'T00:00:00') - new Date()) / 86400000);
+  }
+  function isPast(iso){ return daysUntil(iso) < 0; }
+  /* True once EVERY dated target in a crisis block has passed — the pivot between the tab's
+     "counting down" and "counting since" phases. Derived, never stored: the tool re-decides
+     which phase it is in on every render, so it cannot be left showing the wrong one. */
+  function crisisIsPast(c){
+    return c.targets.every(function(t){ return isPast(t.dateISO); });
   }
 
   var THIRD_TAB = {
@@ -1219,15 +1589,26 @@
     crisis:{
       render: function(st){
         var c = st.crisis;
-        var html = '<h2>The 2026 reckoning</h2><p class="sub">' + c.sub + '</p><div class="count-grid">';
+        var over = crisisIsPast(c);
+        var html = '<h2>' + (over ? c.headingAfter : c.headingBefore) + '</h2>' +
+          '<p class="sub">' + (over ? c.subAfter : c.sub) + '</p><div class="count-grid">';
         c.targets.forEach(function(t){
-          html += '<div class="count"><div class="big mono" id="' + t.id + '">\u2014</div><div class="cap">' +
-            t.cap.replace('{date}', fmtDate(t.dateISO)) + '</div></div>';
+          /* Each card picks its tense from its OWN date, not from the tab's overall phase \u2014
+             between Oct 1 and Dec 31 2026 one card counts up while the other counts down. */
+          var past = isPast(t.dateISO);
+          if (past && !t.capAfter) throw new Error('crisis target ' + t.id + ' is missing capAfter');
+          html += '<div class="count' + (past ? ' past' : '') + '">' +
+            '<span class="phase">' + (past ? 'Now in force' : 'Upcoming') + '</span>' +
+            '<div class="big mono" id="' + t.id + '">\u2014</div><div class="cap">' +
+            (past ? t.capAfter : t.cap).replace('{date}', fmtDate(t.dateISO)) + '</div></div>';
         });
         html += '<div class="count blue"><div class="big mono">' + c.consensusStat.big + '</div><div class="cap">' + c.consensusStat.cap + '</div></div>' +
           '</div><h2>How we got here</h2><ul class="timeline">';
+        /* Hollow (future) vs filled (past) dots are computed from each entry's iso, so the
+           timeline re-sorts itself into past and future on every page load. The old version
+           carried hand-set future:true flags that had to be remembered and edited by hand. */
         c.timeline.forEach(function(e){
-          html += '<li' + (e.future ? ' class="future"' : '') + '><span class="d">' + e.d + '</span><div class="t">' + e.t + '</div></li>';
+          html += '<li' + (isPast(e.iso) ? '' : ' class="future"') + '><span class="d">' + e.d + '</span><div class="t">' + e.t + '</div></li>';
         });
         html += '</ul><h2>The math problem underneath it all</h2>' +
           '<div class="math"><label for="flowSlider">Drag to set the river\u2019s actual annual flow \u2014 then compare it to what the paperwork promised.</label>' +
@@ -1242,7 +1623,10 @@
       },
       wire: function(st){
         var c = st.crisis;
-        function fmtDays(d){ return d > 0 ? d : (d === 0 ? 'TODAY' : 'PASSED'); }
+        /* A passed deadline shows the days SINCE it (a positive number under a "days since…"
+           caption written for it), never the word PASSED sitting where a 2.4rem number should
+           be. See the note on crisis.targets in the data block for the bug this replaced. */
+        function fmtDays(d){ return d === 0 ? 'TODAY' : Math.abs(d); }
         c.targets.forEach(function(t){
           document.getElementById(t.id).textContent = fmtDays(daysUntil(t.dateISO));
         });
@@ -1305,62 +1689,96 @@
     return html;
   }
 
-  /* =============== STATE VIEW =============== */
-  function renderState(key){
-    var st = STATES[key];
-    eyebrow.textContent = 'PMR Civic Tools \u00b7 No. ' + TOOL_NUMBER + '-' + st.num + ' \u00b7 Water Series';
-
-    var thirdLabel = st.thirdTab.label;
-    var html =
-      '<button class="back" id="backBtn">\u2190 Back to the map</button>' +
-      '<h1>' + st.title + '</h1>' +
-      '<p class="thesis">' + st.thesis + '</p>' +
-      '<nav class="tabs" role="tablist" aria-label="Sections">' +
-        '<button class="tab active" data-tab="flow" role="tab" aria-selected="true">Where It Goes</button>' +
-        '<button class="tab" data-tab="compacts" role="tab" aria-selected="false">The Agreements</button>' +
-        '<button class="tab" data-tab="third" role="tab" aria-selected="false">' + thirdLabel + '</button>' +
-        '<button class="tab" data-tab="reservoirs" role="tab" aria-selected="false">Reservoirs</button>' +
-        '<button class="tab" data-tab="quiz" role="tab" aria-selected="false">Quiz</button>' +
-      '</nav>';
-
-    /* --- flow panel --- */
-    html += '<section class="panel active" id="panel-flow">' +
-      '<h2>' + st.flowH2 + '</h2><p class="sub">' + st.flowSub + '</p>' +
-      '<div class="flow-card" id="flowHolder">' + flowSvg(st) + '</div>' +
+  /* =============== PER-REGION PANEL RENDERERS =============== */
+  /* One function per tab, each taking the region object and returning that panel's inner HTML.
+     They are referenced by the TABS registry below; nothing else calls them directly. */
+  function flowPanel(st){
+    var html = '<h2>' + st.flowH2 + '</h2><p class="sub">' + st.flowSub + '</p>' +
+      '<div class="flow-card" id="flowHolder">' +
+        '<div class="flow-svg-wrap">' + flowSvg(st) + '</div>' + flowList(st) +
+      '</div>' +
       '<div class="detail" id="riverDetail" aria-live="polite">' +
         '<div class="meta">' + st.riverIntro.meta + '</div><h3>' + st.riverIntro.h + '</h3><p>' + st.riverIntro.p + '</p>' +
       '</div><div class="stat-strip">';
     st.stats.forEach(function(x){ html += '<div class="stat"><div class="n">' + x.n + '</div><div class="l">' + x.l + '</div></div>'; });
-    html += '</div><div class="local"><span class="tag">' + st.local.tag + '</span><p>' + st.local.p + '</p></div>' +
+    return html + '</div><div class="local"><span class="tag">' + st.local.tag + '</span><p>' + st.local.p + '</p></div>' +
       '<h2 style="margin-top:24px">The ledger balance</h2>' +
       '<p class="sub">' + st.pie.sub + '</p>' +
       '<div class="pie-card" id="pieCard">' + pieSvg(st.pie) +
         '<div class="pie-legend">' + pieLegend(st.pie) + '</div>' +
       '</div>' +
-      '<p class="pie-note">\u2020 ' + st.pie.note + '</p>' +
-      '</section>';
-
-    /* --- compacts panel --- */
-    html += '<section class="panel" id="panel-compacts">' +
-      '<h2>The paperwork on the river</h2><p class="sub">' + st.compactsSub + '</p>' +
+      '<p class="pie-note">\u2020 ' + st.pie.note + '</p>';
+  }
+  function compactsPanel(st){
+    return '<h2>The paperwork on the river</h2><p class="sub">' + st.compactsSub + '</p>' +
       '<div class="filters" role="group" aria-label="Filter agreements">' +
         '<button class="filter active" data-f="all">All agreements</button>' +
         '<button class="filter" data-f="perp">Perpetual</button>' +
         '<button class="filter" data-f="exp">Expiring / in limbo</button>' +
-      '</div><div class="cards" id="cardGrid"></div></section>';
-
-    /* --- third panel (crisis or stakes \u2014 delegated to THIRD_TAB) --- */
-    html += '<section class="panel" id="panel-third">' + THIRD_TAB[st.thirdTab.type].render(st) + '</section>';
-
-    /* --- reservoirs panel (same renderer for every region) --- */
-    html += '<section class="panel" id="panel-reservoirs">' + reservoirsPanel(st) + '</section>';
-
-    /* --- quiz panel --- */
-    html += '<section class="panel" id="panel-quiz">' +
-      '<h2>Council-chamber quiz</h2>' +
+      '</div><div class="cards" id="cardGrid"></div>';
+  }
+  function thirdPanel(st){ return THIRD_TAB[st.thirdTab.type].render(st); }
+  function quizPanel(){
+    return '<h2>Council-chamber quiz</h2>' +
       '<p class="sub">If you can pass this, you know more than most of the room at public comment.</p>' +
       '<div id="quizBox"></div>' +
-      '<div class="score" id="scoreBox"><div>Your score</div><div class="mono" id="scoreNum"></div><div id="scoreMsg"></div></div></section>';
+      '<div class="score" id="scoreBox"><div>Your score</div><div class="mono" id="scoreNum"></div>' +
+      '<div id="scoreMsg"></div><button class="retry" type="button" id="retryBtn">Try again</button></div>';
+  }
+
+  /* The third tab's button text is data, not a constant: Colorado's reads "Countdown 2026"
+     while its deadlines are still ahead and "The 2026 Reckoning" once they have all passed,
+     so the tab never advertises a countdown that has finished. Regions without a labelAfter
+     (every 'stakes' region) just keep their one label. */
+  function thirdTabLabel(st){
+    var t = st.thirdTab;
+    if (t.labelAfter && st.crisis && crisisIsPast(st.crisis)) return t.labelAfter;
+    return t.label;
+  }
+
+  /* ==== TABS REGISTRY \u2014 the single source of truth for every per-region tab. ===========
+     TO ADD A TAB: write its render function above, then add ONE line here. The button, the
+     <section> panel, the show/hide wiring, the roving-focus keyboard nav and the ARIA
+     relationships all derive from this array \u2014 there is nothing else to edit.
+
+       id      unique key; the panel becomes <section id="panel-{id}">
+       label   the button text: a string, or a function(st) for a label that depends on data
+       render  function(st) returning that panel's inner HTML
+     ==================================================================================== */
+  var TABS = [
+    {id:'flow',       label:'Where It Goes',  render:flowPanel},
+    {id:'compacts',   label:'The Agreements', render:compactsPanel},
+    {id:'third',      label:thirdTabLabel,    render:thirdPanel},
+    {id:'reservoirs', label:'Reservoirs',     render:reservoirsPanel},
+    {id:'quiz',       label:'Quiz',           render:quizPanel}
+  ];
+  function tabLabel(tab, st){ return typeof tab.label === 'function' ? tab.label(st) : tab.label; }
+
+  /* =============== STATE VIEW =============== */
+  function renderState(key){
+    var st = STATES[key];
+    eyebrow.textContent = 'PMR Civic Tools \u00b7 No. ' + TOOL_NUMBER + '-' + st.num + ' \u00b7 Water Series';
+
+    var html =
+      '<button class="back" id="backBtn">\u2190 Back to the map</button>' +
+      '<h1>' + st.title + '</h1>' +
+      '<p class="thesis">' + st.thesis + '</p>' +
+      '<nav class="tabs" role="tablist" aria-label="Sections">' +
+        TABS.map(function(t, i){
+          return '<button class="tab' + (i === 0 ? ' active' : '') + '" data-tab="' + t.id + '"' +
+            ' id="tab-' + t.id + '" type="button" role="tab" aria-controls="panel-' + t.id + '"' +
+            /* Roving tabindex: only the selected tab is in the page's tab order. Tab moves you
+               past the whole strip and into the panel; Left/Right move between tabs. That's the
+               ARIA tablist pattern, and it's what stops a keyboard reader from having to press
+               Tab five times to get from the heading to the content. */
+            ' aria-selected="' + (i === 0) + '" tabindex="' + (i === 0 ? '0' : '-1') + '">' +
+            tabLabel(t, st) + '</button>';
+        }).join('') +
+      '</nav>' +
+      TABS.map(function(t, i){
+        return '<section class="panel' + (i === 0 ? ' active' : '') + '" id="panel-' + t.id + '"' +
+          ' role="tabpanel" aria-labelledby="tab-' + t.id + '">' + t.render(st) + '</section>';
+      }).join('');
 
     app.innerHTML = html;
 
@@ -1368,52 +1786,88 @@
     document.getElementById('backBtn').addEventListener('click', function(){ go('home'); });
 
     /* wire tabs */
-    var tabs = app.querySelectorAll('.tab');
-    tabs.forEach(function(t){
-      t.addEventListener('click', function(){
-        var name = t.getAttribute('data-tab');
-        tabs.forEach(function(x){
-          var on = x === t;
-          x.classList.toggle('active', on);
-          x.setAttribute('aria-selected', on ? 'true' : 'false');
-        });
-        app.querySelectorAll('.panel').forEach(function(p){
-          p.classList.toggle('active', p.id === 'panel-' + name);
-        });
+    var tabs = Array.prototype.slice.call(app.querySelectorAll('.tab'));
+    function selectTab(t, moveFocus){
+      tabs.forEach(function(x){
+        var on = x === t;
+        x.classList.toggle('active', on);
+        x.setAttribute('aria-selected', on ? 'true' : 'false');
+        x.tabIndex = on ? 0 : -1;
+      });
+      var name = t.getAttribute('data-tab');
+      app.querySelectorAll('.panel').forEach(function(p){
+        p.classList.toggle('active', p.id === 'panel-' + name);
+      });
+      if (moveFocus) t.focus();
+    }
+    tabs.forEach(function(t, i){
+      t.addEventListener('click', function(){ selectTab(t, false); });
+      t.addEventListener('keydown', function(e){
+        var step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (step){ e.preventDefault(); selectTab(tabs[(i + step + tabs.length) % tabs.length], true); }
+        else if (e.key === 'Home'){ e.preventDefault(); selectTab(tabs[0], true); }
+        else if (e.key === 'End'){ e.preventDefault(); selectTab(tabs[tabs.length - 1], true); }
       });
     });
 
-    /* wire rivers */
-    var svgEl = document.getElementById('flowHolder').querySelector('svg');
+    /* wire rivers — one selection model shared by the SVG diagram and the mobile list.
+       Every element carrying data-r in either view selects the same river, and selecting it
+       updates both views, so a reader who rotates their phone mid-read doesn't lose their place. */
+    var holder = document.getElementById('flowHolder');
+    var svgEl = holder.querySelector('svg');
     var detail = document.getElementById('riverDetail');
     var byId = {};
     st.rivers.forEach(function(r){ byId[r.id] = r; });
-    svgEl.querySelectorAll('[data-r]').forEach(function(el){
-      function set(){
-        svgEl.classList.add('dim');
-        svgEl.querySelectorAll('.river-path').forEach(function(p){
-          p.classList.toggle('hot', p.getAttribute('data-r') === el.getAttribute('data-r'));
-        });
-        var r = byId[el.getAttribute('data-r')];
-        detail.innerHTML = '<div class="meta">' + r.meta + '</div><h3>' + r.h + '</h3><p>' + r.text + '</p>';
-      }
-      el.addEventListener('click', set);
-      el.addEventListener('mouseenter', set);
+    function selectRiver(id){
+      var r = byId[id];
+      if (!r) return;
+      svgEl.classList.add('dim');
+      svgEl.querySelectorAll('.river-path').forEach(function(p){
+        p.classList.toggle('hot', p.getAttribute('data-r') === id);
+      });
+      holder.querySelectorAll('.pickbtn').forEach(function(b){
+        b.setAttribute('aria-pressed', b.getAttribute('data-r') === id ? 'true' : 'false');
+      });
+      detail.innerHTML = '<div class="meta">' + r.meta + '</div><h3>' + r.h + '</h3><p>' + r.text + '</p>';
+    }
+    holder.querySelectorAll('[data-r]').forEach(function(el){
+      var id = el.getAttribute('data-r');
+      el.addEventListener('click', function(){ selectRiver(id); });
+      /* mouseenter is a desktop affordance only; on the list buttons it never fires on touch
+         and would be redundant with click if it did. */
+      if (el.closest('svg')) el.addEventListener('mouseenter', function(){ selectRiver(id); });
+      /* The SVG's <text> labels are focusable but are not real buttons, so Enter/Space have
+         to be handled by hand. The .pickbtn elements are <button>s and need none of this. */
+      el.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); selectRiver(id); }
+      });
     });
 
-    /* wire pie hover: slice and legend highlight together */
+    /* wire pie: slice and legend highlight together.
+       TOUCH TRAP, FIXED: highlighting used to be set by click and cleared only by mouseleave,
+       which never fires on a touchscreen. Tapping a slice on a phone dimmed the entire chart
+       permanently, with no gesture that would undo it short of leaving the tab. Click is now a
+       TOGGLE, so the same tap that dims the chart clears it; hover still works on desktop and
+       is layered on top of, not tangled with, the sticky selection. */
     var pieCard = document.getElementById('pieCard');
     if (pieCard){
+      var pieLocked = null;   // index the reader tapped/clicked, or null. Survives mouseleave.
       function pieHot(i, on){
         pieCard.classList.toggle('dimmed', on);
         pieCard.querySelectorAll('[data-i]').forEach(function(el){
-          el.classList.toggle('hot', on && el.getAttribute('data-i') === String(i));
+          var hot = on && el.getAttribute('data-i') === String(i);
+          el.classList.toggle('hot', hot);
+          if (el.hasAttribute('aria-pressed')) el.setAttribute('aria-pressed', hot ? 'true' : 'false');
         });
       }
       pieCard.querySelectorAll('[data-i]').forEach(function(el){
-        el.addEventListener('mouseenter', function(){ pieHot(el.getAttribute('data-i'), true); });
-        el.addEventListener('mouseleave', function(){ pieHot(0, false); });
-        el.addEventListener('click', function(){ pieHot(el.getAttribute('data-i'), true); });
+        var i = el.getAttribute('data-i');
+        el.addEventListener('mouseenter', function(){ if (pieLocked === null) pieHot(i, true); });
+        el.addEventListener('mouseleave', function(){ if (pieLocked === null) pieHot(0, false); });
+        el.addEventListener('click', function(){
+          pieLocked = (pieLocked === i) ? null : i;
+          pieHot(i, pieLocked !== null);
+        });
       });
     }
 
@@ -1437,7 +1891,7 @@
       if (!grid.children.length){
         var empty = document.createElement('div');
         empty.className = 'card';
-        empty.innerHTML = '<h3>Nothing expiring here</h3><p>' + st.name + '\u2019s compacts are all perpetual \u2014 its exposure to expiring agreements runs through the shared Colorado River or Columbia systems. See the ' + st.thirdTab.label + ' tab.</p><span class="badge perp">All perpetual</span>';
+        empty.innerHTML = '<h3>Nothing expiring here</h3><p>' + st.name + '\u2019s compacts are all perpetual \u2014 its exposure to expiring agreements runs through the shared Colorado River or Columbia systems. See the ' + thirdTabLabel(st) + ' tab.</p><span class="badge perp">All perpetual</span>';
         grid.appendChild(empty);
       }
     }
@@ -1453,47 +1907,60 @@
     /* wire the third tab (crisis or stakes) \u2014 delegated to THIRD_TAB, same as the render step above */
     THIRD_TAB[st.thirdTab.type].wire(st);
 
-    /* wire quiz */
+    /* wire quiz.
+       Extracted into mountQuiz() so "Try again" can rebuild it in place. Retaking used to mean
+       reloading the page, which \u2014 inside the iframe this tool ships in \u2014 also throws the reader
+       back to the top of whatever article embedded it. */
     var quizBox = document.getElementById('quizBox');
-    var answered = 0, correct = 0;
-    st.quiz.forEach(function(item, qi){
-      var qd = document.createElement('div');
-      qd.className = 'q';
-      qd.innerHTML = '<h3>' + (qi + 1) + '. ' + item.q + '</h3>';
-      var opts = document.createElement('div');
-      opts.className = 'opts';
-      var expl = document.createElement('div');
-      expl.className = 'expl';
-      expl.textContent = item.why;
-      item.opts.forEach(function(o, oi){
-        var b = document.createElement('button');
-        b.className = 'opt';
-        b.textContent = o;
-        b.addEventListener('click', function(){
-          if (qd.dataset.done) return;
-          qd.dataset.done = '1';
-          answered++;
-          if (oi === item.a){ b.classList.add('right'); correct++; }
-          else { b.classList.add('wrong'); opts.children[item.a].classList.add('right'); }
-          Array.prototype.forEach.call(opts.children, function(x){ x.disabled = true; });
-          expl.classList.add('show');
-          if (answered === st.quiz.length){
-            var box = document.getElementById('scoreBox');
-            document.getElementById('scoreNum').textContent = correct + ' / ' + st.quiz.length;
-            var frac = correct / st.quiz.length;
-            document.getElementById('scoreMsg').textContent =
-              frac === 1 ? 'Certified water buffalo. Go testify.' :
-              frac >= .6 ? 'Council-chamber ready \u2014 better than most of the room.' :
-              'The river forgives. Scroll back up and try the Compacts tab.';
-            box.classList.add('show');
-            box.scrollIntoView({ behavior:'smooth', block:'nearest' });
-          }
+    var scoreBox = document.getElementById('scoreBox');
+    function mountQuiz(){
+      quizBox.innerHTML = '';
+      scoreBox.classList.remove('show');
+      var answered = 0, correct = 0;
+      st.quiz.forEach(function(item, qi){
+        var qd = document.createElement('div');
+        qd.className = 'q';
+        qd.innerHTML = '<h3>' + (qi + 1) + '. ' + item.q + '</h3>';
+        var opts = document.createElement('div');
+        opts.className = 'opts';
+        var expl = document.createElement('div');
+        expl.className = 'expl';
+        expl.textContent = item.why;
+        item.opts.forEach(function(o, oi){
+          var b = document.createElement('button');
+          b.className = 'opt';
+          b.type = 'button';
+          b.textContent = o;
+          b.addEventListener('click', function(){
+            if (qd.dataset.done) return;
+            qd.dataset.done = '1';
+            answered++;
+            if (oi === item.a){ b.classList.add('right'); correct++; }
+            else { b.classList.add('wrong'); opts.children[item.a].classList.add('right'); }
+            Array.prototype.forEach.call(opts.children, function(x){ x.disabled = true; });
+            expl.classList.add('show');
+            if (answered === st.quiz.length){
+              document.getElementById('scoreNum').textContent = correct + ' / ' + st.quiz.length;
+              var frac = correct / st.quiz.length;
+              document.getElementById('scoreMsg').textContent =
+                frac === 1 ? 'Certified water buffalo. Go testify.' :
+                frac >= .6 ? 'Council-chamber ready \u2014 better than most of the room.' :
+                'The river forgives. Scroll back up and try the Agreements tab.';
+              scoreBox.classList.add('show');
+              scoreBox.scrollIntoView({ behavior:'smooth', block:'nearest' });
+            }
+          });
+          opts.appendChild(b);
         });
-        opts.appendChild(b);
+        qd.appendChild(opts);
+        qd.appendChild(expl);
+        quizBox.appendChild(qd);
       });
-      qd.appendChild(opts);
-      qd.appendChild(expl);
-      quizBox.appendChild(qd);
+    }
+    mountQuiz();
+    document.getElementById('retryBtn').addEventListener('click', function(){
+      mountQuiz();
+      quizBox.scrollIntoView({ behavior:'smooth', block:'start' });
     });
 
     window.scrollTo(0, 0);
@@ -1511,19 +1978,41 @@
   }
 
   /* =============== ROUTER =============== */
+  /* go() writes the hash and lets the resulting hashchange do the rendering, rather than
+     calling route() itself.
+
+     WHY THIS MATTERS: the previous version used history.replaceState, which overwrites the
+     current entry instead of adding one — so navigating map → Colorado → Wyoming left the
+     history stack one entry deep, and pressing Back (or swiping back, which is THE navigation
+     gesture on a phone) took the reader out of the tool entirely, and on the PMR site out of
+     the article that embedded it. Writing location.hash pushes a real entry, so Back walks
+     back through the regions the reader actually visited. */
+  function currentKey(){ return (location.hash || '').replace('#',''); }
   function go(key){
-    try { history.replaceState(null, '', '#' + key); } catch(e){}
-    route(key);
+    if (currentKey() === key){ route(key); return; }   // same view re-requested: just re-render
+    location.hash = '#' + key;                          // fires hashchange → route()
   }
   function route(key){
     if (key === 'essay') renderEssay();
     else if (STATES[key]) renderState(key);
     else renderHome();
   }
-  window.addEventListener('hashchange', function(){
-    route((location.hash || '').replace('#',''));
+  window.addEventListener('hashchange', function(){ route(currentKey()); });
+
+  /* ---------- iframe hash bridge ----------
+     This tool is served in a cross-origin iframe on postmillenniumrenaissance.com, and a hash
+     on the OUTER page can never be read from in here — same-origin policy blocks it outright.
+     The wrapper page appends the hash to the iframe src, and additionally posts it across; this
+     listener is the receiving half. The origin allowlist is the security boundary: check
+     e.origin BEFORE acting on any message, or any page that can frame this one can drive it. */
+  window.addEventListener('message', function(e){
+    var okOrigins = ['https://www.postmillenniumrenaissance.com','https://postmillenniumrenaissance.com'];
+    if (okOrigins.indexOf(e.origin) === -1) return;
+    if (!e.data || e.data.type !== 'pmr-hash' || typeof e.data.hash !== 'string') return;
+    go(e.data.hash.replace('#',''));
   });
-  route((location.hash || '').replace('#',''));
+
+  route(currentKey());
 })();
 </script>
 </body>
