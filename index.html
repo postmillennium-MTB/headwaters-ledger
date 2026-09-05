@@ -106,6 +106,9 @@
   }
   .mono{font-family:ui-monospace,"SF Mono","Cascadia Mono",Consolas,Menlo,monospace}
   .wrap{max-width:960px;margin:0 auto}
+  /* Visible to screen readers only — for labels whose text would be redundant on screen
+     next to an obvious control, but which the control still needs to be announced. */
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
   .eyebrow{
     font-family:ui-monospace,"SF Mono",Consolas,monospace; font-size:.68rem;
@@ -305,7 +308,7 @@
   .timeline .t{font-size:.93rem}
   .math{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
   .math label{display:block;font-size:.88rem;margin-bottom:8px}
-  input[type=range]{width:100%;accent-color:var(--river);height:28px}
+  input[type=range]{width:100%;accent-color:var(--river);height:44px}  /* 44, not 28: the thumb is the target */
   .bars{margin-top:14px;display:flex;flex-direction:column;gap:10px}
   .barrow .bl{display:flex;justify-content:space-between;font-family:ui-monospace,Consolas,monospace;font-size:.72rem;color:var(--ink-soft);margin-bottom:3px}
   .bartrack{background:var(--paper);border:1px solid var(--line);border-radius:6px;height:26px;overflow:hidden}
@@ -350,7 +353,10 @@
   .home-link{
     font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:.68rem;letter-spacing:.12em;
     text-transform:uppercase;color:var(--river);text-decoration:none;border-bottom:1px dashed var(--river);
-    padding-bottom:1px;
+    /* inline-block + padding rather than the old 1px: this link sits alone on its own row, so
+       it is not covered by the "inline in a sentence" target-size exemption the glossary terms
+       legitimately rely on. */
+    display:inline-block;padding:11px 2px 3px;
   }
   .home-link:hover{color:var(--river-deep);border-bottom-style:solid}
   .home-link:focus-visible{outline:3px solid var(--river);outline-offset:3px}
@@ -412,6 +418,130 @@
   .essay th,.essay td{border:1px solid var(--line);padding:7px 10px;text-align:left}
   .essay th{font-family:ui-monospace,Consolas,monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);background:var(--card)}
   .essay .foot{border-top:1px dashed var(--line);margin-top:24px;padding-top:12px;font-size:.78rem;color:var(--ink-soft);font-style:italic}
+
+  /* SEARCH */
+  .search-wrap{margin:14px 0 4px;position:relative}
+  .search-box{
+    width:100%;min-height:48px;padding:12px 14px;font-family:inherit;font-size:1rem;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--line);border-radius:12px;
+  }
+  .search-box::placeholder{color:var(--ink-soft);opacity:.85}
+  .search-box:focus-visible{outline:3px solid var(--river);outline-offset:2px;border-color:var(--river)}
+  .search-results{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+  .sr{
+    display:flex;flex-direction:column;gap:2px;align-items:flex-start;width:100%;min-height:48px;
+    padding:10px 13px;text-align:left;cursor:pointer;background:var(--card);color:var(--ink);
+    border:1.5px solid var(--line);border-left:5px solid var(--river);border-radius:0 10px 10px 0;font-family:inherit;
+  }
+  .sr:hover{border-color:var(--river)}
+  .sr:focus-visible{outline:3px solid var(--river);outline-offset:2px}
+  .sr .srl{font-size:.95rem;font-weight:700;line-height:1.25}
+  .sr .srm{font-family:ui-monospace,Consolas,monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+  .search-empty{padding:12px 2px;font-size:.9rem;color:var(--ink-soft)}
+
+  /* COMPARE TABLE */
+  /* The table scrolls inside its own container rather than widening the page — six columns of
+     monospace numbers will not fit a phone, and a body that scrolls sideways is worse than a
+     table that does. Below the breakpoint it becomes stacked cards instead (see .cmp-cards). */
+  .cmp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:var(--shadow)}
+  table.cmp{border-collapse:collapse;width:100%;font-size:.88rem;min-width:640px}
+  table.cmp th,table.cmp td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  table.cmp tbody tr:last-child td{border-bottom:none}
+  table.cmp th{
+    font-family:ui-monospace,Consolas,monospace;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-soft);background:var(--paper);position:sticky;top:0;
+  }
+  table.cmp th button{
+    font:inherit;color:inherit;background:none;border:none;cursor:pointer;padding:4px 0;min-height:32px;
+    display:inline-flex;align-items:center;gap:5px;letter-spacing:inherit;text-transform:inherit;
+  }
+  table.cmp th button:focus-visible{outline:3px solid var(--river);outline-offset:2px}
+  table.cmp th[aria-sort] button{color:var(--ink);font-weight:700}
+  table.cmp .num{font-family:ui-monospace,Consolas,monospace}
+  table.cmp tbody tr:hover{background:var(--paper)}
+  table.cmp .rname{font-weight:700}
+  table.cmp .rname a{color:var(--river);text-decoration:none;border-bottom:1px dashed var(--river)}
+  table.cmp .rname a:focus-visible{outline:3px solid var(--river);outline-offset:2px}
+  .cmp-cards{display:flex;flex-direction:column;gap:10px}
+  .cmp-card{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--river);border-radius:0 12px 12px 0;padding:13px 15px;box-shadow:var(--shadow)}
+  .cmp-card h3{font-size:1.02rem;margin-bottom:7px}
+  /* The heading link is the whole reason a compare card is interactive, and on mobile this card
+     IS the comparison view — so it gets a real target rather than a 20px line of text. */
+  .cmp-card h3 a{color:var(--river);text-decoration:none;border-bottom:1px dashed var(--river);display:inline-block;padding:9px 0;min-height:44px}
+  .cmp-row{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-top:1px dashed var(--line);font-size:.85rem}
+  .cmp-row .k{color:var(--ink-soft)}
+  .cmp-row .v{font-family:ui-monospace,Consolas,monospace;font-weight:700;text-align:right}
+  /* Mobile sort control. The desktop sort affordance lives in the table's column headers,
+     and the whole table is display:none below the breakpoint — so without this, phone readers
+     got a table they could read in one fixed order and never re-sort. Same cmpSort state,
+     same re-render, just a control that survives the layout swap. */
+  .cmp-sort{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;margin-bottom:12px}
+  .cmp-sort select{
+    flex:1 1 170px;font-family:inherit;font-size:.9rem;padding:10px 12px;min-height:44px;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;
+  }
+  .cmp-sort select:focus-visible{outline:3px solid var(--river);outline-offset:2px}
+  .cmp-sort button{
+    flex:0 0 auto;min-height:44px;padding:10px 15px;cursor:pointer;
+    font-family:ui-monospace,Consolas,monospace;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;
+    background:transparent;color:var(--ink);border:1.5px solid var(--ink);border-radius:999px;
+  }
+  .cmp-sort button:focus-visible{outline:3px solid var(--river);outline-offset:2px}
+  .cmp-scroll{display:none}
+  @media(min-width:700px){
+    .cmp-scroll{display:block}
+    .cmp-cards,.cmp-sort{display:none}
+  }
+
+  /* GLOSSARY TERMS + POPOVER */
+  /* A defined term is a button, not a styled span: it is genuinely interactive, so it has to be
+     reachable by keyboard and announced as pressable. The dotted underline is the only visual
+     cue, kept quiet enough that a paragraph with four terms in it still reads as prose. */
+  .term{
+    font:inherit;color:inherit;background:none;border:none;padding:0;cursor:help;
+    border-bottom:1px dotted var(--river);
+  }
+  .term:hover{border-bottom-style:solid;color:var(--river-deep)}
+  .term:focus-visible{outline:3px solid var(--river);outline-offset:2px;border-radius:2px}
+  /* Bottom sheet rather than a floating tooltip: it needs no collision detection, it never
+     opens off-screen, and on a phone it lands under the thumb instead of under the finger
+     that just tapped the word. */
+  .sheet{
+    position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--card);
+    border-top:3px solid var(--river);box-shadow:0 -4px 24px rgba(0,0,0,.18);
+    padding:16px 18px calc(18px + env(safe-area-inset-bottom,0px));
+    transform:translateY(101%);transition:transform .22s ease;
+  }
+  .sheet.open{transform:none}
+  @media(prefers-reduced-motion:reduce){.sheet{transition:none}}
+  .sheet-inner{max-width:660px;margin:0 auto;position:relative;padding-right:44px}
+  .sheet .st{font-family:ui-monospace,Consolas,monospace;font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft)}
+  .sheet h3{font-size:1.1rem;margin:3px 0 6px}
+  .sheet p{font-size:.92rem}
+  .sheet .more{display:inline-block;margin-top:10px;font-family:ui-monospace,Consolas,monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--river);text-decoration:none;border-bottom:1px dashed var(--river)}
+  .sheet-x{
+    position:absolute;top:-4px;right:0;width:44px;height:44px;border-radius:50%;
+    border:1.5px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;font-size:1.1rem;line-height:1;
+  }
+  .sheet-x:focus-visible{outline:3px solid var(--river);outline-offset:2px}
+  .gloss-list{display:flex;flex-direction:column;gap:10px;max-width:720px}
+  .gloss-item{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--river);border-radius:0 12px 12px 0;padding:13px 16px;box-shadow:var(--shadow)}
+  .gloss-item h3{font-size:1rem;margin-bottom:4px}
+  .gloss-item p{font-size:.9rem}
+
+  /* HOUSEHOLD CALCULATOR */
+  .calc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);max-width:720px}
+  .calc label{display:block;font-size:.88rem;margin-bottom:6px}
+  .calc .fieldrow{margin-bottom:16px}
+  .calc .val{font-family:ui-monospace,Consolas,monospace;font-weight:700;color:var(--river)}
+  .calc select{
+    font-family:inherit;font-size:.95rem;padding:10px 12px;min-height:44px;width:100%;max-width:320px;
+    background:var(--paper);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;
+  }
+  .calc select:focus-visible{outline:3px solid var(--river);outline-offset:2px}
+  .calc .out{margin-top:4px;border-top:1px dashed var(--line);padding-top:14px}
+  .calc .headline{font-size:1.02rem;margin-bottom:12px}
+  .calc .headline b{font-family:ui-monospace,Consolas,monospace;color:var(--river);font-size:1.25rem}
 
   footer{margin-top:34px;border-top:2px solid var(--ink);padding-top:12px;font-size:.78rem;color:var(--ink-soft)}
   footer h4{font-family:ui-monospace,Consolas,monospace;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-bottom:6px}
@@ -491,6 +621,17 @@
 
     <div class="foot">&dagger; Estimates and widely cited figures: consumption and withdrawal totals from USGS national water-use reporting; conveyance and lift figures from project operators (DWR, CAP); Keystone comparisons computed from nameplate capacity (830,000 bbl/day &asymp; 39,000 AF/yr); water pricing varies enormously by region, seniority, and year. Treat proportions as solid and decimals as soft.</div>
   </template>
+  <!-- Glossary bottom sheet. Lives outside #app so a term tap never survives into a view that
+       has been re-rendered underneath it; closeSheet() is called by the router on every route. -->
+  <div class="sheet" id="termSheet" role="dialog" aria-modal="false" aria-labelledby="sheetTerm" hidden>
+    <div class="sheet-inner">
+      <button class="sheet-x" id="sheetClose" type="button" aria-label="Close definition">&times;</button>
+      <span class="st">Water Series · Glossary</span>
+      <h3 id="sheetTerm"></h3>
+      <p id="sheetDef"></p>
+      <a class="more" href="#glossary">All terms &rarr;</a>
+    </div>
+  </div>
   <footer>
     <h4>Data notes &amp; confidence</h4>
     <p><b>Solid:</b> compact parties, dates, and allocation terms come from compact texts, state engineer offices, and the Bureau of Reclamation and State Department dockets. Colorado River 2026 process dates from Reclamation's Post-2026 NEPA docket. Columbia River Treaty status from the U.S. State Department and Province of B.C.</p>
@@ -1178,6 +1319,82 @@
      identical slices on one donut are indistinguishable except by reading the legend. */
   var PIE_COLORS = ['var(--river)','var(--canyon)','var(--sage)','var(--river-deep)','var(--ink-soft)','var(--ink)'];
 
+  /* ==== GLOSSARY REGISTRY — the single source of truth for every defined term. =========
+     TO ADD A TERM: add ONE entry here. It appears in the glossary page, and every place the
+     term shows up in the tool's prose becomes tappable automatically — there is no second
+     list of "which words are linked" to maintain.
+
+       id     unique key, used in the URL and as the popover's target
+       term   the display heading
+       match  the strings to look for in prose, case-insensitive and whole-word. Order does
+              not matter; longer phrases are always tried before shorter ones so that
+              "Lower Basin" wins over "basin". Put every inflection you want caught here
+              ("acre-foot" and "acre-feet" are separate strings) — matching is literal,
+              there is no stemming.
+       def    the definition. Plain sentences; assume the reader arrived from a bike
+              article, not a water-law practice.
+
+     WHY MATCHING IS LITERAL AND NOT REGEX-CLEVER: the prose fields in STATES contain
+     hand-authored HTML. The linker walks TEXT NODES ONLY (see linkTerms()), so it can never
+     insert a button inside a tag or split an element — but that also means a term written
+     with markup inside it ("acre-<b>foot</b>") will not be found. Keep terms unstyled in
+     the prose and this stays safe.
+     ==================================================================================== */
+  var GLOSSARY = [
+    {id:'acrefoot', term:'Acre-foot', match:['acre-foot','acre-feet','acre foot'],
+     def:'The volume that would cover one acre of ground one foot deep — 325,851 gallons. It is the standard unit of western water, and it is deliberately a <b>volume</b>, not a rate: an acre-foot is an amount, not a speed.'},
+    {id:'maf', term:'MAF — million acre-feet', match:['MAF'],
+     def:'Million acre-feet. The scale western water is argued in. The 1922 Colorado River Compact apportions 7.5 MAF per year to each basin; the river itself has averaged roughly 12–13 MAF a year this century.'},
+    {id:'leeferry', term:'Lee Ferry', match:['Lee Ferry'],
+     def:'The point on the Colorado River in northern Arizona where the 1922 Compact divides the Upper Basin from the Lower. Nearly every obligation in the Law of the River is measured as flow past this one spot. Worth knowing: the compact’s <b>Lee Ferry</b> and the USGS gauging station <b>Lees Ferry</b> about a mile upstream are different places, and the near-identical names cause genuine confusion in news coverage.'},
+    {id:'compact', term:'Interstate compact', match:['interstate compact','interstate compacts'],
+     def:'A binding contract between states, consented to by Congress, dividing something they share. Two consequences matter here: it cannot be changed unless every party agrees, and a dispute over one goes straight to the U.S. Supreme Court rather than working up through lower courts.'},
+    {id:'equitable', term:'Equitable apportionment', match:['equitable apportionment','equitable-apportionment'],
+     def:'What the Supreme Court does when states share a river and have failed to agree on a compact: it divides the water itself, by decree. Colorado’s North Platte and Wyoming’s share of the Laramie are governed this way — the states did not write those rules, the Court did.'},
+    {id:'virgin', term:'Virgin water supply', match:['virgin water supply'],
+     def:'The flow a river would have carried with no human use upstream. It is a <b>modeled</b> figure, not a gauge reading — which is exactly why compacts that allocate shares of it, like the Republican River Compact, end up litigating the model itself.'},
+    {id:'consumptive', term:'Consumptive use', match:['consumptive use'],
+     def:'Water that is withdrawn and never comes back — evaporated, transpired by a crop, or built into a product. Distinct from <b>withdrawal</b>, which counts water that is borrowed and returned: a power plant withdraws enormous volumes and consumes very little of it.'},
+    {id:'prior', term:'Prior appropriation', match:['prior appropriation'],
+     def:'“First in time, first in right.” The western water doctrine: whoever first put water to beneficial use holds the strongest claim, regardless of who owns the land beside the river. In a short year the shortage is not shared — junior rights are shut off completely so senior ones stay whole.'},
+    {id:'lawofriver', term:'The Law of the River', match:['Law of the River'],
+     def:'Not one document. The collective name for the compacts, the treaty with Mexico, federal statutes, Supreme Court decrees, and operating guidelines that together govern the Colorado. Its layers were written across a century and were never designed to fit together.'},
+    {id:'basins', term:'Upper and Lower Basin', match:['Upper Basin','Lower Basin','Upper and Lower Basins'],
+     def:'The 1922 Compact’s two halves, split at Lee Ferry. Upper Basin: Colorado, Wyoming, Utah, New Mexico. Lower Basin: Arizona, California, Nevada. The Upper Basin states are where the water comes from; the Lower Basin states are where most of it is used.'},
+    {id:'minute', term:'Minute (as in Minute 323)', match:['Minute 323','Minute 319'],
+     def:'An amendment to the 1944 U.S.–Mexico Water Treaty, negotiated through the International Boundary and Water Commission rather than by treaty renegotiation. Minute 323 is the one that sets how the two countries share shortages — and the one that expires Dec 31, 2026.'},
+    {id:'divide', term:'Continental Divide', match:['Continental Divide'],
+     def:'The ridge line separating water draining to the Pacific from water draining toward the Atlantic and the Gulf of Mexico. North America has a second, less famous divide sending water to Hudson Bay — which is why Montana’s Triple Divide Peak can feed three oceans at once.'},
+    {id:'transbasin', term:'Transbasin diversion', match:['transbasin diversion','transbasin diversions','transbasin'],
+     def:'Moving water out of the basin it fell in and into a different one, usually through a tunnel. Colorado pushes roughly half a million acre-feet a year eastward under the Divide this way — which is how 80% of the state’s people live where only 20% of its water lands.'}
+  ];
+
+  /* Postal/standard abbreviations used in the rivers[] destination strings, so that searching
+     "Kansas" finds a river whose destination reads "KS · OK · AR". Search-only — nothing is
+     displayed from this map, it just widens what each entry can be found by. */
+  var PLACE_NAMES = {
+    CO:'Colorado', WY:'Wyoming', MT:'Montana', ID:'Idaho', UT:'Utah', NM:'New Mexico',
+    AZ:'Arizona', NV:'Nevada', CA:'California', KS:'Kansas', NE:'Nebraska', OK:'Oklahoma',
+    AR:'Arkansas', TX:'Texas', SD:'South Dakota', ND:'North Dakota', WA:'Washington',
+    OR:'Oregon', BC:'British Columbia', AB:'Alberta', SK:'Saskatchewan', YT:'Yukon',
+    NWT:'Northwest Territories', MEX:'Mexico', USA:'United States', CAN:'Canada'
+  };
+
+  /* ---- Household water model ----
+     All ESTIMATES (†), and flagged as such wherever they surface. Sources named so a reader
+     can check them, per the confidence discipline in the footer.
+       GAL_PER_ACRE_FOOT is exact arithmetic: 43,560 ft³ × 7.48052 gal/ft³.
+       DEFAULT_GPCD is EPA's widely cited "about 82 gallons per person per day at home".
+       The slider range spans a genuinely conservative apartment (30) to a large irrigated
+       Front Range lot in July (200) — outdoor irrigation, not indoor fixtures, is what moves
+       this number, which is the point the calculator is making. */
+  var HOUSEHOLD = {
+    galPerAcreFoot: 325851,
+    defaultGpcd: 82, minGpcd: 30, maxGpcd: 200, stepGpcd: 1,
+    defaultPeople: 4, minPeople: 1, maxPeople: 8,
+    sourceNote: 'Per-person use is an estimate: EPA WaterSense puts average U.S. household use near 300 gallons a day, about 82 per person, with roughly 30% of it outdoors nationally — far more than that on an irrigated Front Range lot in summer. Your own bill is the only accurate number; this is a scale model, not an audit.'
+  };
+
   /* ================== END OF DATA — everything below is logic ================== */
 
   /* ---------- tuning constants (named so they're findable, not buried in functions) ---------- */
@@ -1328,7 +1545,22 @@
     eyebrow.textContent = 'PMR Civic Tools \u00b7 No. ' + TOOL_NUMBER + ' \u00b7 Water Series';
     app.innerHTML =
       '<h1>The Headwaters <span class="flow">Ledger</span></h1>' +
-      '<p class="thesis">Six regions own the roof of the continent. The snow that lands on them becomes the Columbia, the Missouri, the Colorado, the Rio Grande, the Saskatchewan, and the Mackenzie \u2014 and a tangle of compacts, treaties, and Supreme Court decrees decides who drinks it. <b>Tap a region to open its ledger.</b></p>' +
+      '<p class="thesis">Six regions own the roof of the continent. The snow that lands on them becomes the Columbia, the Missouri, the Colorado, the Rio Grande, the Saskatchewan, and the Mackenzie \u2014 and a tangle of compacts, treaties, and Supreme Court decrees decides who drinks it. <b>Tap a region to open its ledger</b>, or search for a river.</p>' +
+      /* Search sits above the map deliberately. The map is the better browse; typing is the
+         better answer to "does anything here touch me?", which is the question a reader
+         arriving from an article actually has \u2014 and on a phone it beats hunting for a shape. */
+      '<div class="search-wrap">' +
+        '<label class="sr-only" for="siteSearch">Search rivers, agreements, reservoirs and terms</label>' +
+        /* Deliberately NOT a combobox/listbox. A real combobox owes assistive tech active
+           descendants, option roles and managed focus; a half-built one announces a contract
+           the widget does not honour. This is a text field plus a live region of ordinary
+           buttons \u2014 fully operable, and honest about what it is. */
+        '<input class="search-box" id="siteSearch" type="search" autocomplete="off" ' +
+          'placeholder="Search a river, your state, a compact, a term\u2026" ' +
+          'aria-describedby="searchHelp">' +
+        '<div id="searchOut" aria-live="polite" aria-label="Search results"></div>' +
+        '<p class="search-empty" id="searchHelp" hidden>Type at least two characters.</p>' +
+      '</div>' +
       '<div class="map-card">' +
       /* role="group", not role="img": an img role tells assistive tech to treat the whole SVG as
          a single graphic and ignore what's inside it — which would have hidden all six focusable
@@ -1396,6 +1628,20 @@
       '</div>' +
       infraCardHtml() +
       '<div class="split-row">' +
+        '<a class="essay-card" href="#compare">' +
+          '<span class="etag">Water Series \u00b7 Compare</span>' +
+          '<h3>All Six Regions, Side by Side</h3>' +
+          '<p>Who keeps the most of their own water, who signed the most paperwork, and whose storage is oldest \u2014 the whole Ledger in one sortable table.</p>' +
+          '<span class="read">Open the comparison \u2192</span>' +
+        '</a>' +
+        '<a class="essay-card" href="#household">' +
+          '<span class="etag">Water Series \u00b7 Calculator</span>' +
+          '<h3>Your Household on the Ledger</h3>' +
+          '<p>Everything here is measured in millions of acre-feet, a unit nobody has an intuition for. Put your own house on the same scale and see how the shortage actually compares.</p>' +
+          '<span class="read">Run the numbers \u2192</span>' +
+        '</a>' +
+      '</div>' +
+      '<div class="split-row">' +
         '<a class="essay-card" href="#essay">' +
           '<span class="etag">From the Water Series \u00b7 Essay</span>' +
           '<h3>Too Heavy, Too Cheap: Why America Pipes Oil and Not Water</h3>' +
@@ -1404,6 +1650,12 @@
         '</a>' +
         retentionCardHtml() +
       '</div>' +
+      '<a class="essay-card" href="#glossary">' +
+        '<span class="etag">Water Series \u00b7 Glossary</span>' +
+        '<h3>The Vocabulary, Defined</h3>' +
+        '<p>Acre-foot, Lee Ferry, virgin water supply, prior appropriation. Thirteen terms that are each doing more work than they look like \u2014 and they are tappable wherever they appear anywhere else in the Ledger.</p>' +
+        '<span class="read">Open the glossary \u2192</span>' +
+      '</a>' +
       '<div class="stat-strip">' +
         HOME_STATS.map(function(x){ return '<div class="stat"><div class="n">' + x.n + '</div><div class="l">' + x.l + '</div></div>'; }).join('') +
       '</div>';
@@ -1429,6 +1681,38 @@
     });
     app.querySelectorAll('#regionList .pickbtn').forEach(function(b){
       b.addEventListener('click', function(){ go(b.getAttribute('data-s')); });
+    });
+
+    /* wire search */
+    var box = document.getElementById('siteSearch');
+    var out = document.getElementById('searchOut');
+    var help = document.getElementById('searchHelp');
+    function render(){
+      var hits = runSearch(box.value);
+      out.innerHTML = searchResultsHtml(hits);
+      help.hidden = !(box.value.trim().length && box.value.trim().length < SEARCH_MIN_CHARS);
+      out.querySelectorAll('.sr').forEach(function(b){
+        b.addEventListener('click', function(){ go(b.getAttribute('data-go')); });
+      });
+    }
+    box.addEventListener('input', render);
+    box.addEventListener('keydown', function(e){
+      /* Enter takes the top result — the fastest path for someone who typed the exact name
+         of the thing they wanted. Down-arrow steps into the list for everyone else. */
+      if (e.key === 'Enter'){
+        var first = out.querySelector('.sr');
+        if (first){ e.preventDefault(); first.click(); }
+      } else if (e.key === 'ArrowDown'){
+        var f = out.querySelector('.sr');
+        if (f){ e.preventDefault(); f.focus(); }
+      }
+    });
+    out.addEventListener('keydown', function(e){
+      var items = Array.prototype.slice.call(out.querySelectorAll('.sr'));
+      var i = items.indexOf(document.activeElement);
+      if (i === -1) return;
+      if (e.key === 'ArrowDown'){ e.preventDefault(); (items[i+1] || items[0]).focus(); }
+      else if (e.key === 'ArrowUp'){ e.preventDefault(); if (i === 0) box.focus(); else items[i-1].focus(); }
     });
   }
 
@@ -1755,28 +2039,35 @@
   function tabLabel(tab, st){ return typeof tab.label === 'function' ? tab.label(st) : tab.label; }
 
   /* =============== STATE VIEW =============== */
-  function renderState(key){
+  /* openTab is the tab id from a "#co/reservoirs" style hash. Unknown or missing falls back to
+     the first tab, so a stale or hand-typed link degrades to the region's front page rather
+     than to an empty screen. */
+  function renderState(key, openTab){
     var st = STATES[key];
     eyebrow.textContent = 'PMR Civic Tools \u00b7 No. ' + TOOL_NUMBER + '-' + st.num + ' \u00b7 Water Series';
 
+    var activeIdx = 0;
+    TABS.forEach(function(t, i){ if (t.id === openTab) activeIdx = i; });
+
     var html =
-      '<button class="back" id="backBtn">\u2190 Back to the map</button>' +
+      '<button class="back" id="backBtn" type="button">\u2190 Back to the map</button>' +
       '<h1>' + st.title + '</h1>' +
       '<p class="thesis">' + st.thesis + '</p>' +
       '<nav class="tabs" role="tablist" aria-label="Sections">' +
         TABS.map(function(t, i){
-          return '<button class="tab' + (i === 0 ? ' active' : '') + '" data-tab="' + t.id + '"' +
+          var on = i === activeIdx;
+          return '<button class="tab' + (on ? ' active' : '') + '" data-tab="' + t.id + '"' +
             ' id="tab-' + t.id + '" type="button" role="tab" aria-controls="panel-' + t.id + '"' +
             /* Roving tabindex: only the selected tab is in the page's tab order. Tab moves you
                past the whole strip and into the panel; Left/Right move between tabs. That's the
                ARIA tablist pattern, and it's what stops a keyboard reader from having to press
                Tab five times to get from the heading to the content. */
-            ' aria-selected="' + (i === 0) + '" tabindex="' + (i === 0 ? '0' : '-1') + '">' +
+            ' aria-selected="' + on + '" tabindex="' + (on ? '0' : '-1') + '">' +
             tabLabel(t, st) + '</button>';
         }).join('') +
       '</nav>' +
       TABS.map(function(t, i){
-        return '<section class="panel' + (i === 0 ? ' active' : '') + '" id="panel-' + t.id + '"' +
+        return '<section class="panel' + (i === activeIdx ? ' active' : '') + '" id="panel-' + t.id + '"' +
           ' role="tabpanel" aria-labelledby="tab-' + t.id + '">' + t.render(st) + '</section>';
       }).join('');
 
@@ -1798,6 +2089,11 @@
       app.querySelectorAll('.panel').forEach(function(p){
         p.classList.toggle('active', p.id === 'panel-' + name);
       });
+      /* Switching tabs deliberately does NOT rewrite the hash. The "#co/reservoirs" form
+         exists so a search result or an outside link can open a specific tab; pushing a
+         history entry every time someone clicks through five tabs would turn the back
+         button into a tab-by-tab rewind, which is the opposite of what a reader means by
+         "back" here. The URL keeps naming where they arrived. */
       if (moveFocus) t.focus();
     }
     tabs.forEach(function(t, i){
@@ -1966,6 +2262,409 @@
     window.scrollTo(0, 0);
   }
 
+  /* =============== GLOSSARY: LINKER + SHEET =============== */
+  /* Terms sorted longest-match-first so "Lower Basin" is claimed before "Basin" ever gets a
+     chance at the same text, and so "acre-feet" is not half-matched by a shorter entry. */
+  var TERM_MATCHES = (function(){
+    var list = [];
+    GLOSSARY.forEach(function(g){
+      g.match.forEach(function(m){ list.push({ id:g.id, text:m }); });
+    });
+    return list.sort(function(a,b){ return b.text.length - a.text.length; });
+  })();
+  var termById = {};
+  GLOSSARY.forEach(function(g){ termById[g.id] = g; });
+
+  /* Elements whose text must never be rewritten: anything already interactive (a term button
+     inside a quiz answer would swallow the answer's own click), headings, and SVG, whose
+     <text> elements do not accept HTML children at all. */
+  var TERM_SKIP = /^(BUTTON|A|H1|H2|SCRIPT|STYLE|TEXTAREA|INPUT|SELECT|SVG|TEXT|OPTION)$/;
+
+  /* Walks TEXT NODES ONLY. This is the whole safety argument for auto-linking: it is
+     structurally incapable of inserting markup inside a tag, splitting an element, or
+     corrupting the hand-authored HTML in the STATES prose fields, because it never sees or
+     produces tag text — it only ever replaces one text node with a small fragment.
+     Each term is linked at most ONCE per render, on its first occurrence: a paragraph where
+     every instance of "acre-foot" is dotted reads like a ransom note. */
+  function linkTerms(root){
+    var used = {};
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function(node){
+        if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        for (var p = node.parentNode; p && p !== root; p = p.parentNode){
+          if (p.nodeType !== 1) continue;
+          if (TERM_SKIP.test(p.nodeName.toUpperCase())) return NodeFilter.FILTER_REJECT;
+          if (p.classList && p.classList.contains('term')) return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var pending = [];
+    while (walker.nextNode()) pending.push(walker.currentNode);
+
+    pending.forEach(function(node){
+      for (var i = 0; i < TERM_MATCHES.length; i++){
+        var m = TERM_MATCHES[i];
+        if (used[m.id]) continue;
+        /* Whole-word only, so "Minute 323" matches but the word "minute" in ordinary prose
+           does not, and "compact" inside "compacts" is not half-underlined. */
+        var re = new RegExp('(^|[^A-Za-z0-9-])(' + m.text.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')(?![A-Za-z0-9-])', 'i');
+        var hit = re.exec(node.nodeValue);
+        if (!hit) continue;
+        var start = hit.index + hit[1].length;
+        var frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode(node.nodeValue.slice(0, start)));
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'term';
+        btn.setAttribute('data-term', m.id);
+        btn.setAttribute('aria-label', hit[2] + ' — show definition');
+        btn.textContent = hit[2];
+        frag.appendChild(btn);
+        frag.appendChild(document.createTextNode(node.nodeValue.slice(start + hit[2].length)));
+        node.parentNode.replaceChild(frag, node);
+        used[m.id] = true;
+        return;   // one term per text node; the rest of this node is left alone
+      }
+    });
+  }
+
+  var sheet = document.getElementById('termSheet');
+  var sheetTermEl = document.getElementById('sheetTerm');
+  var sheetDefEl = document.getElementById('sheetDef');
+  var lastTermBtn = null;
+  function openSheet(id, fromBtn){
+    var g = termById[id];
+    if (!g) return;
+    lastTermBtn = fromBtn || null;
+    sheetTermEl.textContent = g.term;
+    sheetDefEl.innerHTML = g.def;
+    sheet.hidden = false;
+    /* Next frame, so the browser paints the sheet in its off-screen position first and the
+       transform actually animates instead of jumping. */
+    requestAnimationFrame(function(){ sheet.classList.add('open'); });
+    document.querySelectorAll('.term').forEach(function(b){
+      b.setAttribute('aria-expanded', b === fromBtn ? 'true' : 'false');
+    });
+  }
+  function closeSheet(returnFocus){
+    if (sheet.hidden) return;
+    sheet.classList.remove('open');
+    sheet.hidden = true;
+    document.querySelectorAll('.term').forEach(function(b){ b.setAttribute('aria-expanded','false'); });
+    if (returnFocus && lastTermBtn && document.contains(lastTermBtn)) lastTermBtn.focus();
+    lastTermBtn = null;
+  }
+  document.getElementById('sheetClose').addEventListener('click', function(){ closeSheet(true); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeSheet(true); });
+  /* Click-away. Capture on document, but ignore clicks on a term button (that is an open, not
+     an away) and clicks inside the sheet itself. */
+  document.addEventListener('click', function(e){
+    if (sheet.hidden) return;
+    if (sheet.contains(e.target)) return;
+    if (e.target.closest && e.target.closest('.term')) return;
+    closeSheet(false);
+  });
+  /* One delegated listener rather than binding every term button on every render. */
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest && e.target.closest('.term');
+    if (!btn) return;
+    var id = btn.getAttribute('data-term');
+    if (!sheet.hidden && lastTermBtn === btn){ closeSheet(true); return; }
+    openSheet(id, btn);
+  });
+
+  /* =============== GLOSSARY VIEW =============== */
+  function renderGlossary(){
+    eyebrow.textContent = 'PMR Civic Tools · No. ' + TOOL_NUMBER + ' · Water Series · Glossary';
+    app.innerHTML =
+      '<button class="back" id="backBtn" type="button">← Back to the map</button>' +
+      '<h1>The <span class="flow">Glossary</span></h1>' +
+      '<p class="thesis">Western water has its own vocabulary, and most of it is doing more work than it looks like. These terms are tappable wherever they appear elsewhere in the Ledger.</p>' +
+      '<div class="gloss-list">' +
+        GLOSSARY.map(function(g){
+          return '<div class="gloss-item" id="term-' + g.id + '"><h3>' + g.term + '</h3><p>' + g.def + '</p></div>';
+        }).join('') +
+      '</div>';
+    document.getElementById('backBtn').addEventListener('click', function(){ go('home'); });
+    window.scrollTo(0, 0);
+  }
+
+  /* =============== COMPARE VIEW =============== */
+  /* Every column here is derived from STATES — there is no comparison data set to maintain
+     alongside the regions, so a seventh region joins this table by existing. */
+  function compareRows(){
+    return Object.keys(STATES).map(function(k){
+      var st = STATES[k];
+      var homeSlice = st.pie.slices.filter(function(s){ return s.home; })[0];
+      var sum = reservoirSummary(st.reservoirs);
+      var expiring = st.compacts.filter(function(c){ return c.kind === 'exp'; }).length;
+      /* pie.total is authored as display text ("~14", "~200") because the tilde is doing
+         honest work — these are rough annual averages. parseFloat gives the sortable number
+         without losing the caveat in the label. */
+      return {
+        key: k,
+        name: st.name,
+        num: st.num,
+        flow: parseFloat(String(st.pie.total).replace(/[^0-9.]/g,'')) || 0,
+        flowLabel: st.pie.total + ' MAF†',
+        home: homeSlice ? homeSlice.p : SUB_ONE_PERCENT_BAR,
+        homeLabel: homeSlice ? homeSlice.p + '%' : '<1%',
+        rivers: st.rivers.length,
+        agreements: st.compacts.length,
+        expiring: expiring,
+        agreementsLabel: st.compacts.length + (expiring ? ' (' + expiring + ' expiring)' : ''),
+        resCount: sum ? sum.count : 0,
+        resLabel: sum ? sum.count + ' · avg ' + sum.avgAge + ' yrs' : 'not yet added'
+      };
+    });
+  }
+  /* Column registry: label, the row field to sort on, and how to print the cell. Adding a
+     column is one entry — the header button, the sort handler, the desktop cell and the
+     mobile card row all read from here. */
+  var CMP_COLS = [
+    {id:'name',       label:'Region',        sort:'name',       fmt:function(r){ return r.name; }, isName:true},
+    {id:'flow',       label:'Annual flow',   sort:'flow',       fmt:function(r){ return r.flowLabel; }, num:true},
+    {id:'home',       label:'Stays home',    sort:'home',       fmt:function(r){ return r.homeLabel; }, num:true},
+    {id:'rivers',     label:'Rivers tracked',sort:'rivers',     fmt:function(r){ return String(r.rivers); }, num:true},
+    {id:'agreements', label:'Agreements',    sort:'agreements', fmt:function(r){ return r.agreementsLabel; }, num:true},
+    {id:'res',        label:'Reservoirs',    sort:'resCount',   fmt:function(r){ return r.resLabel; }, num:true}
+  ];
+  var cmpSort = {col:'flow', dir:-1};
+
+  function compareBody(){
+    var rows = compareRows().sort(function(a,b){
+      var c = CMP_COLS.filter(function(x){ return x.id === cmpSort.col; })[0] || CMP_COLS[1];
+      var av = a[c.sort], bv = b[c.sort];
+      if (typeof av === 'string') return cmpSort.dir * av.localeCompare(bv);
+      return cmpSort.dir * (av - bv);
+    });
+    var head = '<tr>' + CMP_COLS.map(function(c){
+      var active = cmpSort.col === c.id;
+      var arrow = active ? (cmpSort.dir === 1 ? ' ▲' : ' ▼') : '';
+      return '<th scope="col"' + (active ? ' aria-sort="' + (cmpSort.dir === 1 ? 'ascending' : 'descending') + '"' : '') + '>' +
+        '<button type="button" data-sort="' + c.id + '">' + c.label + arrow + '</button></th>';
+    }).join('') + '</tr>';
+    var body = rows.map(function(r){
+      return '<tr>' + CMP_COLS.map(function(c){
+        var v = c.fmt(r);
+        if (c.isName) return '<td class="rname"><a href="#' + r.key + '">' + v + '</a></td>';
+        return '<td' + (c.num ? ' class="num"' : '') + '>' + v + '</td>';
+      }).join('') + '</tr>';
+    }).join('');
+    var cards = rows.map(function(r){
+      return '<div class="cmp-card"><h3><a href="#' + r.key + '">' + r.name + '</a> ' +
+        '<span class="yr" style="font-weight:400;color:var(--ink-soft)">· ' + TOOL_NUMBER + '-' + r.num + '</span></h3>' +
+        CMP_COLS.filter(function(c){ return !c.isName; }).map(function(c){
+          return '<div class="cmp-row"><span class="k">' + c.label + '</span><span class="v">' + c.fmt(r) + '</span></div>';
+        }).join('') + '</div>';
+    }).join('');
+    var sortUi = '<div class="cmp-sort">' +
+      '<label class="sr-only" for="cmpSortCol">Sort by</label>' +
+      '<select id="cmpSortCol">' + CMP_COLS.map(function(c){
+        return '<option value="' + c.id + '"' + (cmpSort.col === c.id ? ' selected' : '') + '>' + c.label + '</option>';
+      }).join('') + '</select>' +
+      '<button type="button" id="cmpSortDir">' +
+        (cmpSort.dir === 1 ? '▲ Low to high' : '▼ High to low') + '</button>' +
+    '</div>';
+    return sortUi +
+           '<div class="cmp-scroll"><table class="cmp"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
+           '<div class="cmp-cards">' + cards + '</div>';
+  }
+
+  /* Re-renders the table, the cards and both sort controls from the shared cmpSort state, then
+     re-binds — the markup is thrown away on every sort, so the listeners have to come back with it. */
+  function redrawCompare(){
+    document.getElementById('cmpHolder').innerHTML = compareBody();
+    wireCompare();
+  }
+  function wireCompare(){
+    app.querySelectorAll('th button[data-sort]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var col = b.getAttribute('data-sort');
+        /* Re-clicking the active column flips direction; a new column starts descending,
+           because on every numeric column here "most" is the interesting end. Name is the
+           exception and starts A–Z. */
+        if (cmpSort.col === col) cmpSort.dir = -cmpSort.dir;
+        else { cmpSort.col = col; cmpSort.dir = (col === 'name') ? 1 : -1; }
+        redrawCompare();
+      });
+    });
+    var sel = document.getElementById('cmpSortCol');
+    var dir = document.getElementById('cmpSortDir');
+    if (sel) sel.addEventListener('change', function(){
+      cmpSort.col = sel.value;
+      cmpSort.dir = (sel.value === 'name') ? 1 : -1;
+      redrawCompare();
+      document.getElementById('cmpSortCol').focus();
+    });
+    if (dir) dir.addEventListener('click', function(){
+      cmpSort.dir = -cmpSort.dir;
+      redrawCompare();
+      document.getElementById('cmpSortDir').focus();
+    });
+  }
+
+  function renderCompare(){
+    eyebrow.textContent = 'PMR Civic Tools · No. ' + TOOL_NUMBER + ' · Water Series · Compare';
+    app.innerHTML =
+      '<button class="back" id="backBtn" type="button">← Back to the map</button>' +
+      '<h1>All Six, <span class="flow">Side by Side</span></h1>' +
+      '<p class="thesis">The map tells you where the water goes one region at a time. This is the same six regions in one table — sort any column to see who keeps the most, who signed the most paperwork, and whose storage is oldest.</p>' +
+      '<div id="cmpHolder">' + compareBody() + '</div>' +
+      '<p class="pie-note" style="margin-top:12px">† Annual flow figures are rough averages, not gauge readings, and are not all measured the same way — British Columbia’s ~200 MAF counts the full discharge of rivers that mostly never leave the province, while Colorado’s ~14 MAF is water that is almost entirely spoken for by somebody downstream. Compare the shares with confidence; compare the totals with care.</p>' +
+      '<p class="pie-note">“Stays home” is the share of each region’s own flow used there rather than leaving. “Reservoirs” counts only the major storage entered in the Ledger so far — British Columbia and Alberta are not yet populated, so their row reads <i>not yet added</i> rather than zero.</p>';
+    document.getElementById('backBtn').addEventListener('click', function(){ go('home'); });
+    wireCompare();
+    window.scrollTo(0, 0);
+  }
+
+  /* =============== HOUSEHOLD CALCULATOR VIEW =============== */
+  function renderHousehold(){
+    eyebrow.textContent = 'PMR Civic Tools · No. ' + TOOL_NUMBER + ' · Water Series · Your Household';
+    var H = HOUSEHOLD;
+    app.innerHTML =
+      '<button class="back" id="backBtn" type="button">← Back to the map</button>' +
+      '<h1>Your Household on the <span class="flow">Ledger</span></h1>' +
+      '<p class="thesis">Every number in this tool is in millions of acre-feet, which is a unit nobody has an intuition for. This puts your own house on the same scale.</p>' +
+      '<div class="calc">' +
+        '<div class="fieldrow">' +
+          '<label for="hhPeople">People in your household: <span class="val" id="hhPeopleVal">' + H.defaultPeople + '</span></label>' +
+          '<input type="range" id="hhPeople" min="' + H.minPeople + '" max="' + H.maxPeople + '" step="1" value="' + H.defaultPeople + '">' +
+        '</div>' +
+        '<div class="fieldrow">' +
+          '<label for="hhGpcd">Gallons per person per day: <span class="val" id="hhGpcdVal">' + H.defaultGpcd + '</span></label>' +
+          '<input type="range" id="hhGpcd" min="' + H.minGpcd + '" max="' + H.maxGpcd + '" step="' + H.stepGpcd + '" value="' + H.defaultGpcd + '">' +
+        '</div>' +
+        '<div class="fieldrow">' +
+          '<label for="hhRegion">Compare against</label>' +
+          '<select id="hhRegion">' +
+            Object.keys(STATES).map(function(k){
+              return '<option value="' + k + '"' + (k === 'co' ? ' selected' : '') + '>' + STATES[k].name + '</option>';
+            }).join('') +
+          '</select>' +
+        '</div>' +
+        '<div class="out" aria-live="polite">' +
+          '<p class="headline" id="hhHeadline"></p>' +
+          '<div class="stat-strip" id="hhStats"></div>' +
+          '<p class="sub" style="margin-top:14px" id="hhContext"></p>' +
+        '</div>' +
+      '</div>' +
+      '<p class="pie-note" style="margin-top:12px">† ' + H.sourceNote + '</p>';
+
+    document.getElementById('backBtn').addEventListener('click', function(){ go('home'); });
+    var people = document.getElementById('hhPeople');
+    var gpcd = document.getElementById('hhGpcd');
+    var region = document.getElementById('hhRegion');
+
+    function update(){
+      var n = parseInt(people.value, 10);
+      var g = parseInt(gpcd.value, 10);
+      var st = STATES[region.value];
+      document.getElementById('hhPeopleVal').textContent = n;
+      document.getElementById('hhGpcdVal').textContent = g;
+
+      var galYear = n * g * 365;
+      var af = galYear / H.galPerAcreFoot;
+      var householdsPerAF = H.galPerAcreFoot / galYear;
+      var regionFlowAF = (parseFloat(String(st.pie.total).replace(/[^0-9.]/g,'')) || 0) * 1e6;
+      var householdsSupplied = regionFlowAF / af;
+
+      document.getElementById('hhHeadline').innerHTML =
+        'Your household uses roughly <b>' + af.toFixed(2) + '</b> acre-feet a year — about ' +
+        Math.round(galYear).toLocaleString() + ' gallons.';
+
+      document.getElementById('hhStats').innerHTML =
+        '<div class="stat"><div class="n">' + householdsPerAF.toFixed(1) + '</div>' +
+          '<div class="l">households like yours share a single acre-foot for a year</div></div>' +
+        '<div class="stat"><div class="n">' + (householdsSupplied / 1e6).toFixed(1) + 'M</div>' +
+          '<div class="l">households like yours could run on ' + st.name + '’s entire annual flow†</div></div>' +
+        '<div class="stat"><div class="n">' + Math.round(galYear / 365).toLocaleString() + '</div>' +
+          '<div class="l">gallons a day, all told</div></div>';
+
+      /* Ties the abstraction back to the specific fight the rest of the tool is about. The
+         4.1 MAF figure is the gap between the 1922 paperwork (16.5 MAF) and a ~12.4 MAF river,
+         which is the same arithmetic as Colorado's countdown-tab slider at its default. */
+      var gapAF = (STATES.co.crisis.paper - STATES.co.crisis.sliderDefault) * 1e6;
+      document.getElementById('hhContext').innerHTML =
+        'For scale: the gap between what the 1922 Colorado River Compact promised on paper and what the river has actually been carrying is about <b>' +
+        (gapAF / 1e6).toFixed(1) + ' million acre-feet a year</b> — enough to supply roughly <b>' +
+        Math.round(gapAF / af / 1e6 * 10) / 10 + ' million households</b> like yours. The shortage is not a rounding error, and it is not something efficiency in the bathroom closes on its own: across the West, most water goes to agriculture, not to houses.';
+    }
+    [people, gpcd].forEach(function(el){ el.addEventListener('input', update); });
+    region.addEventListener('change', update);
+    update();
+    window.scrollTo(0, 0);
+  }
+
+  /* =============== SEARCH =============== */
+  /* The index is built ONCE from STATES on first use and cached. Every entry knows the region
+     and tab it lives on, so a result can deep-link straight to it — which is what made the
+     hash router grow a "#co/reservoirs" form. */
+  var searchIndex = null;
+  function expandPlaces(s){
+    /* Widens "KS · OK · AR" to also match "Kansas", so a reader can search the name of their
+       own state rather than having to know the destination string's abbreviations. */
+    return s.replace(/\b([A-Z]{2,3})\b/g, function(m){ return PLACE_NAMES[m] ? m + ' ' + PLACE_NAMES[m] : m; });
+  }
+  function buildSearchIndex(){
+    if (searchIndex) return searchIndex;
+    var ix = [];
+    Object.keys(STATES).forEach(function(k){
+      var st = STATES[k];
+      ix.push({label:st.name, meta:'Region · Ledger ' + TOOL_NUMBER + '-' + st.num, key:k, tab:'flow',
+               hay:(st.name + ' ' + st.abbr + ' ' + regionHint(k)).toLowerCase()});
+      st.rivers.forEach(function(r){
+        ix.push({label:r.h, meta:st.name + ' · Where It Goes', key:k, tab:'flow',
+                 hay:(r.name + ' ' + r.h + ' ' + expandPlaces(r.dest) + ' ' + r.meta + ' ' + r.text).toLowerCase()});
+      });
+      st.compacts.forEach(function(c){
+        ix.push({label:c.yr + ' · ' + c.name, meta:st.name + ' · The Agreements', key:k, tab:'compacts',
+                 hay:(c.name + ' ' + c.yr + ' ' + expandPlaces(c.states.join(' ')) + ' ' + c.text).toLowerCase()});
+      });
+      (st.reservoirs || []).forEach(function(r){
+        ix.push({label:r.name, meta:st.name + ' · Reservoirs', key:k, tab:'reservoirs',
+                 hay:(r.name + ' ' + r.river + ' ' + (r.note || '')).toLowerCase()});
+      });
+    });
+    GLOSSARY.forEach(function(g){
+      ix.push({label:g.term, meta:'Glossary', route:'glossary',
+               hay:(g.term + ' ' + g.match.join(' ') + ' ' + g.def).toLowerCase()});
+    });
+    ix.push({label:'Too Heavy, Too Cheap', meta:'Essay · Why America pipes oil and not water', route:'essay',
+             hay:'essay pipeline oil water keystone nawapa virtual water hay alfalfa great lakes compact mississippi'});
+    ix.push({label:'All six regions, side by side', meta:'Compare', route:'compare',
+             hay:'compare comparison table all six side by side sort'});
+    ix.push({label:'Your household on the Ledger', meta:'Calculator', route:'household',
+             hay:'household calculator my water bill gallons personal acre-feet home use'});
+    searchIndex = ix;
+    return ix;
+  }
+  var SEARCH_MIN_CHARS = 2;   // below this every query matches nearly everything, which is noise not help
+  var SEARCH_MAX_RESULTS = 12;
+  function runSearch(q){
+    q = q.trim().toLowerCase();
+    if (q.length < SEARCH_MIN_CHARS) return null;
+    var hits = buildSearchIndex().filter(function(e){ return e.hay.indexOf(q) !== -1; });
+    /* A match in the label outranks a match buried in the body prose — someone typing
+       "Snake" wants the Snake River, not every paragraph that mentions it. */
+    hits.sort(function(a,b){
+      var al = a.label.toLowerCase().indexOf(q) !== -1 ? 0 : 1;
+      var bl = b.label.toLowerCase().indexOf(q) !== -1 ? 0 : 1;
+      return al - bl;
+    });
+    return hits.slice(0, SEARCH_MAX_RESULTS);
+  }
+  function searchResultsHtml(hits){
+    if (hits === null) return '';
+    if (!hits.length) return '<p class="search-empty">Nothing matches that. Try a river ("Snake"), a state you live in ("Kansas"), a compact year ("1922"), or a term ("acre-foot").</p>';
+    return '<div class="search-results">' + hits.map(function(h){
+      var target = h.route ? h.route : (h.key + '/' + h.tab);
+      return '<button class="sr" type="button" data-go="' + target + '">' +
+        '<span class="srl">' + h.label + '</span><span class="srm">' + h.meta + '</span></button>';
+    }).join('') + '</div>';
+  }
+
   /* =============== ESSAY VIEW =============== */
   function renderEssay(){
     eyebrow.textContent = 'PMR Civic Tools \u00b7 No. ' + TOOL_NUMBER + ' \u00b7 Water Series \u00b7 Essay';
@@ -1992,10 +2691,35 @@
     if (currentKey() === key){ route(key); return; }   // same view re-requested: just re-render
     location.hash = '#' + key;                          // fires hashchange → route()
   }
+
+  /* Routes, in the two shapes the hash can take:
+       #co              a region, on its first tab
+       #co/reservoirs   a region, opened on a named tab   (what search results link to)
+       #compare #glossary #household #essay   standalone views
+     Anything unrecognised falls through to the map, so a broken link never shows a blank page.
+
+     ROUTE_VIEWS is a registry so adding a standalone view is one line here plus its render
+     function — the home-page card and any search entry pointing at it need no router edit. */
+  var ROUTE_VIEWS = {
+    essay: renderEssay,
+    glossary: renderGlossary,
+    compare: renderCompare,
+    household: renderHousehold
+  };
   function route(key){
-    if (key === 'essay') renderEssay();
-    else if (STATES[key]) renderState(key);
+    /* A term definition left open belongs to the view that was on screen when it was opened;
+       carrying it across a navigation would leave it floating over unrelated content. */
+    closeSheet(false);
+    var parts = String(key).split('/');
+    var head = parts[0];
+    if (ROUTE_VIEWS[head]) ROUTE_VIEWS[head]();
+    else if (STATES[head]) renderState(head, parts[1]);
     else renderHome();
+    /* Runs after every render, on whatever markup that view just produced — which is why a
+       term added to the GLOSSARY registry becomes tappable everywhere at once with no per-view
+       wiring. Deliberately NOT applied to the glossary page itself, where every heading is
+       already a term and linking them to their own definitions would be circular. */
+    if (head !== 'glossary') linkTerms(app);
   }
   window.addEventListener('hashchange', function(){ route(currentKey()); });
 

@@ -31,6 +31,14 @@ Everything — every state, every river, every reservoir, every quiz question �
 | Reservoirs | The region's major reservoirs — name, river, year built, capacity — with an average-age callout and combined-capacity stat. Populated for Colorado, Wyoming, Montana, and Idaho so far; British Columbia and Alberta show a "coming soon" card until that data's added |
 | Quiz | 4–5 questions per region, multiple choice, with an explanation after each answer |
 
+**A search box** above the map. Type a river ("Snake"), the state you live in ("Kansas" finds the Arkansas River, because the index knows KS is Kansas), a compact year ("1922"), a reservoir ("Blue Mesa"), or a term ("acre-foot"), and the result takes you straight to the right region *and the right tab*. Enter picks the top hit.
+
+**A compare view** — all six regions in one sortable table: annual flow, how much stays home, rivers tracked, agreements signed and how many are expiring, reservoir count and average age. On a phone the table becomes stacked cards with their own sort control. Every column is computed from the region data, so nothing here can drift out of step with the individual pages.
+
+**A household calculator** — set your household size and gallons per person per day, pick a region, and see your own water use in acre-feet, how many households share one acre-foot, and how your house compares to the gap between what the 1922 Compact promised and what the river actually carries. It exists because every other number in the tool is in millions of acre-feet, which nobody has an intuition for.
+
+**A glossary** of thirteen terms — acre-foot, MAF, Lee Ferry, virgin water supply, prior appropriation, equitable apportionment, and the rest. These are tappable *wherever they appear anywhere in the tool*: the first time a defined term shows up in any paragraph it becomes a dotted link, and tapping it slides a definition up from the bottom of the screen. Add a term to the registry and it starts linking itself everywhere; there is no list of "which words are linked" to maintain.
+
 **One essay**, "Too Heavy, Too Cheap: Why America Pipes Oil and Not Water," reachable from a card on the map page. It answers a question people naturally ask once they've looked at the map: if we pipe oil across the country, why not water?
 
 **Four color themes** (the dots in the top right): Snowmelt (default blue), Canyon (warm/orange), Nightflow (dark mode), Survey (sepia/vintage). These apply everywhere at once, and your choice is remembered between visits.
@@ -72,6 +80,10 @@ The file went through a maintainability pass and a couple of feature rounds afte
 - **`THIRD_TAB`** is a small registry (`{crisis: {...}, stakes: {...}}`) that renders and wires up each region's third tab. Colorado uses `crisis` (the 2026 countdown); the other five use `stakes`. If you ever want a third kind of tab, add a new key here with `render(st)` and `wire(st)` functions — you won't need to touch `renderState()` itself.
 - **`reservoirSummary()`** and **`barListHtml()`** are shared helpers — the first averages a region's reservoir data once so the per-region Reservoirs tab and the home-page infrastructure card can never disagree with each other; the second is a small reusable bar-chart renderer (built on the `.bars`/`.bartrack`/`.barfill` CSS already used by Colorado's countdown-math widget) used by both new home-page cards.
 - **The home-page "How Much Stays Home" card** reads a `home:true` flag on the relevant pie slice in each region's data. It used to pattern-match the slice's *display label* for the words "Stays in…", which meant a harmless prose edit could silently drop a region to "<1%".
+- **`GLOSSARY`** is the term registry, and `linkTerms()` is the thing to understand before touching it. It walks **text nodes only**, which is the entire safety argument for auto-linking prose that contains hand-authored HTML — it is structurally incapable of inserting a button inside a tag or splitting an element. It links each term at most once per render, skips anything already interactive (a term inside a quiz answer would swallow that answer's click), and skips SVG, whose `<text>` elements cannot hold HTML children. Matching is literal and whole-word, so a term written with markup inside it (`acre-<b>foot</b>`) will not be found — keep defined terms unstyled in the prose.
+- **`CMP_COLS`** is the compare table's column registry: label, sort field, and cell formatter. One entry adds a column to the desktop table, the mobile cards, and the mobile sort dropdown at once.
+- **`ROUTE_VIEWS`** is the router's registry of standalone views (`essay`, `compare`, `glossary`, `household`). Adding one is a line here plus its render function.
+- **`buildSearchIndex()`** builds the search index from `STATES` on first use. Each entry records the region *and* tab it lives on, which is why results can deep-link. `PLACE_NAMES` widens destination strings so searching "Kansas" matches a river whose destination reads "KS".
 - **`escapeHtml()`** exists specifically for reservoir data pulled from outside sources (Wikipedia, dam-operator sites). The rest of the file's prose fields (`thesis`, `text`, etc.) intentionally contain hand-authored HTML like `<b>` and `<span class="flow">` for styling — don't wrap those in `escapeHtml()`, it'll break the formatting.
 - **The flow diagram has two layouts, not one.** The "Where It Goes" SVG is desktop-only; below 700px CSS hides it and shows `flowList()` — the same rivers as a stacked list of real buttons at readable font size. Both are always in the DOM and share one selection handler, so they can't disagree. **Do not** try to fix mobile by shrinking the SVG's viewBox: that was tried and reverted, because the longest river name and the longest destination label collide at narrower widths. That trap is recorded in a comment above `flowSvg()`.
 - **The diagram's width is computed, not typed.** `FLOW_W` is derived from the longest destination label across all six regions. At the old hard-coded 900 units, Wyoming's Bear River label ran off the right edge and was silently clipped — SVG raises no error when content overflows its viewBox, so that kind of bug ships quietly.
@@ -104,6 +116,15 @@ Every region and the essay have their own link, using `#` at the end of the URL:
 - `index.html#bc` → British Columbia
 - `index.html#ab` → Alberta
 - `index.html#essay` → the pipeline essay
+- `index.html#compare` → the six-region comparison
+- `index.html#household` → the household calculator
+- `index.html#glossary` → the glossary
+
+A region link can also name a tab, which is what the search results use:
+
+- `index.html#co/reservoirs` → Colorado, opened on its Reservoirs tab
+- `index.html#wy/compacts` → Wyoming, opened on The Agreements
+- Tab ids are `flow`, `compacts`, `third`, `reservoirs`, `quiz`. An unrecognised one just opens the region's first tab rather than erroring.
 
 Handy for linking straight to Colorado's 2026 countdown from an article, or straight to a region's Reservoirs tab (the link opens the region's page on the "Where It Goes" tab by default — mention the tab by name if you want someone to click over to Reservoirs once they land).
 
@@ -120,14 +141,17 @@ This matters especially for the pie charts on each region's page — those are p
 
 A few directions this could grow, roughly in the order I'd tackle them:
 
-1. **British Columbia and Alberta reservoir data** — still the most obvious next step. The pattern's proven on four states; it's a research-and-data-entry job now, not a design job. Adding entries to their `reservoirs:[]` arrays is the whole edit — both home-page cards pick them up on their own.
-2. **A "compare all six" view.** Right now the only way to compare regions is to visit them one at a time and remember. Every number this would need — flow totals, retention shares, compact counts, reservoir ages — is already in `STATES`, so this is a rendering job, not a research job. It's the cheapest genuinely new *capability* on this list.
-3. **Search / "find my river."** Type "Arkansas" or "Kansas" and land on the region that sends water there. The `rivers[]` array already holds every name and destination string; on a phone this would beat hunting for the right shape on the map.
-4. **A tap-to-define glossary.** The tool says MAF, acre-foot, Lee Ferry, virgin water supply, and equitable apportionment without ever defining them. For a reader arriving from a Pinkbike article rather than a water-law background, that's the difference between "this is fascinating" and "this isn't for me."
-5. **A Utah or New Mexico page** — both are Colorado River Compact signatories already referenced on Colorado's page, so they'd slot into the existing pattern easily. The map itself is the hard part (see the architecture notes above).
-6. **More Water Series essays**, using the same card-on-the-map-page pattern as the pipeline essay. "What's an acre-foot, actually?" or "Who owns the rain that falls on your roof?" both feel like natural companions.
-7. **A live reservoir gauge** for Lake Powell and Lake Mead on Colorado's countdown tab. Worth naming the tradeoff plainly: current storage levels are the numbers that most make the tool look alive, and also the ones that go stale fastest. Hand-updated, it becomes a standing chore and a credibility risk if you miss a few months. If you add it, put the reading's own as-of date right next to the number rather than relying on the footer.
-8. **A "your household" calculator** — plug in your water bill or town, see your personal slice of the pie chart. This is the one that would take the tool from "explains the system" to "shows you where you personally sit in it," which is very on-brand for the rest of your tool suite.
+1. **British Columbia and Alberta reservoir data** — now the only thing standing between the Ledger and a complete storage picture, and the one item on the old list that is *blocked on facts rather than on code*. Everything downstream is already built and waiting: adding entries to those two `reservoirs:[]` arrays is the whole edit, and the Reservoirs tabs, the infrastructure-age card, and the compare table's "not yet added" rows all fill in on their own.
+
+   What it needs is real sourcing, not a plausible guess. Three traps to avoid whenever this gets done:
+   - **Units.** Canadian sources quote reservoir volume in cubic kilometres, cubic decametres or megalitres, never acre-feet. One acre-foot is 1,233.48 m³. Convert deliberately and write the converted number in, since `capacityAF` is what every calculation reads.
+   - **Which volume.** "Gross capacity", "live/active storage" and "water volume" are three different numbers for the same reservoir, and they can differ by half. The four U.S. states in here are entered as design/gross capacity — match that, or the combined-capacity stat compares unlike things.
+   - **Which year.** The average-age card is driven entirely by `yearBuilt`, so a wrong year quietly corrupts a chart on the home page. Dam completion, first impoundment, and full-pool dates are often years apart, and several of these dams were raised or rebuilt later.
+
+   The obvious candidates: **BC** — Williston Lake (W.A.C. Bennett Dam, Peace), Kinbasket Lake (Mica), Arrow Lakes (Hugh Keenleyside), Lake Revelstoke, Duncan Lake. **Alberta** — Abraham Lake (Bighorn Dam), Oldman Reservoir, Lake Newell, Gleniffer Lake (Dickson Dam), St. Mary Reservoir. Best sources are BC Hydro's own dam pages and Alberta Environment and Protected Areas, with Wikipedia only as a cross-check.
+2. **A Utah or New Mexico page** — both are Colorado River Compact signatories already referenced on Colorado's page, so the *data* slots into the existing pattern. The map is the blocker, and it's a design decision rather than a research one: the current six polygons tile a fixed 660×800 viewBox with no room left, so adding a seventh means either redrawing the arrangement or changing what the map is (a wider frame, or dropping the tiled-blocks conceit for something looser). Worth deciding how you want it to look before anyone writes the data.
+3. **More Water Series essays**, using the same card-on-the-map-page pattern as the pipeline essay. "What's an acre-foot, actually?" or "Who owns the rain that falls on your roof?" both feel like natural companions — and the glossary now covers enough of the vocabulary that an essay could lean on it instead of stopping to define things.
+4. **A live reservoir gauge** for Lake Powell and Lake Mead on Colorado's countdown tab. The tradeoff, plainly: current storage levels are the numbers that most make the tool look alive, and also the ones that go stale fastest. Hand-updated it becomes a standing chore and a credibility risk if you miss a few months — worse than not having it, because a confidently wrong current number undermines the figures around it that *are* right. If you add it, put the reading's own as-of date beside the number rather than relying on the footer stamp, and source it from Reclamation's public data rather than a news article.
 
 None of these need to happen — the tool stands on its own as-is. Just flagging where the road keeps going, if you want it to.
 
