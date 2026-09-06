@@ -33,7 +33,7 @@ from concurrent.futures import ThreadPoolExecutor
 os.environ.update({
     'GDAL_DISABLE_READDIR_ON_OPEN': 'EMPTY_DIR',
     # .zip and .gpkg are load-bearing: the WBD divides are range-read out of zipped
-    # GeoPackages, and with only .tif allowed GDAL refuses to open them outright.
+    # GeoPackages, and with only .tif allowed GDAL refuses to open them.
     'CPL_VSIL_CURL_ALLOWED_EXTENSIONS': '.tif,.zip,.gpkg',
     'VSI_CACHE': 'TRUE',
 })
@@ -64,8 +64,9 @@ VB   = 900.0
 SIX  = ['British Columbia','Alberta','Montana','Idaho','Wyoming','Colorado']
 KEY  = {'British Columbia':'bc','Alberta':'ab','Montana':'mt',
         'Idaho':'id','Wyoming':'wy','Colorado':'co'}
-NE50 = ('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/'
-        'geojson/ne_50m_admin_1_states_provinces.geojson')
+NE   = ('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/'
+        'ADMIN1.geojson')
+NE50 = NE.replace('ADMIN1', 'ne_50m_admin_1_states_provinces')
 WBD  = 'https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/WBD/HU2/GPKG/'
 COP  = 'https://copernicus-dem-90m.s3.amazonaws.com/'
 
@@ -182,7 +183,7 @@ def main():
             for lo, la in p.exterior.coords:
                 x, y = albers(lo, la); xs.append(x); ys.append(y)
     X0, X1, Y0, Y1 = min(xs), max(xs), min(ys), max(ys)
-    mx, my = (X1-X0)*0.05, (Y1-Y0)*0.05
+    mx, my = (X1-X0)*0.10, (Y1-Y0)*0.10
     X0 -= mx; X1 += mx; Y0 -= my; Y1 += my
     FRAME = box(0, 0, VB, VB)
 
@@ -239,15 +240,26 @@ def main():
     data['bands'] = bands
 
     log('boundaries ...')
-    data['regions'] = {KEY[n]: emit(prov[n], 0.6) for n in SIX}
+    data['regions'] = {KEY[n]: emit(prov[n], 0.25) for n in SIX}
     near = [n for n, g in prov.items() if n not in SIX and g.intersects(box(-142, 33, -98, 62))]
-    data['near'] = ''.join(emit(prov[n], 1.6) for n in near)
+    data['near'] = ''.join(emit(prov[n], 0.9) for n in near)
     # The union of every admin-1 polygon in frame doubles as the coastline — which is why there is
     # no second, coarser coast outline on this map to disagree with the boundaries drawn over it.
-    data['land'] = emit(unary_union([prov[n].buffer(0) for n in prov]), 1.2)
+    data['land'] = emit(unary_union([prov[n].buffer(0) for n in prov]), 0.6)
+
+    log('rivers and lakes ...')
+    import urllib.request
+    for nm, url in (('rivers','ne_50m_rivers_lake_centerlines'), ('lakes','ne_50m_lakes')):
+        f = url + '.geojson'
+        if not os.path.exists(f):
+            urllib.request.urlretrieve(NE.replace('ADMIN1', url), f)
+        gj = json.load(open(f))
+        close = (nm == 'lakes')
+        data[nm] = ''.join(emit(shape(x['geometry']), 0.35, close=close) for x in gj['features']
+                           if not shape(x['geometry']).is_empty)
 
     log('divides ...')
-    data['divide'] = ''.join(emit(l, 0.7, close=False) for l in continental_divide(prov))
+    data['divide'] = ''.join(emit(l, 0.3, close=False) for l in continental_divide(prov))
 
     lab = {}
     for n in SIX:
@@ -259,7 +271,7 @@ def main():
     data['lab'] = lab
 
     out = json.dumps(data, separators=(',', ':'))
-    for k in ('bands', 'land', 'regions', 'near', 'divide'):
+    for k in ('bands', 'land', 'regions', 'near', 'rivers', 'lakes', 'divide'):
         log('  %-9s %7d bytes' % (k, len(json.dumps(data[k], separators=(',', ':')))))
     log('TOTAL %d bytes' % len(out))
     print(out)
