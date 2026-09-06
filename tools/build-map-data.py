@@ -32,7 +32,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 os.environ.update({
     'GDAL_DISABLE_READDIR_ON_OPEN': 'EMPTY_DIR',
-    'CPL_VSIL_CURL_ALLOWED_EXTENSIONS': '.tif',
+    # .zip and .gpkg are load-bearing: the WBD divides are range-read out of zipped
+    # GeoPackages, and with only .tif allowed GDAL refuses to open them outright.
+    'CPL_VSIL_CURL_ALLOWED_EXTENSIONS': '.tif,.zip,.gpkg',
     'VSI_CACHE': 'TRUE',
 })
 import rasterio, fiona, matplotlib
