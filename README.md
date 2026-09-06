@@ -152,6 +152,18 @@ The file went through a maintainability pass and a couple of feature rounds afte
 
 - **The globe's three colors are the one theming exception in reverse.** `--globe-ocean`, `--globe-land` and `--globe-coast` live in each theme's CSS block alongside the rest of that palette, because they are *chrome* — unlike the basin hexes they follow the theme. A new theme's block has to carry them or the globe falls back to Snowmelt's three, which on a dark theme looks wrong rather than breaking. And because the globe is pixels rather than CSS-painted marks, `applyTheme()` has to *tell* it to redraw; that is what `globeRepaint` is for.
 
+- **Sentences that expire carry their own replacement.** This tool's subject is paperwork with expiry dates on it, which means its prose has expiry dates on it too. On 1 January 2027 a reader would have found a page still saying the operating rules "expire in 2026", and a quiz still saying Reclamation "is finalizing" guidelines that took effect the previous October — a stale claim inside a quiz *answer* being the worst kind, since the reader is told they are right or wrong by a sentence that is neither.
+
+  The countdown tab already solved this with paired `cap`/`capAfter` fields, but that only works where one renderer owns the string. These five sentences live in five different fields read by five different renderers (a thesis, a river's text, `compactsSub`, a compact's text, a quiz answer), so the pairing moved into the prose instead:
+
+  ```
+  {{YYYY-MM-DD|text before that date|text from that date on}}
+  ```
+
+  `resolveTense()` resolves them once at load, in place, before anything renders — the authored content stays in the data block where content belongs, and the logic is one function. A malformed marker fails to match and renders literally, which is loud and findable: the deliberate opposite of a tense that quietly goes wrong four months after anyone last looked.
+
+- **Three status claims are still on a human, not a date.** "another from 1964 currently in limbo", "remain paused", "currently on pause" — all Columbia River Treaty status, in Montana's, Idaho's and BC's entries. No date will fix these; they go stale whenever negotiations move and nothing in the tool will notice. `LAST_REVIEWED` is the current answer, but a footer stamp doesn't attach to a specific sentence, so a reader has no way to know *that claim* is the one riding on it. Worth a per-claim `checked:` date someday; the underlying facts need sourcing either way.
+
 - **`CMP_COLS`** is the compare table's column registry: label, sort field, and cell formatter. One entry adds a column to the desktop table, the mobile cards, and the mobile sort dropdown at once.
 - **`ROUTE_VIEWS`** is the router's registry of standalone views (`essay`, `compare`, `glossary`, `household`). Adding one is a line here plus its render function.
 - **`buildSearchIndex()`** builds the search index from `STATES` on first use. Each entry records the region *and* tab it lives on, which is why results can deep-link. `PLACE_NAMES` widens destination strings so searching "Kansas" matches a river whose destination reads "KS".
