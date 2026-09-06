@@ -2175,6 +2175,25 @@
                                    // of the whole set stays visible behind the one being asked about.
   var GLOBE_GRID_ALPHA   = 0.3;    // graticule opacity. It is orientation furniture, not data —
                                    // raise it and it starts competing with the arcs.
+  /* ---- limb shading ----
+     A sphere lit from anywhere is darker at its edge than at its centre, and without that an
+     orthographic projection is just a circle with a line around it. Two passes: a radial
+     darkening toward the limb, and a soft off-centre highlight that gives the light a direction.
+
+     BLACK AND WHITE AT LOW ALPHA, not theme colours, and that is deliberate. This is a LIGHTING
+     model, not a palette — on Nightflow the theme's ink is nearly white, so darkening the limb
+     with it would make the edge glow. Shading in neutral works on all four surfaces because
+     "away from the light" means the same thing on every one of them.
+
+     IT IS DRAWN AFTER THE LAND AND BEFORE THE ARCS, which is the whole reason it is safe. The
+     arcs carry meaning in the fixed basin palette; dimming them 20% at the limb would shift a
+     colour that a reader is being asked to match against a key. So the shading falls on the
+     ground and the water stays untouched — the same split the map makes between terrain and
+     rivers. */
+  var GLOBE_SHADE_DARK   = 0.24;   // alpha of the darkening at the very edge of the disc
+  var GLOBE_SHADE_MID    = 0.06;   // ...and at 72% out, which sets how fast the falloff bites
+  var GLOBE_SHADE_LIGHT  = 0.11;   // alpha of the highlight at its centre
+  var GLOBE_SHADE_DIR    = [-0.36, -0.40];  // highlight centre, in disc radii from the middle
   var GLOBE_DOT_R        = 4.5;    // px radius of a region pin
   var GLOBE_SEA_DOT_R    = 3.5;    // px radius of a destination pin
   var GLOBE_LABEL_SIZE   = 11;     // px. Fixed, not derived from canvas width — see GLOBE_COMPACT_W.
@@ -2599,6 +2618,22 @@
     globeLandPath(ctx, T, cx, cy, R, w, h);
     ctx.fillStyle = pal.land; ctx.fill();
     ctx.strokeStyle = pal.coast; ctx.lineWidth = 0.8; ctx.stroke();
+
+    /* Limb shading — see the constants above for why it is neutral and why it lands here, between
+       the ground and the arcs rather than over everything. */
+    var lim = ctx.createRadialGradient(cx, cy, R * 0.30, cx, cy, R);
+    lim.addColorStop(0, 'rgba(0,0,0,0)');
+    lim.addColorStop(0.72, 'rgba(0,0,0,' + GLOBE_SHADE_MID + ')');
+    lim.addColorStop(1, 'rgba(0,0,0,' + GLOBE_SHADE_DARK + ')');
+    ctx.fillStyle = lim;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.fill();
+
+    var hx = cx + GLOBE_SHADE_DIR[0]*R, hy = cy + GLOBE_SHADE_DIR[1]*R;
+    var hil = ctx.createRadialGradient(hx, hy, 0, hx, hy, R * 0.95);
+    hil.addColorStop(0, 'rgba(255,255,255,' + GLOBE_SHADE_LIGHT + ')');
+    hil.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = hil;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.fill();
 
     /* Destination arcs. A dashed arc means the "reaches no ocean" basin — the Great Salt Lake — so
        that outcome is distinguished by more than its grey, in line with the rest of the tool. */
