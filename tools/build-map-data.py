@@ -137,7 +137,10 @@ def continental_divide(prov):
 # ---------------------------------------------------------------- terrain
 DEM_BOX  = (-141, -100, 35, 62)     # lon0, lon1, lat0, lat1
 DEM_STEP = 0.04                      # degrees; ~4 km, and about 3x finer than the map can show
-LEVELS   = [1000, 2000, 3000]        # metres
+# Two bands, not three. A 3000m break was tried and measured: it covers 0.4% of the frame for
+# 1657 bytes and 143 vertices, and separates the six regions from their surroundings by only 0.8
+# points more than the 2000m break already does — cost with no legibility. Dropped.
+LEVELS   = [1000, 2000]              # metres
 
 def dem_grid():
     lon0, lon1, lat0, lat1 = DEM_BOX
