@@ -509,6 +509,11 @@
   .globe-btn:hover{border-color:var(--river)}
   .globe-btn:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   .globe-btn[aria-pressed="true"]{background:var(--badge-perp-bg);border-color:var(--river)}
+  .globe-zoomer{display:inline-flex;align-items:center;gap:2px}
+  .globe-btn.zb{min-width:40px;justify-content:center;font-size:1rem;line-height:1;padding:8px 10px}
+  .globe-btn[disabled]{opacity:.42;cursor:default}
+  .globe-btn[disabled]:hover{border-color:var(--line)}
+  .globe-zlevel{font-family:ui-monospace,Consolas,monospace;font-size:.7rem;color:var(--ink-soft);min-width:40px;text-align:center}
   .globe-hint{font-size:.7rem;color:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;text-align:center;margin-top:8px}
 
   /* THE TEXT EQUIVALENT. Not a caption — the same six regions, the same destinations, the same
@@ -1978,7 +1983,43 @@
                                    // margin marker labels are placed into, so lowering it shrinks the globe
                                    // and raising it starts costing labels (see globePlaceLabels).
   var GLOBE_SPIN_DPS     = 4.5;    // degrees of longitude per second while auto-spinning: one turn in 80s.
-                                   // Fast enough to read as alive, slow enough to read text beside.
+                                   // Fast enough to read as alive, slow enough to read text beside. DIVIDED
+                                   // BY THE ZOOM at draw time, because what makes 4.5 feel right is how many
+                                   // PIXELS a second the surface travels, and that scales with the radius.
+                                   // Left constant, a 5x globe whips past at five times the apparent speed.
+  /* ==== ZOOM LADDER — every level the globe will stop at. ==============================
+     A FIXED LADDER rather than a free multiplier, for two reasons. It cannot land the reader on a
+     half-useful magnification, and every stop can be checked by eye rather than hoped about; and it
+     makes the ceiling an explicit design statement instead of an emergent one.
+
+     WHY IT STOPS AT 3.6 — this is the interesting number, and it is not a taste call twice over.
+       Data: Natural Earth 1:110m carries a vertex every ~33-355 km. That is sub-pixel at 1x and
+       about 2px at 3.6x, so the coastline is still telling the truth. By 5x it is 3-6px and
+       Vancouver Island is visibly a polygon; deeper still, the Aleutians become a dotted line.
+       Raising the ceiling without also swapping LAND_110M for land-50m (ten times the bytes) does
+       not add detail, it just lets a reader zoom into a lie.
+       Composition: past ~3.6x the frame holds the six pins and almost nothing else — no coastline,
+       no landmark, arcs floating on blank fill. It reads as an error rather than as a close-up.
+       Both limits were checked at every stop, not derived.
+
+     2.4x is where this card is at its best and it is worth knowing why: all six regions named and
+     separated, all six destinations named, every arc traceable with its thickness legible, and the
+     continent still recognisable under it. That is why picking a region flies to that stop.
+     TO GO DEEPER: add stops here AND swap in land-50m, in that order. One without the other is a
+     regression, whichever one you do first.
+     ==================================================================================== */
+  var GLOBE_ZOOM_STOPS   = [1, 1.6, 2.4, 3.6];
+  var GLOBE_NAMES_AT_ZOOM= 2;      // zoom at or past which region labels are full names, not two-letter
+                                   // codes. The codes exist because five of the six pins sit inside about
+                                   // 100px at 1x (see the note in globeDraw); by 2x that cluster is twice
+                                   // as wide and the names fit. Nothing is forced — globePlaceLabels still
+                                   // drops whatever will not go, and the key always carries all six.
+  /* The first stop that earns full names — where "fly to this region" lands, so the label it flew
+     you to is readable when you arrive. Derived, so moving a stop cannot leave it stale. */
+  var GLOBE_ZOOM_NAMES_IX = (function(){
+    for (var i = 0; i < GLOBE_ZOOM_STOPS.length; i++) if (GLOBE_ZOOM_STOPS[i] >= GLOBE_NAMES_AT_ZOOM) return i;
+    return GLOBE_ZOOM_STOPS.length - 1;
+  })();
   var GLOBE_KEY_STEP     = 6;      // degrees per arrow-key press
   var GLOBE_TILT_LIMIT   = 78;     // clamp on view latitude, so the globe can never roll past its own pole
   var GLOBE_FLY_MS       = 620;    // how long "spin to this region" takes; 0 under prefers-reduced-motion
@@ -2002,6 +2043,7 @@
   var GLOBE_SEA_DOT_R    = 3.5;    // px radius of a destination pin
   var GLOBE_LABEL_SIZE   = 11;     // px. Fixed, not derived from canvas width — see GLOBE_COMPACT_W.
   var GLOBE_LABEL_LH     = 13;     // px of vertical room one label occupies, used by the collision test
+  var GLOBE_LABEL_PAD_X  = 7;      // px of clear space demanded either side of a label — see globePlaceLabels
   var GLOBE_HOME_VIEW    = {lon:-108, lat:46};  // opening view: the six regions facing the reader
 
   var DEG = Math.PI / 180;
@@ -2131,6 +2173,19 @@
     return {y:y/m, z:z/m};
   }
 
+  /* Screen point back to lon/lat, for "double-click a place to go there". Returns null outside the
+     disc. Only the NEAR hemisphere is solvable: orthographic maps both onto the same disc, so the
+     positive root is the only one a reader can have meant. */
+  function globeUnproject(px, py, T, cx, cy, R){
+    var ny = (px - cx) / R, nz = (cy - py) / R;
+    var d = ny*ny + nz*nz;
+    if (d > 1) return null;
+    var nx = Math.sqrt(1 - d);
+    var x1 = nx*T.cosP - nz*T.sinP, z = nx*T.sinP + nz*T.cosP;
+    var x = x1*T.cosL - ny*T.sinL, y = x1*T.sinL + ny*T.cosL;
+    return {lon: Math.atan2(y, x) / DEG, lat: Math.asin(Math.max(-1, Math.min(1, z))) / DEG};
+  }
+
   /* ---------- land ----------
      Fills the near-side land as one path. The part that is not obvious is what to do with a ring
      that runs off the edge of the visible hemisphere: its true boundary there follows the horizon,
@@ -2150,7 +2205,7 @@
          is right for every step small enough that its azimuth cannot swing past a half-turn. At
          GLOBE_DENSIFY_DEG = 1 that fails only within about a degree of the point directly behind
          the reader, where the projection is degenerate anyway and the geometry is invisible. */
-  function globeLandPath(ctx, T, cx, cy, R){
+  function globeLandPath(ctx, T, cx, cy, R, w, h){
     var rings = GLOBE_LAND, by = GLOBE_BUF_Y, bz = GLOBE_BUF_Z, bv = GLOBE_BUF_V;
     var rimStep = GLOBE_RIM_STEP_DEG * DEG;
     var started = false, lastAng = 0, onRim = false;
@@ -2176,6 +2231,7 @@
     ctx.beginPath();
     for (var ri = 0; ri < rings.length; ri++){
       var a = rings[ri], n = a.length / 3, any = false;
+      var x0 = Infinity, x1b = -Infinity, y0 = Infinity, y1b = -Infinity;
       for (var i = 0; i < n; i++){
         var x = a[i*3], y = a[i*3+1], z = a[i*3+2];
         var x1 = x*T.cosL + y*T.sinL;
@@ -2183,8 +2239,20 @@
         bz[i] = z*T.cosP - x1*T.sinP;
         bv[i] = x1*T.cosP + z*T.sinP;
         if (bv[i] > 0) any = true;
+        /* Track where this ring will actually LAND, taking the rim push into account for hidden
+           vertices, so the cull below can be trusted. */
+        var py = by[i], pz = bz[i];
+        if (bv[i] <= 0){ var m = Math.sqrt(py*py + pz*pz) || 1; py /= m; pz /= m; }
+        var sx = cx + R*py, sy = cy - R*pz;
+        if (sx < x0) x0 = sx; if (sx > x1b) x1b = sx;
+        if (sy < y0) y0 = sy; if (sy > y1b) y1b = sy;
       }
       if (!any) continue;                       // wholly on the far side — see note above
+      /* Zoomed in, most of the world is off-canvas and re-pathing it every frame is wasted. Cull on
+         BBOX INTERSECTION, never on "are any vertices on screen": zoomed deep inside Eurasia every
+         one of its vertices is off-canvas while its fill covers the entire frame, and a vertex test
+         would erase the ground under the reader's feet. */
+      if (x1b < 0 || x0 > w || y1b < 0 || y0 > h) continue;
       started = false; onRim = false;
       for (var k = 0; k <= n; k++){             // k == n revisits vertex 0, closing the ring
         var j = k % n;
@@ -2229,20 +2297,27 @@
   /* Meridians every 30 degrees and parallels every 30, built once. Not decoration: without them a
      featureless disc gives a reader nothing to judge the rotation against, and dragging feels like
      it is doing nothing until a coastline happens to swing past. */
-  var GLOBE_GRATICULE = (function(){
+  function globeGrid(step){
     var out = [], lon, lat, ch;
-    for (lon = -180; lon < 180; lon += 30){
+    for (lon = -180; lon < 180; lon += step){
       ch = [];
       for (lat = -80; lat <= 80; lat += 2) ch.push(lonLatVec(lon, lat));
       out.push(ch);
     }
-    for (lat = -60; lat <= 60; lat += 30){
+    for (lat = -60 - (60 % step); lat <= 60; lat += step){
+      if (lat < -80 || lat > 80) continue;
       ch = [];
       for (lon = -180; lon <= 180; lon += 3) ch.push(lonLatVec(lon, lat));
       out.push(ch);
     }
     return out;
-  })();
+  }
+  /* Two grids, both built once. At 1x a 30-degree graticule is the right density; zoomed to 3x it
+     leaves two lines on screen and stops telling a reader which way is which, which is the only job
+     it has. The 10-degree grid takes over past GLOBE_GRID_FINE_AT. */
+  var GLOBE_GRATICULE = globeGrid(30);
+  var GLOBE_GRATICULE_FINE = globeGrid(10);
+  var GLOBE_GRID_FINE_AT = 2.5;   // zoom at which the finer graticule takes over
 
   /* ---------- the arcs ----------
      One arc per region-destination pair, weighted by the SAME annual volumes the continental card's
@@ -2343,7 +2418,12 @@
         var x = hz > 0 ? c.x + gap : hz < 0 ? c.x - gap - c.tw : c.x - c.tw / 2;
         var y = c.y + 4 + sl[1] * GLOBE_LABEL_LH;
         if (x < 3 || x + c.tw > w - 3 || y < GLOBE_LABEL_SIZE || y > h - 3) continue;
-        var rect = {x0:x - 3, x1:x + c.tw + 3, y0:y - GLOBE_LABEL_SIZE, y1:y + 3};
+        /* The horizontal padding is deliberately wider than the vertical: two labels sharing a
+           baseline with a 4px gap read as one run-on string ("MontanaWyoming"), where two
+           stacked at the same gap are unambiguous. GLOBE_LABEL_PAD_X is a bit over one
+           character of the 11px monospace, which is where the eye separates them. */
+        var rect = {x0:x - GLOBE_LABEL_PAD_X, x1:x + c.tw + GLOBE_LABEL_PAD_X,
+                    y0:y - GLOBE_LABEL_SIZE, y1:y + 3};
         if (clear(rect)){ c.left = x; c.ty = y; placed.push(rect); c.done = true; return; }
       }
       /* Nothing fits: DROP it rather than stack it. The pin still draws, and the name is in the
@@ -2356,9 +2436,14 @@
   /* ---------- one frame ---------- */
   function globeDraw(cv, st){
     var ctx = cv.ctx, w = st.w, h = st.h;
-    var cx = w/2, cy = h/2, R = Math.min(w, h) * GLOBE_R_FRAC;
+    var zoom = st.zoom || 1;
+    var cx = w/2, cy = h/2, R = Math.min(w, h) * GLOBE_R_FRAC * zoom;
     var pal = st.pal, T = globeXform(st.lon, st.lat);
     var compact = w < GLOBE_COMPACT_W;
+    /* At 1x the six region pins sit inside about 100px and only two-letter codes fit; zoom spreads
+       them and the names go back on. Nothing is forced — globePlaceLabels still drops what will not
+       go, and the key below always carries all six in full. */
+    var useNames = zoom >= GLOBE_NAMES_AT_ZOOM;
 
     ctx.clearRect(0, 0, w, h);
 
@@ -2371,10 +2456,11 @@
     ctx.clip();
 
     ctx.strokeStyle = pal.coast; ctx.lineWidth = 0.7; ctx.globalAlpha = GLOBE_GRID_ALPHA;
-    GLOBE_GRATICULE.forEach(function(ch){ globeStrokeChain(ctx, ch, T, cx, cy, R); });
+    (zoom >= GLOBE_GRID_FINE_AT ? GLOBE_GRATICULE_FINE : GLOBE_GRATICULE)
+      .forEach(function(ch){ globeStrokeChain(ctx, ch, T, cx, cy, R); });
     ctx.globalAlpha = 1;
 
-    globeLandPath(ctx, T, cx, cy, R);
+    globeLandPath(ctx, T, cx, cy, R, w, h);
     ctx.fillStyle = pal.land; ctx.fill();
     ctx.strokeStyle = pal.coast; ctx.lineWidth = 0.8; ctx.stroke();
 
@@ -2430,7 +2516,7 @@
       ctx.beginPath(); ctx.arc(x, y, on ? GLOBE_DOT_R + 2 : GLOBE_DOT_R, 0, Math.PI*2);
       ctx.fillStyle = on ? pal.river : pal.ink; ctx.fill();
       ctx.strokeStyle = pal.card; ctx.lineWidth = 2; ctx.stroke();
-      cands.push({x:x, y:y, text:on ? STATES[k].name : STATES[k].abbr,
+      cands.push({x:x, y:y, text:(on || useNames) ? STATES[k].name : STATES[k].abbr,
                   color:on ? pal.river : pal.ink, weight:'700', pri:on ? 2 : 1});
     });
     cands.sort(function(a, b){ return (b.pri||0) - (a.pri||0) || a.y - b.y; });
@@ -2501,15 +2587,25 @@
            have anywhere to land. What makes that honest rather than a half-built widget is that it
            is not the only route — .globe-key below is the same information as real buttons. */
         '<canvas class="globe-canvas" id="globeCanvas" width="480" height="480" tabindex="0" role="img" ' +
-          'aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown" ' +
-          'aria-label="An orthographic globe showing world coastlines, the six headwaters regions, and a great-circle arc from each region to every ocean it drains to, drawn in the same basin colors and annual volumes as the chart above. Drag it or use the arrow keys to rotate. The same regions, destinations and volumes are listed as text below.">' +
+          'aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Plus Minus" ' +
+          'aria-label="An orthographic globe showing world coastlines, the six headwaters regions, and a great-circle arc from each region to every ocean it drains to, drawn in the same basin colors and annual volumes as the chart above. Drag it or use the arrow keys to rotate; zoom with the plus and minus keys or the buttons below it. The same regions, destinations and volumes are listed as text below.">' +
         '</canvas>' +
       '</div>' +
       '<div class="globe-bar">' +
+        /* Real buttons rather than a gesture, and that is the whole answer to "why no pinch". A
+           two-finger pinch on a phone is how a reader magnifies the PAGE, and that is an assistive
+           behaviour — taking it over inside an article iframe to zoom one chart is the same theft
+           touch-action:pan-y already refuses for scrolling. These are 40px targets sitting directly
+           under the globe, and page pinch still works over them. */
+        '<span class="globe-zoomer" role="group" aria-label="Zoom">' +
+          '<button class="globe-btn zb" type="button" id="globeOut" aria-label="Zoom out">\u2212</button>' +
+          '<span class="globe-zlevel" id="globeZoom" aria-live="polite">1.0\u00d7</span>' +
+          '<button class="globe-btn zb" type="button" id="globeIn" aria-label="Zoom in">+</button>' +
+        '</span>' +
         '<button class="globe-btn" type="button" id="globeSpin" aria-pressed="false">Auto-spin</button>' +
         '<button class="globe-btn" type="button" id="globeReset">Back to the Rockies</button>' +
       '</div>' +
-      '<p class="globe-hint">Drag to rotate · arrow keys when focused · pick a region below to spin to it</p>' +
+      '<p class="globe-hint">Drag to rotate · double-click to zoom to a place · arrow keys and +/\u2212 when focused · pick a region below to fly to it</p>' +
       basinKeyHtml(basinsUsed(rows.reduce(function(a, r){ return a.concat(r.dests); }, []))) +
       '<div class="globe-key">' +
         rows.map(function(r){
@@ -2536,7 +2632,7 @@
     globeBuildArcs();
 
     var ctx = cv.getContext('2d');
-    var st = {lon:GLOBE_HOME_VIEW.lon, lat:GLOBE_HOME_VIEW.lat, w:480, h:480, focus:null, pal:null};
+    var st = {lon:GLOBE_HOME_VIEW.lon, lat:GLOBE_HOME_VIEW.lat, zoom:1, w:480, h:480, focus:null, pal:null};
     var host = {ctx:ctx};
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
     var spinning = false, raf = null, lastT = 0, fly = null, visible = true, inView = true;
@@ -2582,9 +2678,13 @@
         var e = 1 - Math.pow(1 - fly.t, 3);          // ease-out cubic
         st.lon = wrapLon(fly.lon0 + fly.dLon * e);
         st.lat = fly.lat0 + fly.dLat * e;
+        st.zoom = fly.z0 + fly.dZoom * e;
         if (fly.t >= 1) fly = null;
       } else if (spinning){
-        st.lon = wrapLon(st.lon + GLOBE_SPIN_DPS * dt);
+        /* Divided by the zoom: what makes 4.5 deg/s feel right is the pixels-per-second the surface
+           travels past the eye, and that scales with the radius. Left constant, a 5x globe would
+           whip past at five times the apparent speed. */
+        st.lon = wrapLon(st.lon + GLOBE_SPIN_DPS / st.zoom * dt);
       }
       draw();
       if (fly || (spinning && visible)) raf = requestAnimationFrame(loop);
@@ -2597,22 +2697,77 @@
       spinBtn.textContent = on ? 'Pause spin' : 'Auto-spin';
       kick();
     }
-    function flyTo(lon, lat){
-      if (reduce.matches){ st.lon = wrapLon(lon); st.lat = clampLat(lat); draw(); return; }
-      var dLon = wrapLon(lon - st.lon);
-      fly = {t:0, lon0:st.lon, lat0:st.lat, dLon:dLon, dLat:clampLat(lat) - st.lat};
+    function clampZoom(z){
+      return Math.max(GLOBE_ZOOM_STOPS[0], Math.min(GLOBE_ZOOM_STOPS[GLOBE_ZOOM_STOPS.length-1], z));
+    }
+    /* The readout is announced ONCE, at the destination, never stepped through the tween — an
+       aria-live region that counts 1.1x, 1.2x, 1.3x at 60fps is a scream, not a status. */
+    function showZoom(z){
+      zLabel.textContent = z.toFixed(1) + '\u00d7';
+      zOut.disabled = z <= GLOBE_ZOOM_STOPS[0] + 1e-6;
+      zIn.disabled  = z >= GLOBE_ZOOM_STOPS[GLOBE_ZOOM_STOPS.length-1] - 1e-6;
+    }
+    function flyTo(lon, lat, zoom){
+      var z = clampZoom(zoom == null ? st.zoom : zoom);
+      showZoom(z);
+      if (reduce.matches){
+        st.lon = wrapLon(lon); st.lat = clampLat(lat); st.zoom = z; fly = null; draw(); return;
+      }
+      fly = {t:0, lon0:st.lon, lat0:st.lat, z0:st.zoom,
+             dLon:wrapLon(lon - st.lon), dLat:clampLat(lat) - st.lat, dZoom:z - st.zoom};
       kick();
+    }
+    /* zi is the ladder index and the single source of truth for "how far in are we"; st.zoom is the
+       continuous value the tween writes on its way there. */
+    var zi = 0;
+    function zoomToIx(i, animate, lon, lat){
+      i = Math.max(0, Math.min(GLOBE_ZOOM_STOPS.length - 1, i));
+      var moving = lon != null;
+      if (i === zi && !moving) return;
+      zi = i; setSpin(false);
+      var z = GLOBE_ZOOM_STOPS[i];
+      if (animate) flyTo(moving ? lon : st.lon, moving ? lat : st.lat, z);
+      else { fly = null; st.lon = moving ? wrapLon(lon) : st.lon; st.lat = moving ? clampLat(lat) : st.lat;
+             st.zoom = z; showZoom(z); draw(); }
     }
 
     function updateVisible(){ visible = inView && !document.hidden; kick(); }
 
     var spinBtn = card.querySelector('#globeSpin');
+    var zIn = card.querySelector('#globeIn'), zOut = card.querySelector('#globeOut');
+    var zLabel = card.querySelector('#globeZoom');
     spinBtn.addEventListener('click', function(){ setSpin(!spinning); });
+    zIn.addEventListener('click', function(){ zoomToIx(zi + 1, true); });
+    zOut.addEventListener('click', function(){ zoomToIx(zi - 1, true); });
     card.querySelector('#globeReset').addEventListener('click', function(){
       st.focus = null;
       card.querySelectorAll('.gk-row').forEach(function(b){ b.classList.remove('hot'); b.setAttribute('aria-pressed','false'); });
-      flyTo(GLOBE_HOME_VIEW.lon, GLOBE_HOME_VIEW.lat);
+      setSpin(false);
+      zoomToIx(0, true, GLOBE_HOME_VIEW.lon, GLOBE_HOME_VIEW.lat);
     });
+
+    /* Double-click the globe to bring that place to the centre and step in. At full zoom it steps
+       all the way back out instead, so the gesture is always a way BACK as well as in — a zoom
+       control with no exit is how a reader ends up stranded over an ocean. */
+    cv.addEventListener('dblclick', function(e){
+      var r = cv.getBoundingClientRect();
+      var R = Math.min(st.w, st.h) * GLOBE_R_FRAC * st.zoom;
+      var p = globeUnproject(e.clientX - r.left, e.clientY - r.top,
+                             globeXform(st.lon, st.lat), st.w/2, st.h/2, R);
+      if (!p) return;                                  // outside the disc
+      e.preventDefault();
+      zoomToIx(zi >= GLOBE_ZOOM_STOPS.length - 1 ? 0 : zi + 1, true, p.lon, p.lat);
+    });
+
+    /* Wheel zoom ONLY with a modifier held. A bare wheel handler on a card inside an article iframe
+       swallows the page scroll, which is the same trap touch-action:pan-y refuses for fingers — a
+       reader scrolling past the article should not get caught on the globe. Trackpad pinch arrives
+       as a ctrlKey wheel event, so this gives desktop pinch-to-zoom for free. */
+    cv.addEventListener('wheel', function(e){
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      zoomToIx(zi + (e.deltaY < 0 ? 1 : -1), true);
+    }, {passive:false});
 
     /* ---- pointer drag ----
        touch-action:pan-y in the CSS leaves vertical gestures to the browser, so a reader scrolling
@@ -2638,7 +2793,7 @@
       fly = null;
       /* Degrees per pixel scaled to the globe's own radius, so the point under the finger tracks it
          at roughly 1:1 near the centre whatever size the canvas is. */
-      var k = 90 / (st.w * GLOBE_R_FRAC);
+      var k = 90 / (st.w * GLOBE_R_FRAC * st.zoom);
       st.lon = wrapLon(st.lon - dx * k);
       st.lat = clampLat(st.lat + dy * k);
       drag.x = e.clientX; drag.y = e.clientY;
@@ -2649,6 +2804,8 @@
     cv.addEventListener('pointercancel', endDrag);
 
     cv.addEventListener('keydown', function(e){
+      if (e.key === '+' || e.key === '='){ e.preventDefault(); zoomToIx(zi + 1, true); return; }
+      if (e.key === '-' || e.key === '_'){ e.preventDefault(); zoomToIx(zi - 1, true); return; }
       var d = {ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,1], ArrowDown:[0,-1]}[e.key];
       if (!d) return;
       e.preventDefault();
@@ -2680,7 +2837,13 @@
       b.addEventListener('click', function(){
         locked = (locked === k) ? null : k;
         setFocus(locked);
-        if (locked){ setSpin(false); flyTo(GLOBE_REGION_PIN[k].lon, GLOBE_REGION_PIN[k].lat); }
+        /* Zooms to at least GLOBE_NAMES_AT_ZOOM as well as flying: at 1x the six pins overlap into
+           one knot, so "take me to Alberta" that leaves the view at 1x has not really taken anyone
+           anywhere. Above that zoom the reader's own level is kept. */
+        if (locked){
+          zoomToIx(Math.max(zi, GLOBE_ZOOM_NAMES_IX), true,
+                   GLOBE_REGION_PIN[k].lon, GLOBE_REGION_PIN[k].lat);
+        }
       });
     });
 
@@ -2713,6 +2876,7 @@
     }
 
     globeRepaint = function(){ st.pal = null; draw(); };
+    showZoom(st.zoom);
     resize();
   }
 
