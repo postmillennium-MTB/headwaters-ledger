@@ -274,7 +274,10 @@ def main():
     for k in ('bands', 'land', 'regions', 'near', 'rivers', 'lakes', 'divide'):
         log('  %-9s %7d bytes' % (k, len(json.dumps(data[k], separators=(',', ':')))))
     log('TOTAL %d bytes' % len(out))
-    print(out)
+    # NO trailing newline. This gets pasted between the single quotes of a JSON.parse() call
+    # in index.html, and a raw newline inside a JS string literal is a syntax error that
+    # takes the whole page down. sys.stdout.write, not print.
+    sys.stdout.write(out)
 
 if __name__ == '__main__':
     main()
