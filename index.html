@@ -183,8 +183,19 @@
 
   /* FLOW DIAGRAM */
   .flow-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 10px 6px;box-shadow:var(--shadow)}
-  .river-path{fill:none;stroke:var(--river);stroke-linecap:round;opacity:.55;cursor:pointer;transition:opacity .2s ease,stroke .2s ease}
-  .river-path.hot{opacity:1;stroke:var(--river-deep)}
+  /* Stroke color is set inline per river from its basin (see flowSvg) — this rule only owns
+     shape and state. `.hot` deepens by opacity rather than by swapping the color, because the
+     color now means something. */
+  .river-path{fill:none;stroke-linecap:round;opacity:.62;cursor:pointer;transition:opacity .2s ease}
+  .river-path.hot{opacity:1}
+  /* The drifting current. Paper-colored dashes riding over the river stroke, so it reads as light
+     on water rather than as a second river. Purely decorative. */
+  .river-flow{
+    fill:none;stroke:var(--card);opacity:.55;stroke-linecap:round;pointer-events:none;
+    stroke-dasharray:5 30;animation:riverflow 3s linear infinite;
+  }
+  @keyframes riverflow{to{stroke-dashoffset:-35}}
+  .dim .river-flow{opacity:.2}
   .river-hit{fill:none;stroke:transparent;stroke-width:26;cursor:pointer}
   .dim .river-path:not(.hot){opacity:.14}
   .src-box{fill:var(--ink)}
@@ -432,6 +443,21 @@
   .cont-card .cont-h{font-size:1.18rem;line-height:1.25;margin:6px 0 7px}
   .cont-card .cont-p{font-size:.92rem;color:var(--ink-soft);margin-bottom:14px;max-width:62ch}
   .cont-card .cont-p b{color:var(--ink)}
+
+  /* RESERVOIR BUILD-YEAR STRIP PLOT */
+  /* One row per region, one dot per reservoir, on a shared year axis. The point of the chart is
+     the vertical alignment: nearly every dot lands inside one 30-year federal dam-building window,
+     which is a claim the card already made in prose and never showed. */
+  .strip{width:100%;height:auto;display:block;margin-top:6px}
+  .strip-row-label{fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace}
+  .strip-axis{stroke:var(--line);stroke-width:1}
+  .strip-tick{fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace}
+  .strip-band{fill:var(--river);opacity:.09}
+  .strip-band-lab{fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;letter-spacing:.06em}
+  .strip-desk{display:none}
+  @media(min-width:700px){ .strip-desk{display:block} .strip-mob{display:none} }
+  .strip-dot{fill:var(--river);stroke:var(--card);stroke-width:1.5;opacity:.9}
+  .strip-dot:hover{opacity:1;stroke:var(--ink)}
 
   /* Basin key — the four ocean hues plus the two non-ocean treatments, spelled out in words. */
   .basin-key{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0 2px}
@@ -753,7 +779,10 @@
        name, abbr, num          display name, 2-letter code, tab-number suffix (combined with TOOL_NUMBER, e.g. "14-A")
        title, thesis             home-page-style header HTML for this region's page
        flowH2, flowSub, srcNote, riverIntro{meta,h,p}   "Where It Goes" tab intro + flow-diagram source box label
-       rivers[]                  {id, name, w (line weight in the flow diagram), dest, meta, h, text}
+       rivers[]                  {id, sea, name, w (line weight in the flow diagram), dest, meta, h, text}
+                                 `sea` keys into SEAS and sets the river's color in the flow diagram —
+                                 the same basin palette the ledger charts use, so a blue line means the
+                                 Pacific everywhere in the tool.
        stats[]                   {n, l} shown in the stat-strip
        local{tag,p}              the "local angle" callout box
        pie{total,sub,note,slices[{p,l,s,home?}]}   the ledger-balance donut chart.
@@ -784,19 +813,19 @@
       riverIntro:{meta:'Select a river above', h:'Seven basins, one direction: out',
         p:'Snow that lands in Colorado feeds seven river systems and ends up in roughly 18 states plus Mexico. Everything downstream of that snow is governed by a compact \u2014 pick a river to see its paperwork.'},
       rivers:[
-        {id:'nplatte', name:'NORTH PLATTE', w:5, dest:'WY \u2192 NE', meta:'Governed by U.S. Supreme Court decree (Nebraska v. Wyoming), not a compact', h:'North Platte River',
+        {id:'nplatte', sea:'gulfmex', name:'NORTH PLATTE', w:5, dest:'WY \u2192 NE', meta:'Governed by U.S. Supreme Court decree (Nebraska v. Wyoming), not a compact', h:'North Platte River',
          text:'Rises in North Park, Colorado, then runs through Wyoming to Nebraska. Colorado\u2019s use is capped by a Supreme Court equitable-apportionment decree \u2014 a reminder that when states can\u2019t agree on a compact, the Court writes the rules for them.'},
-        {id:'splatte', name:'SOUTH PLATTE', w:6, dest:'NE \u2192 Missouri R.', meta:'1923 South Platte River Compact \u00b7 CO \u2013 NE', h:'South Platte River',
+        {id:'splatte', sea:'gulfmex', name:'SOUTH PLATTE', w:6, dest:'NE \u2192 Missouri R.', meta:'1923 South Platte River Compact \u00b7 CO \u2013 NE', h:'South Platte River',
          text:'Castle Rock\u2019s home basin. The compact protects Nebraska\u2019s senior irrigation rights in the river\u2019s lower section during the growing season. Nebraska\u2019s 2022 revival of its century-old Perkins County Canal claim proved even 1923 paperwork still has teeth.'},
-        {id:'republican', name:'REPUBLICAN', w:4, dest:'NE \u00b7 KS', meta:'1942 Republican River Compact \u00b7 CO \u2013 KS \u2013 NE', h:'Republican River',
+        {id:'republican', sea:'gulfmex', name:'REPUBLICAN', w:4, dest:'NE \u00b7 KS', meta:'1942 Republican River Compact \u00b7 CO \u2013 KS \u2013 NE', h:'Republican River',
          text:'A quiet plains river with loud litigation. The compact allocates the basin\u2019s \u201cvirgin water supply\u201d among three states; groundwater pumping disputes sent it to the Supreme Court repeatedly. Colorado built a pipeline just to make its compact deliveries.'},
-        {id:'arkansas', name:'ARKANSAS', w:7, dest:'KS \u00b7 OK \u00b7 AR', meta:'1948 Arkansas River Compact \u00b7 CO \u2013 KS', h:'Arkansas River',
+        {id:'arkansas', sea:'gulfmex', name:'ARKANSAS', w:7, dest:'KS \u00b7 OK \u00b7 AR', meta:'1948 Arkansas River Compact \u00b7 CO \u2013 KS', h:'Arkansas River',
          text:'Born near Leadville, leaves at the Kansas line. The compact divides flows and governs John Martin Reservoir operations. Kansas sued Colorado over well pumping and won \u2014 Colorado paid tens of millions in damages. From Kansas the water continues to the Mississippi.'},
-        {id:'riogrande', name:'RIO GRANDE', w:7, dest:'NM \u00b7 TX \u00b7 Mexico', meta:'1938 Rio Grande Compact \u00b7 CO \u2013 NM \u2013 TX', h:'Rio Grande',
+        {id:'riogrande', sea:'gulfmex', name:'RIO GRANDE', w:7, dest:'NM \u00b7 TX \u00b7 Mexico', meta:'1938 Rio Grande Compact \u00b7 CO \u2013 NM \u2013 TX', h:'Rio Grande',
          text:'Rises in the San Juan Mountains, exits through the San Luis Valley. Colorado owes New Mexico an indexed delivery schedule measured at state-line gauges \u2014 the wetter the year, the more Colorado must send. Perpetual, and famously litigated at the Supreme Court.'},
-        {id:'colorado', name:'COLORADO RIVER', w:18, dest:'UT \u00b7 AZ \u00b7 NV \u00b7 CA \u00b7 Mexico', meta:'1922 Colorado River Compact \u00b7 1948 Upper Basin Compact \u00b7 1944 Mexico Treaty', h:'Colorado River',
+        {id:'colorado', sea:'gulfcal', name:'COLORADO RIVER', w:18, dest:'UT \u00b7 AZ \u00b7 NV \u00b7 CA \u00b7 Mexico', meta:'1922 Colorado River Compact \u00b7 1948 Upper Basin Compact \u00b7 1944 Mexico Treaty', h:'Colorado River',
          text:'The big one \u2014 roughly 70% of the water leaving the state. The 1922 Compact splits the river 7.5 MAF per year to each basin at Lee Ferry; the 1948 Compact gives Colorado 51.75% of the Upper Basin\u2019s share. Serves ~40 million people and 30 Tribal Nations. The compacts are perpetual \u2014 but the operating rules on top expire in 2026.'},
-        {id:'sanjuan', name:'SAN JUAN & LA PLATA', w:7, dest:'NM \u00b7 UT (joins Colorado R.)', meta:'1922 La Plata Compact \u00b7 1969 Animas\u2013La Plata Compact', h:'San Juan & La Plata',
+        {id:'sanjuan', sea:'gulfcal', name:'SAN JUAN & LA PLATA', w:7, dest:'NM \u00b7 UT (joins Colorado R.)', meta:'1922 La Plata Compact \u00b7 1969 Animas\u2013La Plata Compact', h:'San Juan & La Plata',
          text:'Southwest Colorado\u2019s rivers cross into New Mexico, then rejoin the Colorado system at Lake Powell. The La Plata Compact (also 1922) alternates flows with New Mexico in dry years \u2014 one of the oldest compacts in the country, and still in force.'}
       ],
       stats:[
@@ -926,19 +955,19 @@
       riverIntro:{meta:'Select a river above', h:'One divide, three directions',
         p:'Wyoming\u2019s crest splits water toward the Pacific (Snake), the Gulf of Mexico (Yellowstone, Platte, Belle Fourche, Niobrara), and the Gulf of California (Green). Every exit has paperwork \u2014 seven compacts and one Supreme Court decree.'},
       rivers:[
-        {id:'snake', name:'SNAKE', w:9, dest:'ID \u2192 Columbia \u2192 Pacific', meta:'1949 Snake River Compact \u00b7 WY \u2013 ID', h:'Snake River',
+        {id:'snake', sea:'pacific', name:'SNAKE', w:9, dest:'ID \u2192 Columbia \u2192 Pacific', meta:'1949 Snake River Compact \u00b7 WY \u2013 ID', h:'Snake River',
          text:'Rises in Yellowstone, exits through Jackson Hole. The compact\u2019s split is the bluntest in the West: 96% of the river\u2019s waters to Idaho, 4% to Wyoming. Downstream it carves Hells Canyon and joins the Columbia.'},
-        {id:'yellowstone', name:'YELLOWSTONE + BIGHORN \u00b7 TONGUE \u00b7 POWDER', w:11, dest:'MT \u2192 Missouri R.', meta:'1950 Yellowstone River Compact \u00b7 WY \u2013 MT \u2013 ND', h:'Yellowstone system',
+        {id:'yellowstone', sea:'gulfmex', name:'YELLOWSTONE + BIGHORN \u00b7 TONGUE \u00b7 POWDER', w:11, dest:'MT \u2192 Missouri R.', meta:'1950 Yellowstone River Compact \u00b7 WY \u2013 MT \u2013 ND', h:'Yellowstone system',
          text:'The Yellowstone and its Wyoming-born tributaries carry the biggest volume leaving the state\u2019s northeast. The compact splits unappropriated tributary flows by percentage \u2014 and produced Montana v. Wyoming, a decade-long Supreme Court fight over what counts as \u201cusing\u201d water.'},
-        {id:'green', name:'GREEN', w:12, dest:'UT \u2192 Colorado R. \u2192 Gulf of California', meta:'1922 Colorado River Compact \u00b7 1948 Upper Basin Compact (WY: 14%)', h:'Green River',
+        {id:'green', sea:'gulfcal', name:'GREEN', w:12, dest:'UT \u2192 Colorado R. \u2192 Gulf of California', meta:'1922 Colorado River Compact \u00b7 1948 Upper Basin Compact (WY: 14%)', h:'Green River',
          text:'The Colorado River system\u2019s largest tributary starts in the Wind River Range. Wyoming holds 14% of the Upper Basin\u2019s share under the 1948 compact \u2014 which drags Wyoming into the same 2026 reckoning Colorado faces.'},
-        {id:'nplatte', name:'NORTH PLATTE', w:8, dest:'NE \u2192 Missouri R.', meta:'U.S. Supreme Court decree \u00b7 Nebraska v. Wyoming (1945, modified 2001)', h:'North Platte River',
+        {id:'nplatte', sea:'gulfmex', name:'NORTH PLATTE', w:8, dest:'NE \u2192 Missouri R.', meta:'U.S. Supreme Court decree \u00b7 Nebraska v. Wyoming (1945, modified 2001)', h:'North Platte River',
          text:'Enters from Colorado, waters ranch country, leaves for Nebraska. No compact here \u2014 the states litigated instead, and the Supreme Court wrote the allocation itself in 1945, then modified it in 2001. The decree caps Wyoming\u2019s irrigated acreage directly.'},
-        {id:'bear', name:'BEAR', w:5, dest:'ID \u00b7 UT \u2192 Great Salt Lake', meta:'1958 Bear River Compact (amended 1980) \u00b7 WY \u2013 ID \u2013 UT', h:'Bear River',
+        {id:'bear', sea:'greatsalt', name:'BEAR', w:5, dest:'ID \u00b7 UT \u2192 Great Salt Lake', meta:'1958 Bear River Compact (amended 1980) \u00b7 WY \u2013 ID \u2013 UT', h:'Bear River',
          text:'A river that can\u2019t make up its mind \u2014 it crosses state lines five times before dying in the Great Salt Lake, never reaching an ocean. Three states split it by reach under a compact updated in 1980.'},
-        {id:'bellef', name:'BELLE FOURCHE / CHEYENNE', w:4, dest:'SD \u2192 Missouri R.', meta:'1943 Belle Fourche River Compact \u00b7 WY \u2013 SD', h:'Belle Fourche River',
+        {id:'bellef', sea:'gulfmex', name:'BELLE FOURCHE / CHEYENNE', w:4, dest:'SD \u2192 Missouri R.', meta:'1943 Belle Fourche River Compact \u00b7 WY \u2013 SD', h:'Belle Fourche River',
          text:'Loops around the Black Hills into South Dakota. The compact leaves Wyoming a small fixed share of unappropriated flows \u2014 roughly a tenth \u2014 with the rest passing downstream.'},
-        {id:'niobrara', name:'NIOBRARA', w:3, dest:'NE \u2192 Missouri R.', meta:'1962 Upper Niobrara River Compact \u00b7 WY \u2013 NE', h:'Niobrara River',
+        {id:'niobrara', sea:'gulfmex', name:'NIOBRARA', w:3, dest:'NE \u2192 Missouri R.', meta:'1962 Upper Niobrara River Compact \u00b7 WY \u2013 NE', h:'Niobrara River',
          text:'The quietest compact in the set. Notable mostly because it anticipated the groundwater era \u2014 it contemplated allocating aquifer pumping decades before most compacts admitted groundwater existed.'}
       ],
       stats:[
@@ -1020,15 +1049,15 @@
       riverIntro:{meta:'Select a river above', h:'Three oceans from one peak',
         p:'Triple Divide Peak splits the continent three ways \u2014 the only such spot in the lower 48. West of it, Montana\u2019s water joins the Columbia and answers to a treaty with Canada. East of it, the Missouri begins its 2,300-mile run with, remarkably, no interstate compact at all.'},
       rivers:[
-        {id:'kootenai', name:'KOOTENAI', w:8, dest:'ID \u2192 back to B.C. \u2192 Columbia', meta:'1964 Columbia River Treaty \u00b7 Libby Dam \u00b7 status: in limbo', h:'Kootenai River',
+        {id:'kootenai', sea:'pacific', name:'KOOTENAI', w:8, dest:'ID \u2192 back to B.C. \u2192 Columbia', meta:'1964 Columbia River Treaty \u00b7 Libby Dam \u00b7 status: in limbo', h:'Kootenai River',
          text:'The international boomerang: enters from British Columbia, swings through Montana past Libby Dam, clips Idaho, and returns to Canada before joining the Columbia. Libby is one of the Columbia River Treaty\u2019s four dams \u2014 which makes Montana a direct party to the treaty stalemate.'},
-        {id:'clarkfork', name:'CLARK FORK / FLATHEAD', w:9, dest:'ID \u2192 WA \u2192 Columbia \u2192 Pacific', meta:'1964 Columbia River Treaty \u00b7 CSKT Compact (tribal)', h:'Clark Fork River',
+        {id:'clarkfork', sea:'pacific', name:'CLARK FORK / FLATHEAD', w:9, dest:'ID \u2192 WA \u2192 Columbia \u2192 Pacific', meta:'1964 Columbia River Treaty \u00b7 CSKT Compact (tribal)', h:'Clark Fork River',
          text:'Montana\u2019s largest river by volume drains the state\u2019s west into Lake Pend Oreille, Idaho, then the Columbia. The Flathead arm runs through the Confederated Salish and Kootenai Tribes\u2019 homeland \u2014 whose 2020 water compact is the largest tribal settlement ever ratified.'},
-        {id:'stmary', name:'ST. MARY \u2192 MILK', w:5, dest:'Alberta \u2192 Hudson Bay / back into MT', meta:'1909 Boundary Waters Treaty \u00b7 1921 IJC apportionment', h:'St. Mary & Milk rivers',
+        {id:'stmary', sea:'hudson', name:'ST. MARY \u2192 MILK', w:5, dest:'Alberta \u2192 Hudson Bay / back into MT', meta:'1909 Boundary Waters Treaty \u00b7 1921 IJC apportionment', h:'St. Mary & Milk rivers',
          text:'The strangest plumbing on the map: St. Mary water (bound for Hudson Bay) is siphoned into the Milk River, which crosses into Alberta and loops back into Montana to irrigate the Hi-Line. A 1909 treaty with Canada splits both rivers \u2014 and a 2024 siphon failure showed how much hangs on century-old steel.'},
-        {id:'missouri', name:'MISSOURI', w:14, dest:'ND \u2192 Mississippi \u2192 Gulf of Mexico', meta:'No interstate compact \u2014 Army Corps Master Manual governs', h:'Missouri River',
+        {id:'missouri', sea:'gulfmex', name:'MISSOURI', w:14, dest:'ND \u2192 Mississippi \u2192 Gulf of Mexico', meta:'No interstate compact \u2014 Army Corps Master Manual governs', h:'Missouri River',
          text:'North America\u2019s longest river is born at Three Forks, where the Jefferson, Madison, and Gallatin meet. Here\u2019s the surprise: the entire Missouri has no interstate compact. Upstream and downstream states fought to a stalemate in the 1940s, so the Army Corps of Engineers runs the river by federal manual instead.'},
-        {id:'yellowstone', name:'YELLOWSTONE', w:11, dest:'ND \u2192 joins Missouri', meta:'1950 Yellowstone River Compact \u00b7 MT \u2013 WY \u2013 ND', h:'Yellowstone River',
+        {id:'yellowstone', sea:'gulfmex', name:'YELLOWSTONE', w:11, dest:'ND \u2192 joins Missouri', meta:'1950 Yellowstone River Compact \u00b7 MT \u2013 WY \u2013 ND', h:'Yellowstone River',
          text:'The longest undammed river in the lower 48\u2020 \u2014 roughly 690 free-flowing miles from the park to its Missouri confluence. The 1950 compact splits its Wyoming-born tributaries, and Montana enforced it all the way to the Supreme Court.'}
       ],
       stats:[
@@ -1107,17 +1136,17 @@
       riverIntro:{meta:'Select a river above', h:'Everything funnels to the Snake',
         p:'The Snake enters from Wyoming at 4% strength (per compact), swallows the Henrys Fork, the Boise, the Payette, the Salmon, and the Clearwater, and exits at Lewiston bound for the Columbia. Idaho\u2019s water law is mostly the story of managing that one river \u2014 and the giant aquifer beneath it.'},
       rivers:[
-        {id:'kootenai', name:'KOOTENAI', w:6, dest:'back to B.C. \u2192 Columbia', meta:'1964 Columbia River Treaty \u00b7 status: in limbo', h:'Kootenai River',
+        {id:'kootenai', sea:'pacific', name:'KOOTENAI', w:6, dest:'back to B.C. \u2192 Columbia', meta:'1964 Columbia River Treaty \u00b7 status: in limbo', h:'Kootenai River',
          text:'Passes through Idaho\u2019s panhandle on its Canada\u2013Montana\u2013Idaho\u2013Canada loop. Treaty operations at Libby Dam upstream set its flows \u2014 so the paused treaty modernization is a panhandle issue too, especially for the Kootenai Tribe\u2019s sturgeon recovery work.'},
-        {id:'pendoreille', name:'CLARK FORK \u2192 PEND OREILLE', w:8, dest:'WA \u2192 Columbia \u2192 Pacific', meta:'1964 Columbia River Treaty', h:'Pend Oreille system',
+        {id:'pendoreille', sea:'pacific', name:'CLARK FORK \u2192 PEND OREILLE', w:8, dest:'WA \u2192 Columbia \u2192 Pacific', meta:'1964 Columbia River Treaty', h:'Pend Oreille system',
          text:'Montana\u2019s Clark Fork becomes Idaho\u2019s Lake Pend Oreille \u2014 the state\u2019s largest and deepest lake \u2014 then exits to Washington as the Pend Oreille River. Another Columbia tributary whose management sits inside the treaty framework with Canada.'},
-        {id:'spokane', name:'SPOKANE', w:4, dest:'WA \u2192 Columbia', meta:'Bi-state aquifer management \u00b7 ID \u2013 WA', h:'Spokane River',
+        {id:'spokane', sea:'pacific', name:'SPOKANE', w:4, dest:'WA \u2192 Columbia', meta:'Bi-state aquifer management \u00b7 ID \u2013 WA', h:'Spokane River',
          text:'Drains Lake Coeur d\u2019Alene westward into Washington, riding atop the Spokane Valley\u2013Rathdrum Prairie Aquifer that both states share and jointly manage \u2014 interstate water cooperation without a formal compact.'},
-        {id:'salmon', name:'SALMON & CLEARWATER', w:9, dest:'join the Snake at Lewiston', meta:'2004 Nez Perce Agreement (Snake River Basin Adjudication)', h:'Salmon & Clearwater rivers',
+        {id:'salmon', sea:'pacific', name:'SALMON & CLEARWATER', w:9, dest:'join the Snake at Lewiston', meta:'2004 Nez Perce Agreement (Snake River Basin Adjudication)', h:'Salmon & Clearwater rivers',
          text:'The \u201cRiver of No Return\u201d and the Clearwater are Idaho-internal \u2014 they never leave the state on their own, joining the Snake at its exit. Their flows anchor the 2004 Nez Perce settlement, one of the largest tribal water agreements in the country, resolving 175,000+ claims.'},
-        {id:'snake', name:'SNAKE', w:16, dest:'OR/WA line \u2192 Columbia \u2192 Pacific', meta:'1949 Snake River Compact (ID: 96%) \u00b7 Swan Falls Agreement 1984', h:'Snake River',
+        {id:'snake', sea:'pacific', name:'SNAKE', w:16, dest:'OR/WA line \u2192 Columbia \u2192 Pacific', meta:'1949 Snake River Compact (ID: 96%) \u00b7 Swan Falls Agreement 1984', h:'Snake River',
          text:'Enters from Wyoming, waters the entire southern Idaho economy, carves Hells Canyon \u2014 deeper than the Grand Canyon\u2020 \u2014 and exits at Lewiston. The 1949 compact hands Idaho 96% of it; the real fights are internal, between surface users and the aquifer pumpers beneath the plain.'},
-        {id:'bear', name:'BEAR', w:5, dest:'UT \u2192 Great Salt Lake (never reaches the sea)', meta:'1958 Bear River Compact (amended 1980) \u00b7 ID \u2013 UT \u2013 WY', h:'Bear River',
+        {id:'bear', sea:'greatsalt', name:'BEAR', w:5, dest:'UT \u2192 Great Salt Lake (never reaches the sea)', meta:'1958 Bear River Compact (amended 1980) \u00b7 ID \u2013 UT \u2013 WY', h:'Bear River',
          text:'Crosses state lines five times and ends in the Great Salt Lake \u2014 the largest river in the hemisphere that never reaches an ocean\u2020. As the lake shrinks, every drop Idaho diverts upstream gets audited by three states and a growing chorus of dust-storm scientists.'}
       ],
       stats:[
@@ -1196,17 +1225,17 @@
       riverIntro:{meta:'Select a river above', h:'A treaty province, not a compact province',
         p:'Nearly every major river below eventually answers to an international treaty or agreement with the United States \u2014 not an interprovincial compact. That\u2019s the core difference between how Canada and the U.S. handle shared water, and BC lives it more than anywhere else on this map.'},
       rivers:[
-        {id:'columbia', name:'COLUMBIA', w:16, dest:'south to WA \u2192 Pacific', meta:'1964 Columbia River Treaty \u00b7 status: modernization talks paused', h:'Columbia River',
+        {id:'columbia', sea:'pacific', name:'COLUMBIA', w:16, dest:'south to WA \u2192 Pacific', meta:'1964 Columbia River Treaty \u00b7 status: modernization talks paused', h:'Columbia River',
          text:'Born at Columbia Lake near Canal Flats, the river runs about 320 km north before doubling back south at the Big Bend near Mica Dam \u2014 roughly 760 km inside Canada in total before it ever reaches Washington State. Three Canadian dams (Duncan, Keenleyside, Mica) hold back that water under the treaty, in exchange for the "Canadian Entitlement": BC\u2019s negotiated share of the extra U.S. hydropower its storage makes possible.'},
-        {id:'kootenay', name:'KOOTENAY', w:8, dest:'south to MT \u2192 ID \u2192 back to BC \u2192 Columbia', meta:'Same 1964 treaty \u00b7 coordinated with Libby Dam, Montana', h:'Kootenay River',
+        {id:'kootenay', sea:'pacific', name:'KOOTENAY', w:8, dest:'south to MT \u2192 ID \u2192 back to BC \u2192 Columbia', meta:'Same 1964 treaty \u00b7 coordinated with Libby Dam, Montana', h:'Kootenay River',
          text:'BC\u2019s version of the boomerang Montana and Idaho already know: the Kootenay (spelled Kootenai south of the border) leaves Canada near Kootenay National Park, loops through Montana and Idaho, and returns to BC to join the Columbia at Castlegar. Libby Dam, just across the line in Montana, backs Lake Koocanusa some 68 km into BC \u2014 one reservoir, two countries.'},
-        {id:'peace', name:'PEACE', w:10, dest:'east to AB \u2192 Arctic Ocean', meta:'1997 Mackenzie River Basin Transboundary Waters Master Agreement', h:'Peace River',
+        {id:'peace', sea:'arctic', name:'PEACE', w:10, dest:'east to AB \u2192 Arctic Ocean', meta:'1997 Mackenzie River Basin Transboundary Waters Master Agreement', h:'Peace River',
          text:'The only river on this entire map bound for the Arctic. The W.A.C. Bennett Dam backs it into Williston Lake \u2014 the seventh-largest reservoir in the world by volume\u2020 \u2014 before it crosses into Alberta, joins the Athabasca and the Mackenzie, and empties into the Beaufort Sea roughly 4,000 km later.'},
-        {id:'fraser', name:'FRASER', w:9, dest:'stays in BC \u2192 Pacific at Vancouver', meta:'No transboundary agreement \u2014 entirely a BC river', h:'Fraser River',
+        {id:'fraser', sea:'pacific', name:'FRASER', w:9, dest:'stays in BC \u2192 Pacific at Vancouver', meta:'No transboundary agreement \u2014 entirely a BC river', h:'Fraser River',
          text:'The river that never leaves. BC\u2019s longest river runs 1,375 km from the Rockies to Vancouver without crossing a border, is never dammed on its main stem, and remains the most productive salmon river on the Pacific coast \u2014 the rare major river on this whole map with no compact, no treaty, and nobody else to negotiate with.'},
-        {id:'skagit', name:'SKAGIT & OKANAGAN', w:5, dest:'south to WA \u2192 Pacific / Columbia', meta:'1984 Skagit River Treaty (High Ross) \u00b7 Okanagan\u2013Osoyoos IJC orders', h:'Skagit & Okanagan rivers',
+        {id:'skagit', sea:'pacific', name:'SKAGIT & OKANAGAN', w:5, dest:'south to WA \u2192 Pacific / Columbia', meta:'1984 Skagit River Treaty (High Ross) \u00b7 Okanagan\u2013Osoyoos IJC orders', h:'Skagit & Okanagan rivers',
          text:'Two quieter border stories. In 1984, Seattle agreed to leave the Skagit Valley unflooded for 80 years \u2014 the deal runs to 2065 \u2014 in exchange for BC supplying power at the rate a taller dam would have produced. Further east, Okanagan and Osoyoos lake levels are managed under longstanding orders from the International Joint Commission, shared with Washington State.'},
-        {id:'flathead', name:'FLATHEAD (NORTH FORK)', w:4, dest:'south to MT \u2192 Columbia system', meta:'2010 BC\u2013Montana MOU \u00b7 2011 BC Flathead Watershed Area Conservation Act', h:'Flathead River (North Fork)',
+        {id:'flathead', sea:'pacific', name:'FLATHEAD (NORTH FORK)', w:4, dest:'south to MT \u2192 Columbia system', meta:'2010 BC\u2013Montana MOU \u00b7 2011 BC Flathead Watershed Area Conservation Act', h:'Flathead River (North Fork)',
          text:'A rare water story with a happy ending. Proposed coal and gas development in BC\u2019s Flathead Valley alarmed Montana and Glacier National Park; in 2011 BC legislated a permanent ban on mining and energy development in its side of the valley. Montana\u2019s matching federal bill never passed \u2014 but most oil and gas leases on its side were voluntarily surrendered anyway.'}
       ],
       stats:[
@@ -1277,17 +1306,17 @@
       riverIntro:{meta:'Select a river above', h:'The 50% province',
         p:'Alberta is upstream of everyone here \u2014 there\u2019s no one else to blame for a dry year. Its rivers split into the Saskatchewan system (a hard quota owed to Saskatchewan) and the Arctic-bound system (a cooperative framework, no fixed percentage). Pick a river to see which rulebook applies.'},
       rivers:[
-        {id:'bow', name:'BOW', w:6, dest:'joins Oldman \u2192 South Saskatchewan \u2192 SK', meta:'1969 Master Agreement on Apportionment \u00b7 basin closed to new licenses since 2006', h:'Bow River',
+        {id:'bow', sea:'hudson', name:'BOW', w:6, dest:'joins Oldman \u2192 South Saskatchewan \u2192 SK', meta:'1969 Master Agreement on Apportionment \u00b7 basin closed to new licenses since 2006', h:'Bow River',
          text:'Runs through Calgary from a glacier near Lake Louise. So heavily allocated that Alberta closed the entire South Saskatchewan basin to new water licenses in 2006 \u2014 its own version of Idaho\u2019s aquifer crunch, decided ahead of a crisis instead of during one.'},
-        {id:'oldman', name:'OLDMAN', w:5, dest:'joins Bow \u2192 South Saskatchewan \u2192 SK', meta:'1969 Master Agreement on Apportionment', h:'Oldman River',
+        {id:'oldman', sea:'hudson', name:'OLDMAN', w:5, dest:'joins Bow \u2192 South Saskatchewan \u2192 SK', meta:'1969 Master Agreement on Apportionment', h:'Oldman River',
          text:'Southern Alberta\u2019s irrigation backbone, watering some of the most productive farmland in the province. Together with the Bow, it\u2019s the reason the South Saskatchewan basin ran out of room to allocate two decades ago.'},
-        {id:'nsask', name:'NORTH SASKATCHEWAN', w:7, dest:'through Edmonton \u2192 SK \u2192 Hudson Bay', meta:'1969 Master Agreement on Apportionment \u00b7 AB owes \u226550% of natural flow', h:'North Saskatchewan River',
+        {id:'nsask', sea:'hudson', name:'NORTH SASKATCHEWAN', w:7, dest:'through Edmonton \u2192 SK \u2192 Hudson Bay', meta:'1969 Master Agreement on Apportionment \u00b7 AB owes \u226550% of natural flow', h:'North Saskatchewan River',
          text:'Rises at the Saskatchewan Glacier in the Columbia Icefield and runs through Edmonton before crossing into Saskatchewan. The Prairie Provinces Water Board audits this handoff every year \u2014 Alberta\u2019s hard commitment is at least half the river\u2019s natural flow, measured at the border.'},
-        {id:'milk', name:'MILK', w:4, dest:'south back into MT \u2192 Missouri R.', meta:'1909 Boundary Waters Treaty \u00b7 1921 IJC Order: 50/50 split with the U.S.', h:'Milk River',
+        {id:'milk', sea:'gulfmex', name:'MILK', w:4, dest:'south back into MT \u2192 Missouri R.', meta:'1909 Boundary Waters Treaty \u00b7 1921 IJC Order: 50/50 split with the U.S.', h:'Milk River',
          text:'The mirror image of Montana\u2019s St. Mary story: the Milk rises in Montana, loops north through Alberta ranch country around the town that shares its name, then heads back south to rejoin the Missouri. The same 1921 order splits both rivers 50/50 between the two countries.'},
-        {id:'athabasca', name:'ATHABASCA', w:8, dest:'north \u2192 Lake Athabasca \u2192 Arctic Ocean', meta:'1997 Mackenzie River Basin Transboundary Waters Master Agreement', h:'Athabasca River',
+        {id:'athabasca', sea:'arctic', name:'ATHABASCA', w:8, dest:'north \u2192 Lake Athabasca \u2192 Arctic Ocean', meta:'1997 Mackenzie River Basin Transboundary Waters Master Agreement', h:'Athabasca River',
          text:'Also born at the Columbia Icefield, the Athabasca runs north past the oil sands at Fort McMurray into Lake Athabasca and eventually the Arctic \u2014 governed by a cooperative framework with BC, Saskatchewan, and the territories rather than a fixed percentage split.'},
-        {id:'peace_ab', name:'PEACE (Alberta reach)', w:6, dest:'from BC \u2192 through the delta \u2192 Arctic Ocean', meta:'1997 Mackenzie Master Agreement \u00b7 Peace-Athabasca Delta', h:'Peace River (Alberta reach)',
+        {id:'peace_ab', sea:'arctic', name:'PEACE (Alberta reach)', w:6, dest:'from BC \u2192 through the delta \u2192 Arctic Ocean', meta:'1997 Mackenzie Master Agreement \u00b7 Peace-Athabasca Delta', h:'Peace River (Alberta reach)',
          text:'Arrives from BC already regulated by the W.A.C. Bennett Dam, then joins the Athabasca in the Peace-Athabasca Delta \u2014 a UNESCO World Heritage wetland whose flooding patterns have been disrupted enough to draw repeated international monitoring missions.'}
       ],
       stats:[
@@ -1606,6 +1635,83 @@
     });
   }
 
+  /* Peak dam-building window, drawn as a shaded band behind the dots. Derived from the data, not
+     typed in: the 30-year span containing the most reservoirs in the whole set. If BC and Alberta
+     are added later and shift the peak, the band moves with them. */
+  var DAM_WINDOW_YEARS = 30;
+  function peakBuildWindow(years){
+    if (!years.length) return null;
+    var best = null;
+    years.forEach(function(y0){
+      var n = years.filter(function(y){ return y >= y0 && y < y0 + DAM_WINDOW_YEARS; }).length;
+      if (!best || n > best.n) best = {start:y0, n:n};
+    });
+    return best;
+  }
+
+  /* Strip-plot geometry, per breakpoint. Same trap as every other SVG in this file: the chart
+     scales to its container, so a 640-unit-wide frame on a ~330px phone renders its 10px tick
+     labels at about 5px. The desktop frame is not shrunk — a second, narrower frame is drawn with
+     its own type sizes and CSS picks one, exactly as the river diagram and the ribbon charts do.
+     padL is DERIVED from the longest region name at the chosen size, so the row labels can never
+     collide with the axis no matter what regions are present. */
+  var STRIP_DESK = {W:640, rowH:26, fRow:11, fTick:10, fBand:9.5, dot:5, cls:'strip-desk'};
+  var STRIP_MOB  = {W:360, rowH:30, fRow:12, fTick:11, fBand:10.5, dot:6, cls:'strip-mob'};
+
+  function reservoirStripSvg(regions, o){
+    var all = [];
+    regions.forEach(function(r){ r.list.forEach(function(x){ all.push(x.yearBuilt); }); });
+    if (!all.length) return '';
+    var minY = Math.min.apply(null, all), maxY = Math.max.apply(null, all);
+    /* Pad to whole decades so the axis ticks land on round numbers. */
+    var lo = Math.floor((minY - 5) / 10) * 10, hi = Math.ceil((maxY + 5) / 10) * 10;
+    var longest = regions.reduce(function(a, r){ return Math.max(a, r.name.length); }, 0);
+    var padL = Math.ceil(longest * o.fRow * MONO_ADVANCE) + 16;
+    var padR = 14, top = o.fBand + 18;
+    var W = o.W, H = top + regions.length * o.rowH + 30;
+    var x = function(y){ return padL + (y - lo) / (hi - lo) * (W - padL - padR); };
+    var win = peakBuildWindow(all);
+
+    var s = '<svg class="strip ' + o.cls + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' +
+      escapeHtml('Build years of the ' + all.length + ' reservoirs in the Ledger, one row per region, ' +
+      minY + ' to ' + maxY + '. ' + win.n + ' of them were built between ' + win.start + ' and ' +
+      (win.start + DAM_WINDOW_YEARS) + '.') + '">';
+    if (win && win.n > 2){
+      var bx0 = x(win.start), bx1 = x(win.start + DAM_WINDOW_YEARS);
+      s += '<rect class="strip-band" x="' + bx0.toFixed(1) + '" y="' + (top - 10) +
+           '" width="' + (bx1 - bx0).toFixed(1) + '" height="' + (regions.length * o.rowH + 10) + '" rx="4"></rect>';
+      var lab = win.n + ' OF ' + all.length + ' BUILT ' + win.start + '–' + (win.start + DAM_WINDOW_YEARS);
+      /* Clamp the band label inside the frame — centred on the band it can otherwise hang off the
+         edge when the peak window sits near one end. */
+      var half = lab.length * o.fBand * MONO_ADVANCE / 2;
+      var cx = Math.min(Math.max((bx0 + bx1) / 2, half + 2), W - half - 2);
+      s += '<text class="strip-band-lab" x="' + cx.toFixed(1) + '" y="' + (top - 15) +
+           '" text-anchor="middle" font-size="' + o.fBand + '">' + lab + '</text>';
+    }
+    regions.forEach(function(r, i){
+      var cy = top + i * o.rowH + o.rowH / 2;
+      s += '<text class="strip-row-label" x="' + (padL - 9) + '" y="' + (cy + o.fRow * 0.36).toFixed(1) +
+           '" text-anchor="end" font-size="' + o.fRow + '">' + escapeHtml(r.name) + '</text>';
+      s += '<line class="strip-axis" x1="' + padL + '" y1="' + cy + '" x2="' + (W - padR) + '" y2="' + cy + '"></line>';
+      r.list.forEach(function(v){
+        s += '<circle class="strip-dot" cx="' + x(v.yearBuilt).toFixed(1) + '" cy="' + cy + '" r="' + o.dot + '">' +
+             '<title>' + escapeHtml(v.name + ' — built ' + v.yearBuilt) + '</title></circle>';
+      });
+    });
+    var axisY = top + regions.length * o.rowH + 6;
+    s += '<line class="strip-axis" x1="' + padL + '" y1="' + axisY + '" x2="' + (W - padR) + '" y2="' + axisY + '"></line>';
+    /* Tick every 20 years on the wide frame, every 40 on the narrow one, so the labels never
+       crowd into each other on a phone. */
+    var step = (W < 500) ? 40 : 20;
+    for (var yr = lo; yr <= hi; yr += step){
+      s += '<line class="strip-axis" x1="' + x(yr).toFixed(1) + '" y1="' + axisY + '" x2="' + x(yr).toFixed(1) + '" y2="' + (axisY + 4) + '"></line>';
+      s += '<text class="strip-tick" x="' + x(yr).toFixed(1) + '" y="' + (axisY + o.fTick + 5) +
+           '" text-anchor="middle" font-size="' + o.fTick + '">' + yr + '</text>';
+    }
+    s += '</svg>';
+    return s;
+  }
+
   function infraCardHtml(){
     var items = regionsWithReservoirs()
       .map(function(key){ return { key:key, st:STATES[key], sum:reservoirSummary(STATES[key].reservoirs) }; })
@@ -1613,12 +1719,15 @@
       .sort(function(a,b){ return b.sum.avgAge - a.sum.avgAge; });
     if (!items.length) return '';
     var overallAvg = Math.round(items.reduce(function(s,x){ return s + x.sum.avgAge; }, 0) / items.length);
-    var barItems = items.map(function(x){ return { label: x.st.name, value: x.sum.avgAge, display: x.sum.avgAge + ' yrs' }; });
+    var count = items.reduce(function(a,x){ return a + x.sum.count; }, 0);
+    /* Bars of average age were replaced by a strip plot of build years. The average was the summary
+       of the story; the strip plot IS the story \u2014 you can see the window rather than be told about it. */
+    var regions = items.map(function(x){ return {name:x.st.name, list:x.st.reservoirs}; });
     return '<div class="essay-card static">' +
       '<span class="etag">Data note \u00b7 Reservoir age</span>' +
       '<h3>The West\u2019s Water Infrastructure Is Getting Old</h3>' +
-      '<p>Across the ' + items.length + ' states tracked so far, the reservoirs storing this water average <b>' + overallAvg + ' years old</b> \u2014 most built in a single federal dam-building window between the 1900s and the 1960s. Open a region\u2019s Reservoirs tab for the full list.</p>' +
-      barListHtml(barItems, {barClass:'paper-b'}) +
+      '<p>Every dot is one of the ' + count + ' major reservoirs tracked so far, placed on the year it was built. They average <b>' + overallAvg + ' years old</b>, and they bunch: the West did not build its storage steadily, it built almost all of it inside one federal window and has been living off it since. Open a region\u2019s Reservoirs tab for the full list.</p>' +
+      reservoirStripSvg(regions, STRIP_DESK) + reservoirStripSvg(regions, STRIP_MOB) +
     '</div>';
   }
 
@@ -1895,18 +2004,64 @@
      The SVG keeps its desktop font sizes. Its river-name labels are focusable (tabindex + role) so
      keyboard users on desktop, where the list is hidden, can still reach every river; before this
      the entire flow diagram was mouse-only. */
+  /* Source-box text metrics. MONO_ADVANCE was MEASURED off the rendered SVG, not guessed — the
+     first attempt at this used 0.6em and still overflowed, because the monospace stack in use
+     advances 0.723em per character. Both line limits below are derived from it, so if the box
+     geometry ever changes, only SRC_BOX_* need editing.
+     BUG THIS FIXES: the region name and the source note both ran out past the dark box and over
+     the diagram — "BRITISH COLUMBIA" ended 55 units past the box edge. SVG neither clips nor
+     warns; it just draws text over the artwork, so this was invisible until someone looked. */
+  var MONO_ADVANCE = 0.723;      // width of one character as a fraction of font-size, measured
+  var SRC_BOX_RIGHT = 172;       // inner right edge of the dark source box, in viewBox units
+  var SRC_NAME_X = 50, SRC_NAME_SIZE = 16, SRC_NAME_LH = 19;
+  var SRC_NOTE_X = 46, SRC_NOTE_SIZE = 9.5, SRC_NOTE_LH = 11;
+  var SRC_NAME_CHARS = Math.floor((SRC_BOX_RIGHT - SRC_NAME_X) / (SRC_NAME_SIZE * MONO_ADVANCE));
+  var SRC_NOTE_CHARS = Math.floor((SRC_BOX_RIGHT - SRC_NOTE_X) / (SRC_NOTE_SIZE * MONO_ADVANCE));
+  /* Greedy word wrap. A single word longer than the limit is left alone rather than hyphenated —
+     better one slightly long line than a broken word. */
+  function wrapText(text, maxChars){
+    var words = String(text).split(' '), lines = [], cur = '';
+    words.forEach(function(w){
+      var next = cur ? cur + ' ' + w : w;
+      if (next.length > maxChars && cur){ lines.push(cur); cur = w; }
+      else cur = next;
+    });
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
   function flowSvg(st){
     var rows = st.rivers.length;
     var rowH = 66, top = 60, H = top + rows*rowH + 40;
     var srcH = H - 70;
     var s = '<svg viewBox="0 0 ' + FLOW_W + ' ' + H + '" role="group" aria-label="Flow diagram of rivers leaving ' + st.name + '">';
     s += '<rect class="src-box" x="30" y="35" width="150" height="' + srcH + '" rx="14"></rect>';
-    s += '<text class="src-label" x="50" y="72" font-size="16">' + st.name.toUpperCase() + '</text>';
-    s += '<text class="src-label" x="46" y="' + (25 + srcH) + '" font-size="9.5" opacity="0.75">' + st.srcNote + '</text>';
+    wrapText(st.name.toUpperCase(), SRC_NAME_CHARS).forEach(function(line, li){
+      s += '<text class="src-label" x="' + SRC_NAME_X + '" y="' + (72 + li * SRC_NAME_LH) +
+           '" font-size="' + SRC_NAME_SIZE + '">' + line + '</text>';
+    });
+    /* The source note is wrapped to fit inside the dark box rather than trusted to be short.
+       BUG THIS FIXES: three of the six notes ("HEADWATERS OF THE COLUMBIA & PEACE" is the worst)
+       were longer than the box is wide and ran out over the diagram, and SVG clips nothing and
+       warns about nothing — it just draws text on top of the artwork. */
+    wrapText(st.srcNote, SRC_NOTE_CHARS).forEach(function(line, li, arr){
+      s += '<text class="src-label" x="' + SRC_NOTE_X + '" y="' + (25 + srcH - (arr.length - 1 - li) * SRC_NOTE_LH) +
+           '" font-size="' + SRC_NOTE_SIZE + '" opacity="0.75">' + line + '</text>';
+    });
     st.rivers.forEach(function(r, i){
       var y = top + 40 + i*rowH;
       var d = 'M180,' + y + ' C 340,' + (y-2) + ' 480,' + (y-5) + ' 640,' + (y-6);
-      s += '<path class="river-path" data-r="' + r.id + '" stroke-width="' + r.w + '" d="' + d + '"></path>';
+      /* Stroke color comes from the river's terminal basin, so the flow diagram, the ledger
+         ribbons and the continental chart all speak one visual language: a blue line means the
+         Pacific whether you are looking at Idaho's rivers or at the whole continent. */
+      var rb = BASINS[(SEAS[r.sea] || SEAS.home).basin] || BASINS.home;
+      s += '<path class="river-path" data-r="' + r.id + '" stroke-width="' + r.w + '"' +
+           ' style="stroke:var(' + rb.v + ')" d="' + d + '"></path>';
+      /* A thin dashed overlay drifting downstream. Decorative, deliberately faint, and it carries
+         no data — its only job is to show which way the water is going, which a static line cannot.
+         Killed outright by the global prefers-reduced-motion rule at the top of the stylesheet. */
+      s += '<path class="river-flow" d="' + d + '" stroke-width="' + Math.max(1.5, r.w * 0.34).toFixed(1) +
+           '" style="animation-duration:' + (2.6 + (i % 3) * 0.5).toFixed(1) + 's"></path>';
       s += '<path class="river-hit" data-r="' + r.id + '" d="' + d + '"></path>';
       s += '<text class="river-name" data-r="' + r.id + '" x="250" y="' + (y - r.w/2 - 8) + '"' +
            ' tabindex="0" role="button" aria-label="' + r.name + ', flows to ' + r.dest + '">' + r.name + '</text>';
@@ -1921,9 +2076,11 @@
     return '<div class="pick-list">' +
       '<div class="lead">Rivers leaving ' + st.name + '</div>' +
       st.rivers.map(function(r){
-        return '<button class="pickbtn" type="button" data-r="' + r.id + '" aria-pressed="false">' +
+        var rb = BASINS[(SEAS[r.sea] || SEAS.home).basin] || BASINS.home;
+        return '<button class="pickbtn" type="button" data-r="' + r.id + '" aria-pressed="false"' +
+          ' style="border-left-color:var(' + rb.v + ')">' +
           '<span class="rn">' + r.name + '</span>' +
-          '<span class="rd">\u2192 ' + r.dest + '</span></button>';
+          '<span class="rd">\u2192 ' + r.dest + ' \u00b7 ' + SEAS[r.sea || 'home'].short + '</span></button>';
       }).join('') +
     '</div>';
   }
@@ -2206,6 +2363,17 @@
     return out;
   }
 
+  /* ONE key per region page, covering both charts on it. The rivers and the ledger slices group
+     the same water differently (seven Colorado rivers, five ledger slices) and so touch slightly
+     different basin sets — but they share a palette, and printing two keys a few hundred pixels
+     apart reads as two different schemes rather than one. The key sits under the river diagram,
+     where a reader meets these colors first. */
+  function regionBasinsUsed(st){
+    var d = st.rivers.map(function(r){ return {basin:(SEAS[r.sea] || SEAS.home).basin}; })
+      .concat(st.pie.slices.map(function(sl){ return {basin:SEAS[sl.sea || 'home'].basin}; }));
+    return basinsUsed(d);
+  }
+
   function regionFlowCardHtml(st){
     var c = regionFlowChart(st);
     var segs = st.pie.slices.map(function(sl, i){
@@ -2226,7 +2394,8 @@
       '</div>' +
       stackedBarHtml(segs) +
       '<div class="stack-note">Left to right: share of ' + st.name + '’s annual flow, by where it ends up.</div>' +
-      basinKeyHtml(basinsUsed(c.dests)) +
+      /* No basin key here on purpose — the one under the river diagram above already covers
+         this chart's colors on a region page. See regionBasinsUsed(). */
       '<div class="pie-legend">' + flowLegend(rows) + '</div>' +
     '</div>';
   }
@@ -2448,6 +2617,7 @@
       '<div class="flow-card" id="flowHolder">' +
         '<div class="flow-svg-wrap">' + flowSvg(st) + '</div>' + flowList(st) +
       '</div>' +
+      basinKeyHtml(regionBasinsUsed(st)) +
       '<div class="detail" id="riverDetail" aria-live="polite">' +
         '<div class="meta">' + st.riverIntro.meta + '</div><h3>' + st.riverIntro.h + '</h3><p>' + st.riverIntro.p + '</p>' +
       '</div><div class="stat-strip">';
