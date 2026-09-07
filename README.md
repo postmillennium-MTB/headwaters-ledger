@@ -16,10 +16,11 @@ Everything — every state, every river, every reservoir, every quiz question �
 
 **A clickable map** of six regions: Colorado, Wyoming, Montana, Idaho, British Columbia, and Alberta — the "headwaters club," the places where the continent's water is actually born. Click a region, get its own page. A small key at the bottom-left explains the dashed Continental Divide line and points north.
 
-**Two summary cards on the home page**, above the essay:
+**Three summary cards on the home page**, above the essay:
 
 - **"The West's Water Infrastructure Is Getting Old"** — a strip plot of every tracked reservoir's build year, computed live from each region's reservoir data (not typed in by hand — add or edit a reservoir and the chart and its peak-window band both update themselves).
 - **"How Much Stays Home"**, sitting next to the essay card at half-width — a bar chart of what share of each region's annual flow is actually used there versus leaving for somewhere else, pulled directly from the same numbers already driving each region's flow chart.
+- **"Where Evaporation Hides in These Numbers"**, at the very bottom of the page, right above the "Data notes & confidence" footer — a plain-text answer to a question the other cards invite but don't answer: every "stays home" share already has evaporation folded into it as consumptive use, but evaporation off reservoirs *downstream* of a region's own border (Lake Powell, Lake Mead) isn't shown anywhere in the tool. Added after a reader asked exactly that question about the continental flow chart.
 
 **Each region's page has five tabs:**
 

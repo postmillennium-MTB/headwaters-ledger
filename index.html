@@ -2051,6 +2051,28 @@
     '</div>';
   }
 
+  /* A reader question ("how does the flow chart handle evaporation?") that turned out to need
+     its own card rather than a footnote — the honest answer has two halves, and burying either
+     one in a tooltip would let a reader walk away with only the flattering half. */
+  function evaporationCardHtml(){
+    return '<div class="essay-card static">' +
+      '<span class="etag">Data note · Evaporation</span>' +
+      '<h3>Where Evaporation Hides in These Numbers</h3>' +
+      '<p>Every “stays home” share on this page — Colorado’s 38%, Idaho’s 8% — already has ' +
+        'evaporation folded into it, counted as consumptive use alongside irrigation and city taps, the ' +
+        'same way each region’s own water plan counts it. The volumes shown leaving for an ocean are ' +
+        'gauge readings taken at the state line or river mouth, so whatever evaporated upstream of that ' +
+        'gauge is already missing from the number — it just isn’t broken out as its own line.</p>' +
+      '<p>What this Ledger can’t show: evaporation off reservoirs downstream of a region’s own border, ' +
+        'on someone else’s stretch of river. Lake Powell and Lake Mead together lose on the order of ' +
+        '1.5–1.8 million acre-feet a year to the desert air&dagger; — more than Wyoming’s entire annual ' +
+        'outflow — and none of it shows up in Colorado’s own ledger, because by the time that water ' +
+        'reaches those reservoirs it has already left the region this map tracks. Read every “stays ' +
+        'home” number as a floor on local consumption, not a ceiling on what’s actually lost between ' +
+        'the mountains and the sea.</p>' +
+    '</div>';
+  }
+
   /* The continental card. Sized by real volume rather than per-region percentages, which is the
      whole point of it — see continentalChart(). The headline sentence is computed from the same
      numbers that draw the ribbons, so it can never claim something the chart contradicts. */
@@ -3437,7 +3459,10 @@
       '</a>' +
       '<div class="stat-strip">' +
         HOME_STATS.map(function(x){ return '<div class="stat"><div class="n">' + x.n + '</div><div class="l">' + x.l + '</div></div>'; }).join('') +
-      '</div>';
+      '</div>' +
+      /* Last thing on the home page, deliberately: it sits right above the page-wide "Data
+         notes & confidence" footer, which is exactly the register this belongs in. */
+      evaporationCardHtml();
 
     var hint = document.getElementById('mapHint');
     /* The hint's heading line ("Colorado \u00b7 Ledger 14-A") is derived from STATES rather than
