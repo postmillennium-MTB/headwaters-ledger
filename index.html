@@ -87,6 +87,11 @@
 <meta name="twitter:image" content="https://postmillennium-mtb.github.io/headwaters-ledger/apple-touch-icon.png">
 <style>
   :root{
+    /* TYPE FLOOR. Smallest text anywhere in the page, in rem (12px at the default size).
+       Every label, legend and caption that used to carry its own .6-.72rem value now points here,
+       so raising or lowering the floor is a one-line edit. Not applied to SVG <text>, which is
+       sized in viewBox units and scales with the drawing. */
+    --fs-min:.75rem;
     --paper:#EDF2EF; --card:#F7FAF8; --ink:#1C3644; --ink-soft:#4A6272;
     --river:#23708A; --river-deep:#155066; --canyon:#B4502A; --sage:#6E8464;
     --line:#C9D6D0; --badge-perp-bg:#DCE9E4; --badge-exp-bg:#F3DED2;
@@ -144,7 +149,7 @@
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
   .eyebrow{
-    font-family:ui-monospace,"SF Mono",Consolas,monospace; font-size:.68rem;
+    font-family:ui-monospace,"SF Mono",Consolas,monospace; font-size:var(--fs-min);
     letter-spacing:.22em; text-transform:uppercase; color:var(--ink-soft);
     display:flex; justify-content:space-between; align-items:center; gap:10px;
     border-bottom:2px solid var(--ink); padding-bottom:8px; margin-bottom:14px;
@@ -170,12 +175,28 @@
   h1 .flow{color:var(--river)}
   .thesis{margin-top:10px;font-size:clamp(.98rem,2.8vw,1.13rem);color:var(--ink-soft);font-style:italic;max-width:660px}
   .thesis b{color:var(--ink);font-style:normal}
+  /* HOME LEAD-IN — the finding, above the map. Two figures sit side by side even at phone width
+     (each is short), set in the headline serif so they read as the page's own voice rather than
+     a dashboard tile. Quiet frame on purpose: the map below stays the loudest object. */
+  .lead-stats{
+    display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-top:16px;padding:12px 0 10px;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  }
+  .ls-n{font-weight:700;line-height:1;letter-spacing:-.02em}
+  .ls-big{font-size:clamp(2.4rem,9vw,3.6rem);color:var(--river)}
+  .ls-small{font-size:clamp(2.4rem,9vw,3.6rem);color:var(--canyon)}
+  .ls-l{margin-top:6px;font-size:.92rem;line-height:1.35;color:var(--ink-soft);max-width:30ch}
+  .ls-jump{
+    grid-column:1 / -1;justify-self:start;margin-top:4px;padding:10px 0;min-height:44px;background:none;border:0;
+    color:var(--river);font:inherit;font-size:.9rem;text-decoration:underline;text-underline-offset:3px;cursor:pointer;
+  }
+  .ls-jump:focus-visible{outline:2px solid var(--river);outline-offset:2px}
   h2{font-size:1.25rem;margin:6px 0 4px}
   .sub{color:var(--ink-soft);font-size:.92rem;margin-bottom:16px}
 
   .back{
     display:inline-flex;align-items:center;gap:6px;margin-bottom:14px;
-    font-family:ui-monospace,Consolas,monospace;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;
+    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;
     padding:11px 16px;min-height:44px;border:1.5px solid var(--ink);border-radius:999px;background:transparent;color:var(--ink);cursor:pointer;
   }
   .back:hover{background:var(--card)}
@@ -214,7 +235,13 @@
     stroke-linejoin:round;
   }
   /* Monospace, so mapLabelX's width maths from MONO_ADVANCE is a measurement and not a hope. */
-  .state-tag{fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;font-size:15px;font-style:italic;pointer-events:none}
+  /* Same card-coloured halo as .state-name. The résumé line is thin italic mono, and without a halo
+     the Continental Divide (a 3px canyon-red line) and the river lines run straight through its
+     letters — "a treaty, not a compact" read as struck through on the default view. */
+  .state-tag{
+    fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;font-size:15px;font-style:italic;
+    pointer-events:none;paint-order:stroke;stroke:var(--card);stroke-width:4px;stroke-linejoin:round;
+  }
   /* THE MAP'S MOBILE FRAME. Not the desktop labels made bigger — a different set of labels.
      Scaled to a 340px phone, a 900-unit viewBox renders 23px type at about 9 CSS px, and the
      fix is not 33px type: "BRITISH COLUMBIA" at that size is 416 of the 900 units across and
@@ -240,10 +267,10 @@
   .map-btn:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   .map-btn[disabled]{opacity:.4;cursor:default}
   .map-btn[disabled]:hover{border-color:var(--line)}
-  .map-btn.wide{width:auto;padding:0 10px;font-size:.68rem;letter-spacing:.04em}
+  .map-btn.wide{width:auto;padding:0 10px;font-size:var(--fs-min);letter-spacing:.04em}
   .map-legend{
     position:absolute;left:10px;bottom:8px;display:flex;flex-direction:column;gap:3px;
-    font-family:ui-monospace,Consolas,monospace;font-size:.66rem;color:var(--ink-soft);
+    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);color:var(--ink-soft);
     background:color-mix(in srgb, var(--card) 82%, transparent);padding:6px 8px;border-radius:8px;
     pointer-events:none;
   }
@@ -278,7 +305,7 @@
     margin-top:12px;background:var(--card);border-left:4px solid var(--river);border-radius:0 12px 12px 0;
     padding:13px 16px;box-shadow:var(--shadow);min-height:76px;
   }
-  .map-hint .meta{font-family:ui-monospace,Consolas,monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px}
+  .map-hint .meta{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px}
   .map-hint p{font-size:.92rem}
 
   /* FLOW DIAGRAM */
@@ -318,7 +345,7 @@
   .pick-list{display:flex;flex-direction:column;gap:8px;padding:4px 0 2px;margin-top:12px}
   .flow-svg-wrap{display:none}
   .pick-list .lead{
-    font-family:ui-monospace,Consolas,monospace;font-size:.66rem;letter-spacing:.16em;
+    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.16em;
     text-transform:uppercase;color:var(--ink-soft);margin-bottom:2px;
   }
   .pickbtn{
@@ -329,7 +356,8 @@
     transition:border-color .15s ease,background .15s ease;
   }
   .pickbtn .rn{font-family:ui-monospace,Consolas,monospace;font-size:.8rem;letter-spacing:.04em;font-weight:700;line-height:1.25}
-  .pickbtn .rd{font-family:ui-monospace,Consolas,monospace;font-size:.72rem;color:var(--ink-soft);line-height:1.3}
+  /* Prose in the body serif, not mono: a sentence set in 12px mono is the hardest thing on a phone to read. Mono is kept for numbers, units and codes. */
+  .pickbtn .rd{font-size:.85rem;color:var(--ink-soft);line-height:1.35}
   .pickbtn[aria-pressed="true"]{background:var(--card);border-color:var(--river);border-left-color:var(--river-deep);border-left-width:8px}
   .pickbtn[aria-pressed="true"] .rn{color:var(--river-deep)}
   .pickbtn:focus-visible{outline:3px solid var(--river);outline-offset:2px}
@@ -351,7 +379,7 @@
     padding:14px 16px;box-shadow:var(--shadow);min-height:88px;
   }
   .detail h3{font-size:1.05rem;margin-bottom:3px}
-  .detail .meta{font-family:ui-monospace,Consolas,monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
+  .detail .meta{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
   .detail p{font-size:.92rem}
 
   .stat-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:16px}
@@ -360,13 +388,13 @@
   .stat .l{font-size:.78rem;color:var(--ink-soft);line-height:1.35}
 
   .local{margin-top:16px;background:var(--card);border:1px dashed var(--sage);border-radius:12px;padding:14px 16px}
-  .local .tag{font-family:ui-monospace,Consolas,monospace;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--sage);font-weight:700}
+  .local .tag{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.18em;text-transform:uppercase;color:var(--sage);font-weight:700}
   .local p{font-size:.92rem;margin-top:4px}
 
   /* TABS */
   .tabs{display:flex;gap:6px;margin:22px 0 18px;flex-wrap:wrap}
   .tab{
-    font-family:ui-monospace,Consolas,monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.08em;text-transform:uppercase;
     padding:12px 15px;border:1.5px solid var(--ink);border-radius:999px;background:transparent;color:var(--ink);
     cursor:pointer;transition:all .15s ease;
   }
@@ -380,7 +408,7 @@
   /* CARDS */
   .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
   .filter{
-    font-family:ui-monospace,Consolas,monospace;font-size:.68rem;letter-spacing:.06em;
+    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.06em;
     padding:9px 13px;border:1.5px solid var(--line);border-radius:999px;background:var(--card);
     color:var(--ink-soft);cursor:pointer;transition:all .15s ease;
   }
@@ -391,16 +419,16 @@
     background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 16px;
     box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px;
   }
-  .card .yr{font-family:ui-monospace,Consolas,monospace;font-size:.7rem;letter-spacing:.14em;color:var(--ink-soft)}
+  .card .yr{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.14em;color:var(--ink-soft)}
   .card h3{font-size:1.02rem;line-height:1.25}
   .chips{display:flex;flex-wrap:wrap;gap:4px}
   .chip{
-    font-family:ui-monospace,Consolas,monospace;font-size:.64rem;letter-spacing:.05em;
+    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.05em;
     background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:2px 6px;color:var(--ink-soft);
   }
   .card p{font-size:.85rem;flex:1}
   .badge{
-    align-self:flex-start;font-family:ui-monospace,Consolas,monospace;font-size:.62rem;
+    align-self:flex-start;font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);
     letter-spacing:.1em;text-transform:uppercase;font-weight:700;border-radius:6px;padding:4px 8px;
   }
   .badge.perp{background:var(--badge-perp-bg);color:var(--river-deep)}
@@ -421,7 +449,7 @@
   .count.past{border-top-color:var(--ink-soft)}
   .count.past .big{color:var(--ink)}
   .count .phase{
-    font-family:ui-monospace,Consolas,monospace;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;
+    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.16em;text-transform:uppercase;
     font-weight:700;color:var(--ink-soft);display:block;margin-bottom:5px;
   }
   .timeline{list-style:none;border-left:2.5px solid var(--line);margin:8px 0 26px 8px;padding-left:20px}
@@ -431,13 +459,13 @@
     background:var(--river);border:2.5px solid var(--paper);
   }
   .timeline li.future::before{background:var(--paper);border-color:var(--canyon)}
-  .timeline .d{font-family:ui-monospace,Consolas,monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft)}
+  .timeline .d{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft)}
   .timeline .t{font-size:.93rem}
   .math{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
   .math label{display:block;font-size:.88rem;margin-bottom:8px}
   input[type=range]{width:100%;accent-color:var(--river);height:44px}  /* 44, not 28: the thumb is the target */
   .bars{margin-top:14px;display:flex;flex-direction:column;gap:10px}
-  .barrow .bl{display:flex;justify-content:space-between;font-family:ui-monospace,Consolas,monospace;font-size:.72rem;color:var(--ink-soft);margin-bottom:3px}
+  .barrow .bl{display:flex;justify-content:space-between;font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);color:var(--ink-soft);margin-bottom:3px}
   .bartrack{background:var(--paper);border:1px solid var(--line);border-radius:6px;height:26px;overflow:hidden}
   .barfill{height:100%;border-radius:5px 0 0 5px;transition:width .25s ease}
   .barfill.paper-b{background:var(--ink);opacity:.85}
@@ -445,7 +473,7 @@
   .deficit{margin-top:12px;font-size:.95rem}
   .deficit b{color:var(--canyon);font-family:ui-monospace,Consolas,monospace}
   .stake{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--canyon);border-radius:0 12px 12px 0;padding:14px 16px;box-shadow:var(--shadow);margin-bottom:12px}
-  .stake .d{font-family:ui-monospace,Consolas,monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--canyon);font-weight:700}
+  .stake .d{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.14em;text-transform:uppercase;color:var(--canyon);font-weight:700}
   .stake h3{font-size:1rem;margin:2px 0 4px}
   .stake p{font-size:.88rem}
 
@@ -469,7 +497,7 @@
   /* Retaking the quiz used to require a full page reload, which on a phone means losing
      your place in the article that embedded this. */
   .retry{
-    margin-top:12px;font-family:ui-monospace,Consolas,monospace;font-size:.72rem;letter-spacing:.1em;
+    margin-top:12px;font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.1em;
     text-transform:uppercase;padding:11px 18px;min-height:44px;border:1.5px solid var(--paper);
     border-radius:999px;background:transparent;color:var(--paper);cursor:pointer;
   }
@@ -478,7 +506,7 @@
 
   .home-link-row{text-align:right;margin:-4px 0 12px}
   .home-link{
-    font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:.68rem;letter-spacing:.12em;
+    font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:var(--fs-min);letter-spacing:.12em;
     text-transform:uppercase;color:var(--river);text-decoration:none;border-bottom:1px dashed var(--river);
     /* inline-block + padding rather than the old 1px: this link sits alone on its own row, so
        it is not covered by the "inline in a sentence" target-size exemption the glossary terms
@@ -519,7 +547,7 @@
     background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.55) 0 3px,transparent 3px 7px);
   }
   .pie-card.dimmed .sb-seg:not(.hot){opacity:.22}
-  .stack-note{font-size:.72rem;color:var(--ink-soft);margin-top:7px;font-family:ui-monospace,Consolas,monospace}
+  .stack-note{font-size:.82rem;color:var(--ink-soft);margin-top:7px}
 
   .pie-legend{display:flex;flex-direction:column;gap:6px;width:100%;margin-top:14px}
   /* Legend rows are real <button>s so the chart is reachable by keyboard and screen reader, not
@@ -534,10 +562,10 @@
   .leg-sw{width:13px;height:13px;border-radius:4px;flex:none;margin-top:3px;border:1px solid var(--line)}
   .leg-pct{font-family:ui-monospace,Consolas,monospace;font-weight:700;width:46px;flex:none}
   .leg-lab{font-size:.88rem;line-height:1.3}
-  .leg-sub{display:block;font-size:.72rem;color:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;margin-top:1px}
+  .leg-sub{display:block;font-size:var(--fs-min);color:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;margin-top:1px}
   .pie-note{font-size:.78rem;color:var(--ink-soft);margin-top:10px}
 
-  .cont-card .etag{font-family:ui-monospace,Consolas,monospace;font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;color:var(--canyon);font-weight:700}
+  .cont-card .etag{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.18em;text-transform:uppercase;color:var(--canyon);font-weight:700}
   .cont-card .cont-h{font-size:1.18rem;line-height:1.25;margin:6px 0 7px}
   .cont-card .cont-p{font-size:.92rem;color:var(--ink-soft);margin-bottom:14px;max-width:62ch}
   .cont-card .cont-p b{color:var(--ink)}
@@ -559,7 +587,7 @@
 
   /* Basin key — the four ocean hues plus the two non-ocean treatments, spelled out in words. */
   .basin-key{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0 2px}
-  .bk{display:inline-flex;align-items:center;gap:6px;font-family:ui-monospace,Consolas,monospace;font-size:.68rem;color:var(--ink-soft)}
+  .bk{display:inline-flex;align-items:center;gap:6px;font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);color:var(--ink-soft)}
   .bk i{width:12px;height:12px;border-radius:3px;display:block;border:1px solid var(--line)}
 
   /* ROTATABLE GLOBE (home page, under the continental card) */
@@ -591,7 +619,7 @@
   .globe-btn{
     display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:8px 13px;border-radius:8px;
     border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;
-    font-family:ui-monospace,Consolas,monospace;font-size:.72rem;letter-spacing:.04em;
+    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.04em;
   }
   .globe-btn:hover{border-color:var(--river)}
   .globe-btn:focus-visible{outline:3px solid var(--river);outline-offset:2px}
@@ -600,8 +628,8 @@
   .globe-btn.zb{min-width:40px;justify-content:center;font-size:1rem;line-height:1;padding:8px 10px}
   .globe-btn[disabled]{opacity:.42;cursor:default}
   .globe-btn[disabled]:hover{border-color:var(--line)}
-  .globe-zlevel{font-family:ui-monospace,Consolas,monospace;font-size:.7rem;color:var(--ink-soft);min-width:40px;text-align:center}
-  .globe-hint{font-size:.7rem;color:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;text-align:center;margin-top:8px}
+  .globe-zlevel{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);color:var(--ink-soft);min-width:40px;text-align:center}
+  .globe-hint{font-size:.82rem;color:var(--ink-soft);text-align:center;margin-top:8px}
 
   /* THE TEXT EQUIVALENT. Not a caption — the same six regions, the same destinations, the same
      volumes the arcs are drawn from, as real buttons. Clicking one spins the globe to it and
@@ -620,9 +648,9 @@
   .gk-row:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   .gk-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
   .gk-name{font-weight:700;font-size:.9rem}
-  .gk-co{font-family:ui-monospace,Consolas,monospace;font-size:.66rem;color:var(--ink-soft)}
+  .gk-co{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);color:var(--ink-soft)}
   .gk-dests{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:4px}
-  .gk-d{display:inline-flex;align-items:center;gap:5px;font-family:ui-monospace,Consolas,monospace;font-size:.68rem;color:var(--ink-soft)}
+  .gk-d{display:inline-flex;align-items:center;gap:5px;font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);color:var(--ink-soft)}
   .gk-d i{width:10px;height:10px;border-radius:3px;flex:none;border:1px solid var(--line);display:block}
   .gk-d i.hatched{background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.55) 0 3px,transparent 3px 7px)}
   @media(min-width:760px){ .globe-key{grid-template-columns:1fr 1fr} }
@@ -641,10 +669,10 @@
   }
   .essay-card:hover{transform:translateY(-2px);box-shadow:0 3px 8px rgba(28,54,68,.14), 0 8px 22px rgba(28,54,68,.10)}
   .essay-card:focus-visible{outline:3px solid var(--river);outline-offset:2px}
-  .essay-card .etag{font-family:ui-monospace,Consolas,monospace;font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;color:var(--canyon);font-weight:700}
+  .essay-card .etag{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.18em;text-transform:uppercase;color:var(--canyon);font-weight:700}
   .essay-card h3{font-size:1.08rem;line-height:1.3;margin:5px 0 6px}
   .essay-card p{font-size:.9rem;color:var(--ink-soft);margin:0}
-  .essay-card .read{display:inline-block;margin-top:9px;font-family:ui-monospace,Consolas,monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--canyon)}
+  .essay-card .read{display:inline-block;margin-top:9px;font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--canyon)}
   /* .static = same visual language as the essay link card, but for informational (non-link) cards \u2014
      no hover-lift, so it doesn't look clickable when it isn't. */
   .essay-card.static{cursor:default}
@@ -657,12 +685,12 @@
 
   /* ESSAY ARTICLE VIEW */
   .essay{max-width:720px}
-  .essay .kicker{font-family:ui-monospace,Consolas,monospace;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin:2px 0 18px}
+  .essay .kicker{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin:2px 0 18px}
   .essay h2{font-size:1.18rem;margin:28px 0 8px}
   .essay p{margin:0 0 14px;font-size:.98rem}
   .essay table{border-collapse:collapse;margin:6px 0 18px;width:100%;font-size:.88rem}
   .essay th,.essay td{border:1px solid var(--line);padding:7px 10px;text-align:left}
-  .essay th{font-family:ui-monospace,Consolas,monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);background:var(--card)}
+  .essay th{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);background:var(--card)}
   .essay .foot{border-top:1px dashed var(--line);margin-top:24px;padding-top:12px;font-size:.78rem;color:var(--ink-soft);font-style:italic}
 
   /* SEARCH */
@@ -682,7 +710,7 @@
   .sr:hover{border-color:var(--river)}
   .sr:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   .sr .srl{font-size:.95rem;font-weight:700;line-height:1.25}
-  .sr .srm{font-family:ui-monospace,Consolas,monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+  .sr .srm{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
   .search-empty{padding:12px 2px;font-size:.9rem;color:var(--ink-soft)}
 
   /* COMPARE TABLE */
@@ -694,7 +722,7 @@
   table.cmp th,table.cmp td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
   table.cmp tbody tr:last-child td{border-bottom:none}
   table.cmp th{
-    font-family:ui-monospace,Consolas,monospace;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;
+    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;
     color:var(--ink-soft);background:var(--paper);position:sticky;top:0;
   }
   table.cmp th button{
@@ -729,7 +757,7 @@
   .cmp-sort select:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   .cmp-sort button{
     flex:0 0 auto;min-height:44px;padding:10px 15px;cursor:pointer;
-    font-family:ui-monospace,Consolas,monospace;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;
+    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.08em;text-transform:uppercase;
     background:transparent;color:var(--ink);border:1.5px solid var(--ink);border-radius:999px;
   }
   .cmp-sort button:focus-visible{outline:3px solid var(--river);outline-offset:2px}
@@ -761,10 +789,10 @@
   .sheet.open{transform:none}
   @media(prefers-reduced-motion:reduce){.sheet{transition:none}}
   .sheet-inner{max-width:660px;margin:0 auto;position:relative;padding-right:44px}
-  .sheet .st{font-family:ui-monospace,Consolas,monospace;font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft)}
+  .sheet .st{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft)}
   .sheet h3{font-size:1.1rem;margin:3px 0 6px}
   .sheet p{font-size:.92rem}
-  .sheet .more{display:inline-block;margin-top:10px;font-family:ui-monospace,Consolas,monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--river);text-decoration:none;border-bottom:1px dashed var(--river)}
+  .sheet .more{display:inline-block;margin-top:10px;font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--river);text-decoration:none;border-bottom:1px dashed var(--river)}
   .sheet-x{
     position:absolute;top:-4px;right:0;width:44px;height:44px;border-radius:50%;
     border:1.5px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;font-size:1.1rem;line-height:1;
@@ -790,7 +818,7 @@
   .calc .headline b{font-family:ui-monospace,Consolas,monospace;color:var(--river);font-size:1.25rem}
 
   footer{margin-top:34px;border-top:2px solid var(--ink);padding-top:12px;font-size:.78rem;color:var(--ink-soft)}
-  footer h4{font-family:ui-monospace,Consolas,monospace;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-bottom:6px}
+  footer h4{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-bottom:6px}
   footer p{margin-bottom:6px}
   @media(max-width:560px){
     .count .big{font-size:2rem}
@@ -2076,14 +2104,36 @@
   /* The continental card. Sized by real volume rather than per-region percentages, which is the
      whole point of it — see continentalChart(). The headline sentence is computed from the same
      numbers that draw the ribbons, so it can never claim something the chart contradicts. */
-  function continentalCardHtml(){
-    var c = continentalChart();
+  /* The two numbers the whole tool turns on, computed once so the card's sentence and the
+     home-page lead-in above the map can never disagree with each other or with the ribbons. */
+  function continentalHeadline(c){
     var total = c.dests.reduce(function(a, d){ return a + d.value; }, 0);
     var ranked = c.dests.slice().sort(function(a, b){ return b.value - a.value; });
     var top2 = ranked.slice(0, 2);
-    var top2Share = Math.round((top2[0].value + top2[1].value) / total * 100);
     var gulfcal = c.dests.filter(function(d){ return d.id === 'gulfcal'; })[0];
-    var gulfcalShare = gulfcal ? (gulfcal.value / total * 100) : 0;
+    return {total:total, ranked:ranked, top2:top2,
+            top2Share:Math.round((top2[0].value + top2[1].value) / total * 100),
+            gulfcalShare:gulfcal ? (gulfcal.value / total * 100) : 0};
+  }
+
+  /* Home-page lead-in: the finding, stated before the reader has to dig for it. Two figures and
+     one line each; the jump link scrolls to the chart that proves them rather than navigating
+     (a plain #contCard href would be read by the hash router as a route). */
+  function homeLeadHtml(){
+    var h = continentalHeadline(continentalChart());
+    return '<div class="lead-stats">' +
+      '<div class="ls"><div class="ls-n ls-big">' + h.top2Share + '%</div>' +
+        '<div class="ls-l">of the water goes to just two places: the ' + h.top2[0].label + ' and the ' + h.top2[1].label + '</div></div>' +
+      '<div class="ls"><div class="ls-n ls-small">' + h.gulfcalShare.toFixed(1) + '%</div>' +
+        '<div class="ls-l">is carried by the Colorado \u2014 the river the 2026 fight is about</div></div>' +
+      '<button type="button" class="ls-jump" id="leadJump">See where it all ends up \u2193</button>' +
+    '</div>';
+  }
+
+  function continentalCardHtml(){
+    var c = continentalChart();
+    var h = continentalHeadline(c);
+    var total = h.total, ranked = h.ranked, top2 = h.top2, top2Share = h.top2Share, gulfcalShare = h.gulfcalShare;
 
     var segs = ranked.map(function(d){
       return {key:'d-' + d.id, value:d.value, basin:d.basin,
@@ -3097,6 +3147,8 @@
   var MAP_TAG_DY    = 20;     // baseline drop from a region's name to its one-line résumé
   var MAP_EDGE_PAD  = 8;      // closest a label may sit to the frame edge, in viewBox units
   var MAP_PIN_R     = 5;      // radius of a headwaters pin
+  var MAP_PIN_CLEAR = 6;      // extra clear space, in viewBox units, kept around a pin when placing labels.
+                              // Raise it and labels sit further from dots but more of them get dropped.
 
   /* Albers equal-area conic — the same projection, with the same parameters, that MAP_GEO's paths
      were baked with. It exists so a lon/lat already in the data block (the headwaters pins) can be
@@ -3225,8 +3277,11 @@
       MAP_REGION_BBOX = {};
       Object.keys(g.regions).forEach(function(r){ MAP_REGION_BBOX[r] = mapPathBBox(g.regions[r]); });
     }
+    var pinBoxes = [];   // each pin's footprint, handed to the label placer below as ground it may not cover
     Object.keys(GLOBE_REGION_PIN).forEach(function(r){
       var p = mapProject(GLOBE_REGION_PIN[r].lon, GLOBE_REGION_PIN[r].lat);
+      var pr = (MAP_PIN_R + MAP_PIN_CLEAR) * k;
+      pinBoxes.push({x0:p[0] - pr, x1:p[0] + pr, y0:p[1] - pr, y1:p[1] + pr});
       s += '<circle class="map-pin" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) +
            '" r="' + (MAP_PIN_R * k).toFixed(2) + '" stroke-width="' + (2 * k).toFixed(2) + '"></circle>';
     });
@@ -3255,7 +3310,10 @@
                    want:a[1]});
     });
     blocks.sort(function(p, q){ return p.want - q.want; });
-    var placed = [];
+    /* Pins are seeded in as already-placed boxes, so a name or résumé is pushed to the next free slot
+       rather than printed over the dot it belongs to (Idaho's "the Snake funnel" and Wyoming's
+       "water to 3 seas" both sat on their own pin before this). */
+    var placed = pinBoxes.slice();
     blocks.forEach(function(bl){
       var top = bl.lo[1] + MAP_NAME_SIZE * k, bot = bl.lo[3] - (bl.tg ? MAP_TAG_DY * k : 0);
       /* 16 slots, not 8. A region clipped at the top of the view — British Columbia at the
@@ -3390,6 +3448,7 @@
       /* Search sits above the map deliberately. The map is the better browse; typing is the
          better answer to "does anything here touch me?", which is the question a reader
          arriving from an article actually has \u2014 and on a phone it beats hunting for a shape. */
+      homeLeadHtml() +
       '<div class="search-wrap">' +
         '<label class="sr-only" for="siteSearch">Search rivers, agreements, reservoirs and terms</label>' +
         /* Deliberately NOT a combobox/listbox. A real combobox owes assistive tech active
@@ -3463,6 +3522,12 @@
       /* Last thing on the home page, deliberately: it sits right above the page-wide "Data
          notes & confidence" footer, which is exactly the register this belongs in. */
       evaporationCardHtml();
+
+    var leadJump = document.getElementById('leadJump');
+    if (leadJump) leadJump.addEventListener('click', function(){
+      var t = document.getElementById('contCard');
+      if (t) t.scrollIntoView({block:'start'});   // smoothness comes from the html scroll-behavior rule, which already honors reduced motion
+    });
 
     var hint = document.getElementById('mapHint');
     /* The hint's heading line ("Colorado \u00b7 Ledger 14-A") is derived from STATES rather than
