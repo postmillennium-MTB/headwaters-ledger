@@ -92,11 +92,22 @@
        so raising or lowering the floor is a one-line edit. Not applied to SVG <text>, which is
        sized in viewBox units and scales with the drawing. */
     --fs-min:.75rem;
+    /* FONT STACKS. --font-mono is deliberately the SHORT stack: the map and chart label-fitting
+       maths (MONO_ADVANCE in the script) is calibrated to the face this resolves to, so widening the
+       stack could change a glyph's advance width and push a label into its neighbour. --font-mono-ext
+       is the wider stack used by the handful of plain-HTML numerals that do no width maths. */
+    --font-body:"Palatino Linotype",Palatino,"Book Antiqua","Iowan Old Style",Georgia,serif;
+    --font-mono:ui-monospace,Consolas,monospace;
+    --font-mono-ext:ui-monospace,"SF Mono","Cascadia Mono",Consolas,Menlo,monospace;
+    /* RADII. Cards 14, panels and stat tiles 12, inputs and buttons 8, chips 6, pills fully round.
+       Swatches and progress-bar ends (3-6px) are drawn to the size of the thing and stay literal. */
+    --r-lg:14px; --r-md:12px; --r-sm:8px; --r-xs:6px; --r-pill:999px;
     --paper:#EDF2EF; --card:#F7FAF8; --ink:#1C3644; --ink-soft:#4A6272;
     --river:#23708A; --river-deep:#155066; --canyon:#B4502A; --sage:#6E8464;
     --line:#C9D6D0; --badge-perp-bg:#DCE9E4; --badge-exp-bg:#F3DED2;
     --globe-ocean:#CFE0E6; --globe-land:#F0F4F0; --globe-coast:#8FA8AE;
     --shadow:0 1px 3px rgba(28,54,68,.10), 0 4px 14px rgba(28,54,68,.06);
+    --shadow-lift:0 3px 8px rgba(28,54,68,.14), 0 8px 22px rgba(28,54,68,.10);
   }
   [data-theme="canyon"]{
     --paper:#F3EBE0; --card:#FBF6EE; --ink:#3A2A1E; --ink-soft:#6E5844;
@@ -104,6 +115,7 @@
     --line:#DCCDB8; --badge-perp-bg:#E9DFC9; --badge-exp-bg:#F0D4C4;
     --globe-ocean:#E3D7C6; --globe-land:#FAF4EA; --globe-coast:#B9A489;
     --shadow:0 1px 3px rgba(58,42,30,.10), 0 4px 14px rgba(58,42,30,.06);
+    --shadow-lift:0 3px 8px rgba(58,42,30,.14), 0 8px 22px rgba(58,42,30,.10);
   }
   [data-theme="nightflow"]{
     --paper:#12222C; --card:#1B303C; --ink:#E4EEF0; --ink-soft:#9EB6BF;
@@ -111,6 +123,7 @@
     --line:#31495590; --badge-perp-bg:#24424C; --badge-exp-bg:#4A3226;
     --globe-ocean:#162A35; --globe-land:#2C4653; --globe-coast:#4C6B77;
     --shadow:0 1px 3px rgba(0,0,0,.35), 0 4px 14px rgba(0,0,0,.25);
+    --shadow-lift:0 3px 8px rgba(0,0,0,.45), 0 8px 22px rgba(0,0,0,.35);
   }
   [data-theme="survey"]{
     --paper:#EFE9DA; --card:#F7F2E6; --ink:#2E2A20; --ink-soft:#5C5644;
@@ -118,6 +131,7 @@
     --line:#D5CBB2; --badge-perp-bg:#E2DCC6; --badge-exp-bg:#EED8C4;
     --globe-ocean:#DFD7C2; --globe-land:#F6F1E4; --globe-coast:#AEA486;
     --shadow:0 1px 3px rgba(46,42,32,.10), 0 4px 14px rgba(46,42,32,.06);
+    --shadow-lift:0 3px 8px rgba(46,42,32,.14), 0 8px 22px rgba(46,42,32,.10);
   }
   /* ==== BASIN COLORS — meaning-carrying, and therefore FIXED across all four themes. ====
      Mirrors the BASINS registry in the script (see its comment for why these four hexes and
@@ -139,17 +153,17 @@
   @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none!important;animation:none!important} }
   body{
     background:var(--paper); color:var(--ink);
-    font-family:"Palatino Linotype",Palatino,"Book Antiqua","Iowan Old Style",Georgia,serif;
+    font-family:var(--font-body);
     line-height:1.55; padding:18px 14px 60px;
   }
-  .mono{font-family:ui-monospace,"SF Mono","Cascadia Mono",Consolas,Menlo,monospace}
+  .mono{font-family:var(--font-mono-ext)}
   .wrap{max-width:960px;margin:0 auto}
   /* Visible to screen readers only — for labels whose text would be redundant on screen
      next to an obvious control, but which the control still needs to be announced. */
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
   .eyebrow{
-    font-family:ui-monospace,"SF Mono",Consolas,monospace; font-size:var(--fs-min);
+    font-family:var(--font-mono-ext); font-size:var(--fs-min);
     letter-spacing:.22em; text-transform:uppercase; color:var(--ink-soft);
     display:flex; justify-content:space-between; align-items:center; gap:10px;
     border-bottom:2px solid var(--ink); padding-bottom:8px; margin-bottom:14px;
@@ -196,14 +210,14 @@
 
   .back{
     display:inline-flex;align-items:center;gap:6px;margin-bottom:14px;
-    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;
-    padding:11px 16px;min-height:44px;border:1.5px solid var(--ink);border-radius:999px;background:transparent;color:var(--ink);cursor:pointer;
+    font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;
+    padding:11px 16px;min-height:44px;border:1.5px solid var(--ink);border-radius:var(--r-pill);background:transparent;color:var(--ink);cursor:pointer;
   }
   .back:hover{background:var(--card)}
   .back:focus-visible{outline:3px solid var(--river);outline-offset:2px}
 
   /* MAP */
-  .map-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 10px 6px;box-shadow:var(--shadow)}
+  .map-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px 10px 6px;box-shadow:var(--shadow)}
   svg{width:100%;height:auto;display:block}
   /* THE HOME MAP — real geography, drawn from MAP_GEO (see the data block for provenance). */
   .map-sea{fill:var(--globe-ocean)}
@@ -230,7 +244,7 @@
      it crosses a terrain band, a boundary or the Divide. Region names routinely overflow their own
      outline — that is normal cartography, and the halo is what makes it safe. */
   .state-name{
-    fill:var(--ink);font-family:ui-monospace,Consolas,monospace;font-weight:700;letter-spacing:.09em;
+    fill:var(--ink);font-family:var(--font-mono);font-weight:700;letter-spacing:.09em;
     font-size:23px;pointer-events:none;paint-order:stroke;stroke:var(--card);stroke-width:5px;
     stroke-linejoin:round;
   }
@@ -239,7 +253,7 @@
      the Continental Divide (a 3px canyon-red line) and the river lines run straight through its
      letters — "a treaty, not a compact" read as struck through on the default view. */
   .state-tag{
-    fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;font-size:15px;font-style:italic;
+    fill:var(--ink-soft);font-family:var(--font-mono);font-size:15px;font-style:italic;
     pointer-events:none;paint-order:stroke;stroke:var(--card);stroke-width:4px;stroke-linejoin:round;
   }
   /* THE MAP'S MOBILE FRAME. Not the desktop labels made bigger — a different set of labels.
@@ -249,7 +263,7 @@
      else, and the pick-list underneath carries all six names and résumés at real body size —
      the same split the globe card makes at 1x, for the same reason. */
   .state-abbr{
-    display:none;fill:var(--ink);font-family:ui-monospace,Consolas,monospace;font-weight:700;
+    display:none;fill:var(--ink);font-family:var(--font-mono);font-weight:700;
     font-size:38px;letter-spacing:.06em;pointer-events:none;paint-order:stroke;stroke:var(--card);
     stroke-width:7px;stroke-linejoin:round;
   }
@@ -259,8 +273,8 @@
   .map-ctrl{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px}
   .map-btn{
     width:40px;height:40px;display:flex;align-items:center;justify-content:center;
-    border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;
-    cursor:pointer;font-family:ui-monospace,Consolas,monospace;font-size:1rem;line-height:1;
+    border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:var(--r-sm);
+    cursor:pointer;font-family:var(--font-mono);font-size:1rem;line-height:1;
     box-shadow:var(--shadow);
   }
   .map-btn:hover{border-color:var(--river)}
@@ -270,8 +284,8 @@
   .map-btn.wide{width:auto;padding:0 10px;font-size:var(--fs-min);letter-spacing:.04em}
   .map-legend{
     position:absolute;left:10px;bottom:8px;display:flex;flex-direction:column;gap:3px;
-    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);color:var(--ink-soft);
-    background:color-mix(in srgb, var(--card) 82%, transparent);padding:6px 8px;border-radius:8px;
+    font-family:var(--font-mono);font-size:var(--fs-min);color:var(--ink-soft);
+    background:color-mix(in srgb, var(--card) 82%, transparent);padding:6px 8px;border-radius:var(--r-sm);
     pointer-events:none;
   }
   .map-legend b{display:inline-block;width:18px;height:0;border-top:3px solid var(--canyon);
@@ -302,14 +316,14 @@
   }
 
   .map-hint{
-    margin-top:12px;background:var(--card);border-left:4px solid var(--river);border-radius:0 12px 12px 0;
+    margin-top:12px;background:var(--card);border-left:4px solid var(--river);border-radius:0 var(--r-md) var(--r-md) 0;
     padding:13px 16px;box-shadow:var(--shadow);min-height:76px;
   }
-  .map-hint .meta{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px}
+  .map-hint .meta{font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px}
   .map-hint p{font-size:.92rem}
 
   /* FLOW DIAGRAM */
-  .flow-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 10px 6px;box-shadow:var(--shadow)}
+  .flow-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px 10px 6px;box-shadow:var(--shadow)}
   /* Stroke color is set inline per river from its basin (see flowSvg) — this rule only owns
      shape and state. `.hot` deepens by opacity rather than by swapping the color, because the
      color now means something. */
@@ -326,10 +340,10 @@
   .river-hit{fill:none;stroke:transparent;stroke-width:26;cursor:pointer}
   .dim .river-path:not(.hot){opacity:.14}
   .src-box{fill:var(--ink)}
-  .src-label{fill:var(--paper);font-family:ui-monospace,Consolas,monospace;font-weight:700;letter-spacing:.12em}
-  .river-name{fill:var(--ink);font-family:ui-monospace,Consolas,monospace;font-size:13px;letter-spacing:.04em;cursor:pointer}
+  .src-label{fill:var(--paper);font-family:var(--font-mono);font-weight:700;letter-spacing:.12em}
+  .river-name{fill:var(--ink);font-family:var(--font-mono);font-size:13px;letter-spacing:.04em;cursor:pointer}
   .river-name:focus-visible{outline:3px solid var(--river);outline-offset:2px}
-  .dest-label{fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;font-size:12px}
+  .dest-label{fill:var(--ink-soft);font-family:var(--font-mono);font-size:12px}
 
   /* PICK LIST (MOBILE) — the fix for the trap recorded above flowSvg().
      Both SVGs in this tool are fixed-unit viewBoxes scaled to container width, so on a
@@ -345,7 +359,7 @@
   .pick-list{display:flex;flex-direction:column;gap:8px;padding:4px 0 2px;margin-top:12px}
   .flow-svg-wrap{display:none}
   .pick-list .lead{
-    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.16em;
+    font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.16em;
     text-transform:uppercase;color:var(--ink-soft);margin-bottom:2px;
   }
   .pickbtn{
@@ -355,7 +369,7 @@
     border-radius:0 10px 10px 0;color:var(--ink);font-family:inherit;
     transition:border-color .15s ease,background .15s ease;
   }
-  .pickbtn .rn{font-family:ui-monospace,Consolas,monospace;font-size:.8rem;letter-spacing:.04em;font-weight:700;line-height:1.25}
+  .pickbtn .rn{font-family:var(--font-mono);font-size:.8rem;letter-spacing:.04em;font-weight:700;line-height:1.25}
   /* Prose in the body serif, not mono: a sentence set in 12px mono is the hardest thing on a phone to read. Mono is kept for numbers, units and codes. */
   .pickbtn .rd{font-size:.85rem;color:var(--ink-soft);line-height:1.35}
   .pickbtn[aria-pressed="true"]{background:var(--card);border-color:var(--river);border-left-color:var(--river-deep);border-left-width:8px}
@@ -375,27 +389,27 @@
   }
 
   .detail{
-    margin-top:12px;background:var(--card);border-left:4px solid var(--river);border-radius:0 12px 12px 0;
+    margin-top:12px;background:var(--card);border-left:4px solid var(--river);border-radius:0 var(--r-md) var(--r-md) 0;
     padding:14px 16px;box-shadow:var(--shadow);min-height:88px;
   }
   .detail h3{font-size:1.05rem;margin-bottom:3px}
-  .detail .meta{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
+  .detail .meta{font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
   .detail p{font-size:.92rem}
 
   .stat-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:16px}
-  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
-  .stat .n{font-family:ui-monospace,Consolas,monospace;font-size:1.4rem;font-weight:700;color:var(--river)}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:12px 14px;box-shadow:var(--shadow)}
+  .stat .n{font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--river)}
   .stat .l{font-size:.78rem;color:var(--ink-soft);line-height:1.35}
 
-  .local{margin-top:16px;background:var(--card);border:1px dashed var(--sage);border-radius:12px;padding:14px 16px}
-  .local .tag{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.18em;text-transform:uppercase;color:var(--sage);font-weight:700}
+  .local{margin-top:16px;background:var(--card);border:1px dashed var(--sage);border-radius:var(--r-md);padding:14px 16px}
+  .local .tag{font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.18em;text-transform:uppercase;color:var(--sage);font-weight:700}
   .local p{font-size:.92rem;margin-top:4px}
 
   /* TABS */
   .tabs{display:flex;gap:6px;margin:22px 0 18px;flex-wrap:wrap}
   .tab{
-    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.08em;text-transform:uppercase;
-    padding:12px 15px;border:1.5px solid var(--ink);border-radius:999px;background:transparent;color:var(--ink);
+    font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.08em;text-transform:uppercase;
+    padding:12px 15px;border:1.5px solid var(--ink);border-radius:var(--r-pill);background:transparent;color:var(--ink);
     cursor:pointer;transition:all .15s ease;
   }
   .tab:hover{background:var(--card)}
@@ -408,28 +422,28 @@
   /* CARDS */
   .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
   .filter{
-    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.06em;
-    padding:9px 13px;border:1.5px solid var(--line);border-radius:999px;background:var(--card);
+    font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.06em;
+    padding:9px 13px;border:1.5px solid var(--line);border-radius:var(--r-pill);background:var(--card);
     color:var(--ink-soft);cursor:pointer;transition:all .15s ease;
   }
   .filter.active{border-color:var(--ink);color:var(--ink);font-weight:700}
   .filter:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
   .card{
-    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 16px;
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:15px 16px;
     box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px;
   }
-  .card .yr{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.14em;color:var(--ink-soft)}
+  .card .yr{font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.14em;color:var(--ink-soft)}
   .card h3{font-size:1.02rem;line-height:1.25}
   .chips{display:flex;flex-wrap:wrap;gap:4px}
   .chip{
-    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.05em;
-    background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:2px 6px;color:var(--ink-soft);
+    font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.05em;
+    background:var(--paper);border:1px solid var(--line);border-radius:var(--r-xs);padding:2px 6px;color:var(--ink-soft);
   }
   .card p{font-size:.85rem;flex:1}
   .badge{
-    align-self:flex-start;font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);
-    letter-spacing:.1em;text-transform:uppercase;font-weight:700;border-radius:6px;padding:4px 8px;
+    align-self:flex-start;font-family:var(--font-mono);font-size:var(--fs-min);
+    letter-spacing:.1em;text-transform:uppercase;font-weight:700;border-radius:var(--r-xs);padding:4px 8px;
   }
   .badge.perp{background:var(--badge-perp-bg);color:var(--river-deep)}
   .badge.exp{background:var(--badge-exp-bg);color:var(--canyon)}
@@ -438,9 +452,9 @@
 
   /* CRISIS / STAKES */
   .count-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:20px}
-  .count{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);border-top:5px solid var(--canyon)}
+  .count{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow);border-top:5px solid var(--canyon)}
   .count.blue{border-top-color:var(--river)}
-  .count .big{font-family:ui-monospace,Consolas,monospace;font-size:2.4rem;font-weight:700;line-height:1;color:var(--canyon)}
+  .count .big{font-family:var(--font-mono);font-size:2.4rem;font-weight:700;line-height:1;color:var(--canyon)}
   .count.blue .big{color:var(--river)}
   .count .cap{font-size:.82rem;color:var(--ink-soft);margin-top:6px;line-height:1.4}
   /* A deadline that has passed is still a live number ("112 days since"), so it keeps
@@ -449,7 +463,7 @@
   .count.past{border-top-color:var(--ink-soft)}
   .count.past .big{color:var(--ink)}
   .count .phase{
-    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.16em;text-transform:uppercase;
+    font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.16em;text-transform:uppercase;
     font-weight:700;color:var(--ink-soft);display:block;margin-bottom:5px;
   }
   .timeline{list-style:none;border-left:2.5px solid var(--line);margin:8px 0 26px 8px;padding-left:20px}
@@ -459,26 +473,26 @@
     background:var(--river);border:2.5px solid var(--paper);
   }
   .timeline li.future::before{background:var(--paper);border-color:var(--canyon)}
-  .timeline .d{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft)}
+  .timeline .d{font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft)}
   .timeline .t{font-size:.93rem}
-  .math{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+  .math{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow)}
   .math label{display:block;font-size:.88rem;margin-bottom:8px}
   input[type=range]{width:100%;accent-color:var(--river);height:44px}  /* 44, not 28: the thumb is the target */
   .bars{margin-top:14px;display:flex;flex-direction:column;gap:10px}
-  .barrow .bl{display:flex;justify-content:space-between;font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);color:var(--ink-soft);margin-bottom:3px}
-  .bartrack{background:var(--paper);border:1px solid var(--line);border-radius:6px;height:26px;overflow:hidden}
+  .barrow .bl{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:var(--fs-min);color:var(--ink-soft);margin-bottom:3px}
+  .bartrack{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-xs);height:26px;overflow:hidden}
   .barfill{height:100%;border-radius:5px 0 0 5px;transition:width .25s ease}
   .barfill.paper-b{background:var(--ink);opacity:.85}
   .barfill.flow-b{background:var(--river)}
   .deficit{margin-top:12px;font-size:.95rem}
-  .deficit b{color:var(--canyon);font-family:ui-monospace,Consolas,monospace}
-  .stake{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--canyon);border-radius:0 12px 12px 0;padding:14px 16px;box-shadow:var(--shadow);margin-bottom:12px}
-  .stake .d{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.14em;text-transform:uppercase;color:var(--canyon);font-weight:700}
+  .deficit b{color:var(--canyon);font-family:var(--font-mono)}
+  .stake{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--canyon);border-radius:0 var(--r-md) var(--r-md) 0;padding:14px 16px;box-shadow:var(--shadow);margin-bottom:12px}
+  .stake .d{font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.14em;text-transform:uppercase;color:var(--canyon);font-weight:700}
   .stake h3{font-size:1rem;margin:2px 0 4px}
   .stake p{font-size:.88rem}
 
   /* QUIZ */
-  .q{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);margin-bottom:12px}
+  .q{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow);margin-bottom:12px}
   .q h3{font-size:.98rem;margin-bottom:10px}
   .opts{display:flex;flex-direction:column;gap:7px}
   .opt{
@@ -491,22 +505,22 @@
   .opt:disabled{cursor:default}
   .expl{display:none;margin-top:10px;font-size:.85rem;color:var(--ink-soft);border-top:1px dashed var(--line);padding-top:8px}
   .expl.show{display:block}
-  .score{display:none;text-align:center;background:var(--ink);color:var(--paper);border-radius:14px;padding:18px;font-size:1.05rem;margin-top:6px}
+  .score{display:none;text-align:center;background:var(--ink);color:var(--paper);border-radius:var(--r-lg);padding:18px;font-size:1.05rem;margin-top:6px}
   .score.show{display:block}
   .score .mono{font-size:1.9rem;font-weight:700}
   /* Retaking the quiz used to require a full page reload, which on a phone means losing
      your place in the article that embedded this. */
   .retry{
-    margin-top:12px;font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.1em;
+    margin-top:12px;font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.1em;
     text-transform:uppercase;padding:11px 18px;min-height:44px;border:1.5px solid var(--paper);
-    border-radius:999px;background:transparent;color:var(--paper);cursor:pointer;
+    border-radius:var(--r-pill);background:transparent;color:var(--paper);cursor:pointer;
   }
   .retry:hover{background:var(--paper);color:var(--ink)}
   .retry:focus-visible{outline:3px solid var(--paper);outline-offset:2px}
 
   .home-link-row{text-align:right;margin:-4px 0 12px}
   .home-link{
-    font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:var(--fs-min);letter-spacing:.12em;
+    font-family:var(--font-mono-ext);font-size:var(--fs-min);letter-spacing:.12em;
     text-transform:uppercase;color:var(--river);text-decoration:none;border-bottom:1px dashed var(--river);
     /* inline-block + padding rather than the old 1px: this link sits alone on its own row, so
        it is not covered by the "inline in a sentence" target-size exemption the glossary terms
@@ -518,7 +532,7 @@
 
   /* FLOW CHARTS (Sankey ribbons + mobile stacked bar) */
   .pie-card{
-    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;
     box-shadow:var(--shadow);
   }
   .sankey-wrap{display:none}
@@ -534,12 +548,12 @@
   .pie-card.dimmed .sk-band:not(.hot){fill-opacity:.16}
   .sk-node{fill-opacity:.95}
   .sk-leader{fill:none;stroke:var(--ink-soft);stroke-width:1;opacity:.5}
-  .sk-lab{fill:var(--ink);font-family:ui-monospace,Consolas,monospace;font-size:13px;font-weight:700}
-  .sk-sub{fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;font-size:11px}
+  .sk-lab{fill:var(--ink);font-family:var(--font-mono);font-size:13px;font-weight:700}
+  .sk-sub{fill:var(--ink-soft);font-family:var(--font-mono);font-size:11px}
 
   /* Mobile proportional bar. 4px rounded ends anchored to the track, 2px surface gaps between
      segments — the same mark spec the ribbons follow, at a size a phone can actually render. */
-  .stackbar{display:flex;width:100%;height:34px;border-radius:6px;overflow:hidden;gap:2px;background:var(--paper)}
+  .stackbar{display:flex;width:100%;height:34px;border-radius:var(--r-xs);overflow:hidden;gap:2px;background:var(--paper)}
   .sb-seg{display:block;min-width:3px;transition:opacity .16s ease,filter .16s ease}
   .sb-seg:first-child{border-radius:6px 0 0 6px}
   .sb-seg:last-child{border-radius:0 6px 6px 0}
@@ -553,20 +567,20 @@
   /* Legend rows are real <button>s so the chart is reachable by keyboard and screen reader, not
      just by hovering a ribbon. The reset here is what a button needs to still look like a row. */
   .leg-row{
-    display:flex;gap:9px;align-items:flex-start;padding:8px;min-height:40px;border-radius:8px;
+    display:flex;gap:9px;align-items:flex-start;padding:8px;min-height:40px;border-radius:var(--r-sm);
     cursor:pointer;transition:background .15s ease;width:100%;text-align:left;
     background:transparent;border:none;color:inherit;font:inherit;
   }
   .leg-row.hot{background:var(--paper)}
   .leg-row:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   .leg-sw{width:13px;height:13px;border-radius:4px;flex:none;margin-top:3px;border:1px solid var(--line)}
-  .leg-pct{font-family:ui-monospace,Consolas,monospace;font-weight:700;width:46px;flex:none}
+  .leg-pct{font-family:var(--font-mono);font-weight:700;width:46px;flex:none}
   .leg-lab{font-size:.88rem;line-height:1.3}
-  .leg-sub{display:block;font-size:var(--fs-min);color:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;margin-top:1px}
+  .leg-sub{display:block;font-size:var(--fs-min);color:var(--ink-soft);font-family:var(--font-mono);margin-top:1px}
   .pie-note{font-size:.78rem;color:var(--ink-soft);margin-top:10px}
 
   /* .etag now appears only where it names a KIND of content ("Data note", "Essay"), so it is sentence case and lightly tracked. It used to sit above every card as a tracked all-caps series tag; when every card has one, none of them says anything. */
-  .cont-card .etag{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.04em;color:var(--canyon);font-weight:700}
+  .cont-card .etag{font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.04em;color:var(--canyon);font-weight:700}
   .cont-card .cont-h{font-size:1.18rem;line-height:1.25;margin:6px 0 7px}
   .cont-card .cont-p{font-size:.92rem;color:var(--ink-soft);margin-bottom:14px;max-width:62ch}
   .cont-card .cont-p b{color:var(--ink)}
@@ -576,11 +590,11 @@
      the vertical alignment: nearly every dot lands inside one 30-year federal dam-building window,
      which is a claim the card already made in prose and never showed. */
   .strip{width:100%;height:auto;display:block;margin-top:6px}
-  .strip-row-label{fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace}
+  .strip-row-label{fill:var(--ink-soft);font-family:var(--font-mono)}
   .strip-axis{stroke:var(--line);stroke-width:1}
-  .strip-tick{fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace}
+  .strip-tick{fill:var(--ink-soft);font-family:var(--font-mono)}
   .strip-band{fill:var(--river);opacity:.09}
-  .strip-band-lab{fill:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;letter-spacing:.06em}
+  .strip-band-lab{fill:var(--ink-soft);font-family:var(--font-mono);letter-spacing:.06em}
   .strip-desk{display:none}
   @media(min-width:700px){ .strip-desk{display:block} .strip-mob{display:none} }
   .strip-dot{fill:var(--river);stroke:var(--card);stroke-width:1.5;opacity:.9}
@@ -588,7 +602,7 @@
 
   /* Basin key — the four ocean hues plus the two non-ocean treatments, spelled out in words. */
   .basin-key{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0 2px}
-  .bk{display:inline-flex;align-items:center;gap:6px;font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);color:var(--ink-soft)}
+  .bk{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:var(--fs-min);color:var(--ink-soft)}
   .bk i{width:12px;height:12px;border-radius:3px;display:block;border:1px solid var(--line)}
 
   /* ROTATABLE GLOBE (home page, under the continental card) */
@@ -606,7 +620,7 @@
      arrow keys. Delete the key and the card becomes mouse-only. */
   .globe-stage{position:relative;width:100%;max-width:480px;margin:0 auto}
   .globe-canvas{
-    display:block;width:100%;height:auto;border-radius:14px;
+    display:block;width:100%;height:auto;border-radius:var(--r-lg);
     /* pan-y, NOT none. A reader flicking down the page has to keep scrolling even when their
        thumb lands on the globe, so vertical gestures stay the browser's; a horizontal one starts
        a rotation and captures the pointer, after which both axes follow the finger. The axis the
@@ -618,9 +632,9 @@
 
   .globe-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;justify-content:center}
   .globe-btn{
-    display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:8px 13px;border-radius:8px;
+    display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:8px 13px;border-radius:var(--r-sm);
     border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;
-    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.04em;
+    font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.04em;
   }
   .globe-btn:hover{border-color:var(--river)}
   .globe-btn:focus-visible{outline:3px solid var(--river);outline-offset:2px}
@@ -629,7 +643,7 @@
   .globe-btn.zb{min-width:40px;justify-content:center;font-size:1rem;line-height:1;padding:8px 10px}
   .globe-btn[disabled]{opacity:.42;cursor:default}
   .globe-btn[disabled]:hover{border-color:var(--line)}
-  .globe-zlevel{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);color:var(--ink-soft);min-width:40px;text-align:center}
+  .globe-zlevel{font-family:var(--font-mono);font-size:var(--fs-min);color:var(--ink-soft);min-width:40px;text-align:center}
   .globe-hint{font-size:.82rem;color:var(--ink-soft);text-align:center;margin-top:8px}
 
   /* THE TEXT EQUIVALENT. Not a caption — the same six regions, the same destinations, the same
@@ -646,13 +660,13 @@
     color:var(--river);font-size:.92rem;font-weight:700;border-top:1px solid var(--line);
   }
   .fold > summary::-webkit-details-marker{display:none}
-  .fold > summary::before{content:"+";width:1.1em;text-align:center;font-family:ui-monospace,Consolas,monospace}
+  .fold > summary::before{content:"+";width:1.1em;text-align:center;font-family:var(--font-mono)}
   .fold[open] > summary::before{content:"\2212"}
-  .fold > summary:focus-visible{outline:3px solid var(--river);outline-offset:2px;border-radius:6px}
+  .fold > summary:focus-visible{outline:3px solid var(--river);outline-offset:2px;border-radius:var(--r-xs)}
   .fold > :not(summary){margin-top:8px}
   .globe-key{display:grid;grid-template-columns:1fr;gap:6px;margin-top:14px;align-items:start}
   .gk-row{
-    display:block;width:100%;text-align:left;padding:9px 10px;border-radius:8px;min-height:40px;
+    display:block;width:100%;text-align:left;padding:9px 10px;border-radius:var(--r-sm);min-height:40px;
     background:transparent;border:1px solid transparent;color:inherit;font:inherit;cursor:pointer;
     transition:background .15s ease,border-color .15s ease;
   }
@@ -660,9 +674,9 @@
   .gk-row:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   .gk-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
   .gk-name{font-weight:700;font-size:.9rem}
-  .gk-co{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);color:var(--ink-soft)}
+  .gk-co{font-family:var(--font-mono);font-size:var(--fs-min);color:var(--ink-soft)}
   .gk-dests{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:4px}
-  .gk-d{display:inline-flex;align-items:center;gap:5px;font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);color:var(--ink-soft)}
+  .gk-d{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:var(--fs-min);color:var(--ink-soft)}
   .gk-d i{width:10px;height:10px;border-radius:3px;flex:none;border:1px solid var(--line);display:block}
   .gk-d i.hatched{background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.55) 0 3px,transparent 3px 7px)}
   @media(min-width:760px){ .globe-key{grid-template-columns:1fr 1fr} }
@@ -675,13 +689,13 @@
   /* ESSAY CARD (home page) */
   .essay-card{
     display:block;margin-top:14px;background:var(--card);border:1px solid var(--line);
-    border-left:4px solid var(--canyon);border-radius:0 12px 12px 0;padding:15px 18px;
+    border-left:4px solid var(--canyon);border-radius:0 var(--r-md) var(--r-md) 0;padding:15px 18px;
     box-shadow:var(--shadow);text-decoration:none;color:var(--ink);
     transition:transform .15s ease, box-shadow .15s ease;
   }
-  .essay-card:hover{transform:translateY(-2px);box-shadow:0 3px 8px rgba(28,54,68,.14), 0 8px 22px rgba(28,54,68,.10)}
+  .essay-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lift)}
   .essay-card:focus-visible{outline:3px solid var(--river);outline-offset:2px}
-  .essay-card .etag{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.04em;color:var(--canyon);font-weight:700}
+  .essay-card .etag{font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.04em;color:var(--canyon);font-weight:700}
   .essay-card h3{font-size:1.08rem;line-height:1.3;margin:5px 0 6px}
   .essay-card p{font-size:.9rem;color:var(--ink-soft);margin:0}
   .essay-card .read{display:inline-block;margin-top:9px;font-size:.92rem;font-weight:700;color:var(--canyon);text-decoration:underline;text-underline-offset:3px}
@@ -697,19 +711,19 @@
 
   /* ESSAY ARTICLE VIEW */
   .essay{max-width:720px}
-  .essay .kicker{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin:2px 0 18px}
+  .essay .kicker{font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin:2px 0 18px}
   .essay h2{font-size:1.18rem;margin:28px 0 8px}
   .essay p{margin:0 0 14px;font-size:.98rem}
   .essay table{border-collapse:collapse;margin:6px 0 18px;width:100%;font-size:.88rem}
   .essay th,.essay td{border:1px solid var(--line);padding:7px 10px;text-align:left}
-  .essay th{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);background:var(--card)}
+  .essay th{font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);background:var(--card)}
   .essay .foot{border-top:1px dashed var(--line);margin-top:24px;padding-top:12px;font-size:.78rem;color:var(--ink-soft);font-style:italic}
 
   /* SEARCH */
   .search-wrap{margin:14px 0 4px;position:relative}
   .search-box{
     width:100%;min-height:48px;padding:12px 14px;font-family:inherit;font-size:1rem;
-    background:var(--card);color:var(--ink);border:1.5px solid var(--line);border-radius:12px;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--line);border-radius:var(--r-md);
   }
   .search-box::placeholder{color:var(--ink-soft);opacity:.85}
   .search-box:focus-visible{outline:3px solid var(--river);outline-offset:2px;border-color:var(--river)}
@@ -722,19 +736,19 @@
   .sr:hover{border-color:var(--river)}
   .sr:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   .sr .srl{font-size:.95rem;font-weight:700;line-height:1.25}
-  .sr .srm{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+  .sr .srm{font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
   .search-empty{padding:12px 2px;font-size:.9rem;color:var(--ink-soft)}
 
   /* COMPARE TABLE */
   /* The table scrolls inside its own container rather than widening the page — six columns of
      monospace numbers will not fit a phone, and a body that scrolls sideways is worse than a
      table that does. Below the breakpoint it becomes stacked cards instead (see .cmp-cards). */
-  .cmp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:var(--shadow)}
+  .cmp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:var(--r-md);background:var(--card);box-shadow:var(--shadow)}
   table.cmp{border-collapse:collapse;width:100%;font-size:.88rem;min-width:640px}
   table.cmp th,table.cmp td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
   table.cmp tbody tr:last-child td{border-bottom:none}
   table.cmp th{
-    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;
+    font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;
     color:var(--ink-soft);background:var(--paper);position:sticky;top:0;
   }
   table.cmp th button{
@@ -743,20 +757,20 @@
   }
   table.cmp th button:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   table.cmp th[aria-sort] button{color:var(--ink);font-weight:700}
-  table.cmp .num{font-family:ui-monospace,Consolas,monospace}
+  table.cmp .num{font-family:var(--font-mono)}
   table.cmp tbody tr:hover{background:var(--paper)}
   table.cmp .rname{font-weight:700}
   table.cmp .rname a{color:var(--river);text-decoration:none;border-bottom:1px dashed var(--river)}
   table.cmp .rname a:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   .cmp-cards{display:flex;flex-direction:column;gap:10px}
-  .cmp-card{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--river);border-radius:0 12px 12px 0;padding:13px 15px;box-shadow:var(--shadow)}
+  .cmp-card{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--river);border-radius:0 var(--r-md) var(--r-md) 0;padding:13px 15px;box-shadow:var(--shadow)}
   .cmp-card h3{font-size:1.02rem;margin-bottom:7px}
   /* The heading link is the whole reason a compare card is interactive, and on mobile this card
      IS the comparison view — so it gets a real target rather than a 20px line of text. */
   .cmp-card h3 a{color:var(--river);text-decoration:none;border-bottom:1px dashed var(--river);display:inline-block;padding:9px 0;min-height:44px}
   .cmp-row{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-top:1px dashed var(--line);font-size:.85rem}
   .cmp-row .k{color:var(--ink-soft)}
-  .cmp-row .v{font-family:ui-monospace,Consolas,monospace;font-weight:700;text-align:right}
+  .cmp-row .v{font-family:var(--font-mono);font-weight:700;text-align:right}
   /* Mobile sort control. The desktop sort affordance lives in the table's column headers,
      and the whole table is display:none below the breakpoint — so without this, phone readers
      got a table they could read in one fixed order and never re-sort. Same cmpSort state,
@@ -769,8 +783,8 @@
   .cmp-sort select:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   .cmp-sort button{
     flex:0 0 auto;min-height:44px;padding:10px 15px;cursor:pointer;
-    font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.08em;text-transform:uppercase;
-    background:transparent;color:var(--ink);border:1.5px solid var(--ink);border-radius:999px;
+    font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.08em;text-transform:uppercase;
+    background:transparent;color:var(--ink);border:1.5px solid var(--ink);border-radius:var(--r-pill);
   }
   .cmp-sort button:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   .cmp-scroll{display:none}
@@ -801,25 +815,25 @@
   .sheet.open{transform:none}
   @media(prefers-reduced-motion:reduce){.sheet{transition:none}}
   .sheet-inner{max-width:660px;margin:0 auto;position:relative;padding-right:44px}
-  .sheet .st{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft)}
+  .sheet .st{font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft)}
   .sheet h3{font-size:1.1rem;margin:3px 0 6px}
   .sheet p{font-size:.92rem}
-  .sheet .more{display:inline-block;margin-top:10px;font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--river);text-decoration:none;border-bottom:1px dashed var(--river)}
+  .sheet .more{display:inline-block;margin-top:10px;font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--river);text-decoration:none;border-bottom:1px dashed var(--river)}
   .sheet-x{
     position:absolute;top:-4px;right:0;width:44px;height:44px;border-radius:50%;
     border:1.5px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;font-size:1.1rem;line-height:1;
   }
   .sheet-x:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   .gloss-list{display:flex;flex-direction:column;gap:10px;max-width:720px}
-  .gloss-item{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--river);border-radius:0 12px 12px 0;padding:13px 16px;box-shadow:var(--shadow)}
+  .gloss-item{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--river);border-radius:0 var(--r-md) var(--r-md) 0;padding:13px 16px;box-shadow:var(--shadow)}
   .gloss-item h3{font-size:1rem;margin-bottom:4px}
   .gloss-item p{font-size:.9rem}
 
   /* HOUSEHOLD CALCULATOR */
-  .calc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);max-width:720px}
+  .calc{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow);max-width:720px}
   .calc label{display:block;font-size:.88rem;margin-bottom:6px}
   .calc .fieldrow{margin-bottom:16px}
-  .calc .val{font-family:ui-monospace,Consolas,monospace;font-weight:700;color:var(--river)}
+  .calc .val{font-family:var(--font-mono);font-weight:700;color:var(--river)}
   .calc select{
     font-family:inherit;font-size:.95rem;padding:10px 12px;min-height:44px;width:100%;max-width:320px;
     background:var(--paper);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;
@@ -827,10 +841,10 @@
   .calc select:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   .calc .out{margin-top:4px;border-top:1px dashed var(--line);padding-top:14px}
   .calc .headline{font-size:1.02rem;margin-bottom:12px}
-  .calc .headline b{font-family:ui-monospace,Consolas,monospace;color:var(--river);font-size:1.25rem}
+  .calc .headline b{font-family:var(--font-mono);color:var(--river);font-size:1.25rem}
 
   footer{margin-top:34px;border-top:2px solid var(--ink);padding-top:12px;font-size:.78rem;color:var(--ink-soft)}
-  footer h4{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-bottom:6px}
+  footer h4{font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-bottom:6px}
   footer p{margin-bottom:6px}
   @media(max-width:560px){
     .count .big{font-size:2rem}
