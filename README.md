@@ -18,6 +18,8 @@ Everything — every state, every river, every reservoir, every quiz question �
 
 **A two-figure lead-in under the title** — "85% of the water goes to just two places" and "2.1% is carried by the Colorado" — so the page's finding is the first thing read, with a link that scrolls to the chart behind it. Both figures are computed from the same data as the continental flow chart (one shared function), so they cannot disagree with it.
 
+**Fewer labels, shorter page.** A small colored tag now appears on a home-page card only where it names a kind of content ("Data note", "Essay"); the repeated "Water Series ·" tags are gone. The two long lists that restate a chart — the continental destinations beyond the top two, and the globe's region-by-region breakdown — sit behind native collapsible sections (`foldHtml()`), closed by default. The numbers stay in the page for screen readers, find-in-page and the chart-highlight wiring.
+
 **A 12px type floor.** Every label, legend and caption now reads its minimum size from one CSS variable (`--fs-min`), and descriptive sentences are set in the body serif rather than small monospace. SVG chart text is sized separately and was left alone.
 
 **Three summary cards on the home page**, above the essay:
