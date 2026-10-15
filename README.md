@@ -20,6 +20,8 @@ Everything — every state, every river, every reservoir, every quiz question �
 
 **Fewer labels, shorter page.** A small colored tag now appears on a home-page card only where it names a kind of content ("Data note", "Essay"); the repeated "Water Series ·" tags are gone. The two long lists that restate a chart — the continental destinations beyond the top two, and the globe's region-by-region breakdown — sit behind native collapsible sections (`foldHtml()`), closed by default. The numbers stay in the page for screen readers, find-in-page and the chart-highlight wiring.
 
+**Design tokens.** The stylesheet's repeated values now live in one `:root` block: a five-step type scale plus a 12px floor (`--fs-min` … `--fs-xl`), three letter-spacing steps (`--track-*`), five corner radii (`--r-*`), the two font stacks (`--font-body`, `--font-mono`) and per-theme shadows (`--shadow`, `--shadow-lift`). Colors were already tokenized per theme. Previously there were 34 distinct font sizes and 15 radii, and the card hover shadow was hard-coded to the Snowmelt color in all four themes. Chart and map text drawn inside SVGs is deliberately left out: its widths feed the label-fitting maths, and `--font-mono` is kept as the short stack that maths was calibrated to.
+
 **A 12px type floor.** Every label, legend and caption now reads its minimum size from one CSS variable (`--fs-min`), and descriptive sentences are set in the body serif rather than small monospace. SVG chart text is sized separately and was left alone.
 
 **Three summary cards on the home page**, above the essay:
