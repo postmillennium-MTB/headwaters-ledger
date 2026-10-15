@@ -565,7 +565,8 @@
   .leg-sub{display:block;font-size:var(--fs-min);color:var(--ink-soft);font-family:ui-monospace,Consolas,monospace;margin-top:1px}
   .pie-note{font-size:.78rem;color:var(--ink-soft);margin-top:10px}
 
-  .cont-card .etag{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.18em;text-transform:uppercase;color:var(--canyon);font-weight:700}
+  /* .etag now appears only where it names a KIND of content ("Data note", "Essay"), so it is sentence case and lightly tracked. It used to sit above every card as a tracked all-caps series tag; when every card has one, none of them says anything. */
+  .cont-card .etag{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.04em;color:var(--canyon);font-weight:700}
   .cont-card .cont-h{font-size:1.18rem;line-height:1.25;margin:6px 0 7px}
   .cont-card .cont-p{font-size:.92rem;color:var(--ink-soft);margin-bottom:14px;max-width:62ch}
   .cont-card .cont-p b{color:var(--ink)}
@@ -638,6 +639,17 @@
   /* align-items:start, because a <button> stretched to a grid row's height centres its own
      content vertically — which floats a three-destination region halfway down a cell sized
      by a five-destination one, and the two columns stop scanning as a list. */
+  /* FOLD — see foldHtml(). The summary is a full-width 44px target so it is easy to hit on a phone. */
+  .fold{margin-top:12px}
+  .fold > summary{
+    display:flex;align-items:center;gap:8px;min-height:44px;padding:0 4px;cursor:pointer;list-style:none;
+    color:var(--river);font-size:.92rem;font-weight:700;border-top:1px solid var(--line);
+  }
+  .fold > summary::-webkit-details-marker{display:none}
+  .fold > summary::before{content:"+";width:1.1em;text-align:center;font-family:ui-monospace,Consolas,monospace}
+  .fold[open] > summary::before{content:"\2212"}
+  .fold > summary:focus-visible{outline:3px solid var(--river);outline-offset:2px;border-radius:6px}
+  .fold > :not(summary){margin-top:8px}
   .globe-key{display:grid;grid-template-columns:1fr;gap:6px;margin-top:14px;align-items:start}
   .gk-row{
     display:block;width:100%;text-align:left;padding:9px 10px;border-radius:8px;min-height:40px;
@@ -669,10 +681,10 @@
   }
   .essay-card:hover{transform:translateY(-2px);box-shadow:0 3px 8px rgba(28,54,68,.14), 0 8px 22px rgba(28,54,68,.10)}
   .essay-card:focus-visible{outline:3px solid var(--river);outline-offset:2px}
-  .essay-card .etag{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.18em;text-transform:uppercase;color:var(--canyon);font-weight:700}
+  .essay-card .etag{font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.04em;color:var(--canyon);font-weight:700}
   .essay-card h3{font-size:1.08rem;line-height:1.3;margin:5px 0 6px}
   .essay-card p{font-size:.9rem;color:var(--ink-soft);margin:0}
-  .essay-card .read{display:inline-block;margin-top:9px;font-family:ui-monospace,Consolas,monospace;font-size:var(--fs-min);letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--canyon)}
+  .essay-card .read{display:inline-block;margin-top:9px;font-size:.92rem;font-weight:700;color:var(--canyon);text-decoration:underline;text-underline-offset:3px}
   /* .static = same visual language as the essay link card, but for informational (non-link) cards \u2014
      no hover-lift, so it doesn't look clickable when it isn't. */
   .essay-card.static{cursor:default}
@@ -2044,7 +2056,7 @@
        of the story; the strip plot IS the story \u2014 you can see the window rather than be told about it. */
     var regions = items.map(function(x){ return {name:x.st.name, list:x.st.reservoirs}; });
     return '<div class="essay-card static">' +
-      '<span class="etag">Data note \u00b7 Reservoir age</span>' +
+      '<span class="etag">Data note</span>' +
       '<h3>The West\u2019s Water Infrastructure Is Getting Old</h3>' +
       '<p>Every dot is one of the ' + count + ' major reservoirs tracked so far, placed on the year it was built. They average <b>' + overallAvg + ' years old</b>, and they bunch: the West did not build its storage steadily, it built almost all of it inside one federal window and has been living off it since. Open a region\u2019s Reservoirs tab for the full list.</p>' +
       reservoirStripSvg(regions, STRIP_DESK) + reservoirStripSvg(regions, STRIP_MOB) +
@@ -2072,7 +2084,6 @@
       };
     }).sort(function(a,b){ return b.value - a.value; });
     return '<div class="essay-card static">' +
-      '<span class="etag">Water Series \u00b7 Ledger Balance</span>' +
       '<h3>How Much Stays Home</h3>' +
       '<p>Share of each region\u2019s average annual flow used there \u2014 cities, farms, evaporation \u2014 rather than leaving for somewhere else. See a region\u2019s own Where It Goes tab for the full breakdown.</p>' +
       barListHtml(items, {max:100, barClass:'flow-b'}) +
@@ -2084,7 +2095,7 @@
      one in a tooltip would let a reader walk away with only the flattering half. */
   function evaporationCardHtml(){
     return '<div class="essay-card static">' +
-      '<span class="etag">Data note · Evaporation</span>' +
+      '<span class="etag">Data note</span>' +
       '<h3>Where Evaporation Hides in These Numbers</h3>' +
       '<p>Every “stays home” share on this page — Colorado’s 38%, Idaho’s 8% — already has ' +
         'evaporation folded into it, counted as consumptive use alongside irrigation and city taps, the ' +
@@ -2104,6 +2115,15 @@
   /* The continental card. Sized by real volume rather than per-region percentages, which is the
      whole point of it — see continentalChart(). The headline sentence is computed from the same
      numbers that draw the ribbons, so it can never claim something the chart contradicts. */
+  /* FOLD: a native <details> that is closed by default. Used where a list restates what the chart
+     above it already draws (the continental legend's long tail, the globe's per-region breakdown),
+     so the page gets shorter without the numbers leaving the document. <details> is deliberate:
+     the content stays in the DOM, so screen readers, find-in-page and the card's data-k/data-g
+     highlight wiring all keep working, and it needs no JavaScript. */
+  function foldHtml(summary, inner){
+    return '<details class="fold"><summary>' + summary + '</summary>' + inner + '</details>';
+  }
+
   /* The two numbers the whole tool turns on, computed once so the card's sentence and the
      home-page lead-in above the map can never disagree with each other or with the ribbons. */
   function continentalHeadline(c){
@@ -2130,6 +2150,8 @@
     '</div>';
   }
 
+  var CONT_LEGEND_SHOWN = 2;   // legend rows shown before the fold on the continental card; the rest sit behind "Show the other N destinations"
+
   function continentalCardHtml(){
     var c = continentalChart();
     var h = continentalHeadline(c);
@@ -2151,7 +2173,6 @@
     });
 
     return '<div class="pie-card cont-card" id="contCard" style="margin-top:14px">' +
-      '<span class="etag">Water Series · The whole ledger</span>' +
       '<h3 class="cont-h">Where It All Ends Up</h3>' +
       '<p class="cont-p">Every other chart here normalises a region to 100%, which quietly implies the six are the same size. They are not. Sized by actual annual flow, <b>' +
         top2Share + '% of the water off the roof of the continent goes to just two places</b> — ' +
@@ -2166,7 +2187,13 @@
       stackedBarHtml(segs) +
       '<div class="stack-note">All six regions combined, by final destination.</div>' +
       basinKeyHtml(basinsUsed(c.dests)) +
-      '<div class="pie-legend">' + flowLegend(rows) + '</div>' +
+      /* The first CONT_LEGEND_SHOWN rows carry the story (the top two destinations are 85% of the
+         water); the long tail of small ones is one tap away rather than 340px of scrolling. */
+      '<div class="pie-legend">' + flowLegend(rows.slice(0, CONT_LEGEND_SHOWN)) + '</div>' +
+      (rows.length > CONT_LEGEND_SHOWN
+        ? foldHtml('Show the other ' + (rows.length - CONT_LEGEND_SHOWN) + ' destinations',
+                   '<div class="pie-legend">' + flowLegend(rows.slice(CONT_LEGEND_SHOWN)) + '</div>')
+        : '') +
       '<p class="pie-note">† Flow totals are rough annual averages and are not all measured the same way — see the note on the ' +
         '<a href="#compare" style="color:var(--river)">comparison page</a>. Read the ranking with confidence and the decimals with care.</p>' +
     '</div>';
@@ -2826,7 +2853,6 @@
     var used = [];
     rows.forEach(function(r){ r.dests.forEach(function(d){ if (used.indexOf(d.basin) === -1) used.push(d.basin); }); });
     return '<div class="pie-card cont-card" id="globeCard" style="margin-top:14px">' +
-      '<span class="etag">Water Series · The same ledger, on the earth</span>' +
       '<h3 class="cont-h">Six Regions, One Spine, Six Coastlines</h3>' +
       '<p class="cont-p">The chart above has no geography in it — boxes on the left, boxes on the right. Spin this and the same numbers become a shape: <b>five of the six regions sit within about 700 miles of each other</b> on one mountain spine, and the water leaving them arrives at six different edges of the continent. The thickest arc runs from British Columbia to the Pacific. The Colorado’s is the short one, aimed at a gulf it no longer reaches in most years.</p>' +
       '<div class="globe-stage">' +
@@ -2853,9 +2879,9 @@
         '<button class="globe-btn" type="button" id="globeSpin" aria-pressed="false">Auto-spin</button>' +
         '<button class="globe-btn" type="button" id="globeReset">Back to the Rockies</button>' +
       '</div>' +
-      '<p class="globe-hint">Drag to rotate · double-click to zoom to a place · arrow keys and +/\u2212 when focused · pick a region below to fly to it</p>' +
+      '<p class="globe-hint">Drag to rotate · double-click to zoom to a place · arrow keys and +/\u2212 when focused · open the region list below to fly to one</p>' +
       basinKeyHtml(basinsUsed(rows.reduce(function(a, r){ return a.concat(r.dests); }, []))) +
-      '<div class="globe-key">' +
+      foldHtml('Region by region: where each one\u2019s water goes', '<div class="globe-key">' +
         rows.map(function(r){
           return '<button class="gk-row" type="button" data-g="' + r.key + '" aria-pressed="false">' +
             '<span class="gk-head"><span class="gk-name">' + r.name + '</span>' +
@@ -2866,7 +2892,7 @@
                 d.label + ' · ' + d.maf + ' MAF†' + (d.drawn ? '' : ' · no arc') + '</span>';
             }).join('') + '</span></button>';
         }).join('') +
-      '</div>' +
+      '</div>') +
       '<p class="pie-note">† Arc thickness carries the same annual volumes the chart above is built from, on a square-root scale — the real range is 300 to 1. Region pins sit on each region’s hydrological high ground and destination pins on the river mouth, rounded to a hundredth of a degree: map pins, not survey points. “No arc” marks the two outcomes with nowhere to draw to — water used where it falls, and Wyoming’s Bear, Belle Fourche and Niobrara, which genuinely split three ways. Coastlines are Natural Earth 1:110m (public domain) via <span class="mono">world-atlas</span>, embedded rather than fetched.</p>' +
     '</div>';
   }
@@ -3489,32 +3515,29 @@
       infraCardHtml() +
       '<div class="split-row">' +
         '<a class="essay-card" href="#compare">' +
-          '<span class="etag">Water Series \u00b7 Compare</span>' +
           '<h3>All Six Regions, Side by Side</h3>' +
           '<p>Who keeps the most of their own water, who signed the most paperwork, and whose storage is oldest \u2014 the whole Ledger in one sortable table.</p>' +
-          '<span class="read">Open the comparison \u2192</span>' +
+          '<span class="read">Open the comparison</span>' +
         '</a>' +
         '<a class="essay-card" href="#household">' +
-          '<span class="etag">Water Series \u00b7 Calculator</span>' +
           '<h3>Your Household on the Ledger</h3>' +
           '<p>Everything here is measured in millions of acre-feet, a unit nobody has an intuition for. Put your own house on the same scale and see how the shortage actually compares.</p>' +
-          '<span class="read">Run the numbers \u2192</span>' +
+          '<span class="read">Run the numbers</span>' +
         '</a>' +
       '</div>' +
       '<div class="split-row">' +
         '<a class="essay-card" href="#essay">' +
-          '<span class="etag">From the Water Series \u00b7 Essay</span>' +
+          '<span class="etag">Essay</span>' +
           '<h3>Too Heavy, Too Cheap: Why America Pipes Oil and Not Water</h3>' +
           '<p>We built pipelines that move crude from Alberta to the Gulf \u2014 so why not pipe Mississippi floodwater to Phoenix? The answer comes down to volume, value, physics, and politics \u2026 plus the continental water pipeline that already exists. (It ships as hay.)</p>' +
-          '<span class="read">Read the essay \u2192</span>' +
+          '<span class="read">Read the essay</span>' +
         '</a>' +
         retentionCardHtml() +
       '</div>' +
       '<a class="essay-card" href="#glossary">' +
-        '<span class="etag">Water Series \u00b7 Glossary</span>' +
         '<h3>The Vocabulary, Defined</h3>' +
         '<p>Acre-foot, Lee Ferry, virgin water supply, prior appropriation. Thirteen terms that are each doing more work than they look like \u2014 and they are tappable wherever they appear anywhere else in the Ledger.</p>' +
-        '<span class="read">Open the glossary \u2192</span>' +
+        '<span class="read">Open the glossary</span>' +
       '</a>' +
       '<div class="stat-strip">' +
         HOME_STATS.map(function(x){ return '<div class="stat"><div class="n">' + x.n + '</div><div class="l">' + x.l + '</div></div>'; }).join('') +
