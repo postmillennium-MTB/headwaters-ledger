@@ -16,6 +16,10 @@ Everything — every state, every river, every reservoir, every quiz question �
 
 **A clickable map** of six regions: Colorado, Wyoming, Montana, Idaho, British Columbia, and Alberta — the "headwaters club," the places where the continent's water is actually born. Click a region, get its own page. A small key at the bottom-left explains the dashed Continental Divide line and points north.
 
+**A two-figure lead-in under the title** — "85% of the water goes to just two places" and "2.1% is carried by the Colorado" — so the page's finding is the first thing read, with a link that scrolls to the chart behind it. Both figures are computed from the same data as the continental flow chart (one shared function), so they cannot disagree with it.
+
+**A 12px type floor.** Every label, legend and caption now reads its minimum size from one CSS variable (`--fs-min`), and descriptive sentences are set in the body serif rather than small monospace. SVG chart text is sized separately and was left alone.
+
 **Three summary cards on the home page**, above the essay:
 
 - **"The West's Water Infrastructure Is Getting Old"** — a strip plot of every tracked reservoir's build year, computed live from each region's reservoir data (not typed in by hand — add or edit a reservoir and the chart and its peak-window band both update themselves).
