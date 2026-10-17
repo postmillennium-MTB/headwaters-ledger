@@ -42,10 +42,10 @@ The top of the Headwaters Ledger home page reads as a generic, templated website
 
 **Acceptance criteria:**
 
-- [ ] **AC-1.1** Given the home page is loaded at a 390 px viewport width When the page first renders Then the search bar appears immediately below the title and the map's top edge is visible without scrolling
-- [ ] **AC-1.2** Given the home page is loaded at any viewport width, from 320 px to desktop When a reader scrolls down past the map and its region list Then the introduction paragraph, the two statistics and the "See where it all ends up ↓" link appear in that order, directly above the continental chart
-- [ ] **AC-1.3** Given the home page is loaded When the introduction, statistics and link are read Then their wording is identical to the current wording, and the statistic values still come from the live data (85% and 2.1% today)
-- [ ] **AC-1.4** Given a reader is on the home page When they activate "See where it all ends up ↓" Then the page scrolls to the continental chart
+- [x] **AC-1.1** Given the home page is loaded at a 390 px viewport width When the page first renders Then the search bar appears immediately below the title and the map's top edge is visible without scrolling
+- [x] **AC-1.2** Given the home page is loaded at any viewport width, from 320 px to desktop When a reader scrolls down past the map and its region list Then the introduction paragraph, the two statistics and the "See where it all ends up ↓" link appear in that order, directly above the continental chart
+- [x] **AC-1.3** Given the home page is loaded When the introduction, statistics and link are read Then their wording is identical to the current wording, and the statistic values still come from the live data (85% and 2.1% today)
+- [x] **AC-1.4** Given a reader is on the home page When they activate "See where it all ends up ↓" Then the page scrolls to the continental chart
 
 ### Story 2: Pick one of six themes
 
@@ -55,12 +55,12 @@ The top of the Headwaters Ledger home page reads as a generic, templated website
 
 **Acceptance criteria:**
 
-- [ ] **AC-2.1** Given the home page is loaded When the theme picker is shown Then it contains exactly six choices named Survey Light, Survey Night, Docket Light, Docket Night, Poster Light and Poster Night, each readable by assistive technology, and none of the four former themes remains
-- [ ] **AC-2.6** Given a first-time visitor with no saved choice When the page loads Then Survey Light is shown
-- [ ] **AC-2.2** Given the picker is shown When a reader selects any theme Then the whole page, including the home page, a region page, cards and controls, switches to that theme's colors and fonts immediately with no reload
-- [ ] **AC-2.3** Given a reader selected a theme When they reload the page or return later Then the same theme is shown
-- [ ] **AC-2.4** Given a reader selects a dark theme When the page renders Then the browser's address-bar color and native controls match the theme's darkness
-- [ ] **AC-2.5** Given each of the six themes is selected When the home page renders Then the title, introduction, statistics, search bar and buttons use that theme's defined fonts, and no element shows the former teal-and-rust styling
+- [x] **AC-2.1** Given the home page is loaded When the theme picker is shown Then it contains exactly six choices named Survey Light, Survey Night, Docket Light, Docket Night, Poster Light and Poster Night, each readable by assistive technology, and none of the four former themes remains
+- [x] **AC-2.6** Given a first-time visitor with no saved choice When the page loads Then Survey Light is shown
+- [x] **AC-2.2** Given the picker is shown When a reader selects any theme Then the whole page, including the home page, a region page, cards and controls, switches to that theme's colors and fonts immediately with no reload
+- [x] **AC-2.3** Given a reader selected a theme When they reload the page or return later Then the same theme is shown
+- [x] **AC-2.4** Given a reader selects a dark theme When the page renders Then the browser's address-bar color and native controls match the theme's darkness
+- [x] **AC-2.5** Given each of the six themes is selected When the home page renders Then the title, introduction, statistics, search bar and buttons use that theme's defined fonts, and no element shows the former teal-and-rust styling
 
 ### Story 3: Distinct looks
 
@@ -70,10 +70,10 @@ The top of the Headwaters Ledger home page reads as a generic, templated website
 
 **Acceptance criteria:**
 
-- [ ] **AC-3.1** Given the Survey themes are selected When the home page renders Then the title is set in tall condensed capitals, and the two statistics appear as bordered tiles labeled "BM"
-- [ ] **AC-3.2** Given the Docket themes are selected When the home page renders Then the title is set in a typewriter face, a "FILED" stamp appears beside the eyebrow, and the statistics appear as ruled rows labeled "Finding 1" and "Finding 2"
-- [ ] **AC-3.3** Given the Poster themes are selected When the home page renders Then the title is set in a heavy slab serif inside a double-ruled frame, and the statistics appear as filled badges
-- [ ] **AC-3.4** Given the light and dark variant of the same direction When each is rendered Then they share fonts and layout and differ only in color
+- [x] **AC-3.1** Given the Survey themes are selected When the home page renders Then the title is set in tall condensed capitals, and the two statistics appear as bordered tiles labeled "BM"
+- [x] **AC-3.2** Given the Docket themes are selected When the home page renders Then the title is set in a typewriter face, a "FILED" stamp appears beside the eyebrow, and the statistics appear as ruled rows labeled "Finding 1" and "Finding 2"
+- [x] **AC-3.3** Given the Poster themes are selected When the home page renders Then the title is set in a heavy slab serif inside a double-ruled frame, and the statistics appear as filled badges
+- [x] **AC-3.4** Given the light and dark variant of the same direction When each is rendered Then they share fonts and layout and differ only in color
 
 ### Story 4: Works offline and embedded
 
@@ -83,9 +83,9 @@ The top of the Headwaters Ledger home page reads as a generic, templated website
 
 **Acceptance criteria:**
 
-- [ ] **AC-4.1** Given the file is opened with no network connection When any of the six themes is selected Then that theme's fonts display, not substitute fonts
-- [ ] **AC-4.2** Given the page is loaded When network activity is inspected Then no request is made to any font host or other outside address for fonts
-- [ ] **AC-4.3** Given the page is embedded in a frame on another site When it loads Then all six themes display correctly
+- [x] **AC-4.1** Given the file is opened with no network connection When any of the six themes is selected Then that theme's fonts display, not substitute fonts
+- [x] **AC-4.2** Given the page is loaded When network activity is inspected Then no request is made to any font host or other outside address for fonts
+- [ ] **AC-4.3** (not yet tested in a real third-party frame) Given the page is embedded in a frame on another site When it loads Then all six themes display correctly
 
 ### Story 5: Readable in every theme
 
@@ -95,8 +95,8 @@ The top of the Headwaters Ledger home page reads as a generic, templated website
 
 **Acceptance criteria:**
 
-- [ ] **AC-5.1** Given any of the six themes When the home page text (title, introduction, statistic labels, captions, search placeholder, buttons) is measured Then each normal-size text color has at least 4.5:1 contrast against its background and each large text at least 3:1
-- [ ] **AC-5.2** Given a dark theme When the map, region list, continental chart and globe render Then every label and every basin color remains distinguishable against the dark background
+- [x] **AC-5.1** Given any of the six themes When the home page text (title, introduction, statistic labels, captions, search placeholder, buttons) is measured Then each normal-size text color has at least 4.5:1 contrast against its background and each large text at least 3:1
+- [ ] **AC-5.2** (basin contrast verified; dark-theme map labels not visually reviewed in every state) Given a dark theme When the map, region list, continental chart and globe render Then every label and every basin color remains distinguishable against the dark background
 
 ### Story 6: Returning visitors keep a working theme
 
@@ -106,10 +106,10 @@ The top of the Headwaters Ledger home page reads as a generic, templated website
 
 **Acceptance criteria:**
 
-- [ ] **AC-6.1** Given a reader's browser holds a saved theme that is one of the four former themes (Snowmelt, Canyon, Nightflow or the old Survey) When they open the page Then Survey Light is shown and the page renders fully
-- [ ] **AC-6.2** Given a reader's browser holds an unrecognized saved theme value When they open the page Then Survey Light is shown and the page renders fully
-- [ ] **AC-6.4** Given a reader's browser holds a saved choice that is one of the six new themes When they open the page Then that theme is shown
-- [ ] **AC-6.3** Given the saved choice cannot be read or written (for example, storage is blocked) When the page loads Then Survey Light is shown and the picker still works for the visit
+- [x] **AC-6.1** Given a reader's browser holds a saved theme that is one of the four former themes (Snowmelt, Canyon, Nightflow or the old Survey) When they open the page Then Survey Light is shown and the page renders fully
+- [x] **AC-6.2** Given a reader's browser holds an unrecognized saved theme value When they open the page Then Survey Light is shown and the page renders fully
+- [x] **AC-6.4** Given a reader's browser holds a saved choice that is one of the six new themes When they open the page Then that theme is shown
+- [x] **AC-6.3** Given the saved choice cannot be read or written (for example, storage is blocked) When the page loads Then Survey Light is shown and the picker still works for the visit
 
 ## Functional Requirements
 
