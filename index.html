@@ -12,7 +12,7 @@
     · DESIGN TOKENS (:root) ...... type scale (--fs-*), letter-spacing (--track-*), radii (--r-*),
                                    font stacks (--font-*), shadows (--shadow, --shadow-lift). Use a
                                    token instead of a literal; add a literal only for a one-off display size
-    · THEME PALETTES (CSS) ....... the 4 color themes; DEFAULT (snowmelt) IS FIRST
+    · THEME PALETTES (CSS) ....... the 6 color themes; DEFAULT (survey-light) IS FIRST
                                    and carries the bare :root — see the THEMES
                                    registry comment for why moving it breaks things
     · BASE + LAYOUT .............. body, wrap, eyebrow, theme picker
@@ -66,12 +66,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="An interactive ledger of where the Rocky Mountains' water goes and who controls it — six headwaters regions, 20+ compacts and treaties, and the Colorado River rules that turned over in 2026.">
-<!-- The tool ships four themes, one of them dark (Nightflow), so it opts into both
+<!-- The tool ships six themes, three of them dark (the -night ones), so it opts into both
      schemes rather than pinning to light. applyTheme() keeps the theme-color tag and
      the root color-scheme in step with whichever theme is actually active, so mobile
      browser chrome and native form controls (the flow slider) match the page. -->
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#EDF2EF">
+<meta name="theme-color" content="#E8E2CC">
 <link rel="icon" href="favicon.ico">
 <link rel="icon" type="image/png" href="favicon-32x32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -136,47 +136,78 @@
        maths (MONO_ADVANCE in the script) is calibrated to the face this resolves to, so widening the
        stack could change a glyph's advance width and push a label into its neighbour. --font-mono-ext
        is the wider stack used by the handful of plain-HTML numerals that do no width maths. */
-    --font-body:"Palatino Linotype",Palatino,"Book Antiqua","Iowan Old Style",Georgia,serif;
     --font-mono:ui-monospace,Consolas,monospace;
     --font-mono-ext:ui-monospace,"SF Mono","Cascadia Mono",Consolas,Menlo,monospace;
     /* Per-theme type (see ADR-001). --font-display: title, section headings, big numerals.
        --font-label: small uppercase HTML labels, never SVG text (that keeps --font-mono, which the
        label-fitting maths is calibrated to). Defaults below match today's look until themes override them. */
-    --font-display:var(--font-body);
-    --font-label:var(--font-mono-ext);
     /* RADII. Cards 14, panels and stat tiles 12, inputs and buttons 8, chips 6, pills fully round.
        Swatches and progress-bar ends (3-6px) are drawn to the size of the thing and stay literal. */
     --r-lg:14px; --r-md:12px; --r-sm:8px; --r-xs:6px; --r-pill:999px;
-    --paper:#EDF2EF; --card:#F7FAF8; --ink:#1C3644; --ink-soft:#4A6272;
-    --river:#23708A; --river-deep:#155066; --canyon:#B4502A; --sage:#6E8464;
-    --line:#C9D6D0; --badge-perp-bg:#DCE9E4; --badge-exp-bg:#F3DED2;
-    --globe-ocean:#CFE0E6; --globe-land:#F0F4F0; --globe-coast:#8FA8AE;
-    --shadow:0 1px 3px rgba(28,54,68,.10), 0 4px 14px rgba(28,54,68,.06);
-    --shadow-lift:0 3px 8px rgba(28,54,68,.14), 0 8px 22px rgba(28,54,68,.10);
+    --paper:#E8E2CC; --card:#F9F5E6; --ink:#2B2A22; --ink-soft:#5A5440;
+    --river:#1F3A4D; --river-deep:#142A39; --canyon:#9A4A1F; --sage:#586339;
+    --line:#CDC5A8; --badge-perp-bg:#DDDAC0; --badge-exp-bg:#EFD6C0;
+    --globe-ocean:#D4DAD6; --globe-land:#F3EEDB; --globe-coast:#9AA08C;
+    --shadow:0 1px 3px rgba(43,42,34,.10), 0 4px 14px rgba(43,42,34,.06);
+    --shadow-lift:0 3px 8px rgba(43,42,34,.14), 0 8px 22px rgba(43,42,34,.10);
+    --font-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+    --font-body:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+    --font-label:"IBM Plex Mono",ui-monospace,Consolas,monospace;
   }
-  [data-theme="canyon"]{
-    --paper:#F3EBE0; --card:#FBF6EE; --ink:#3A2A1E; --ink-soft:#6E5844;
-    --river:#A8562E; --river-deep:#7E3D1E; --canyon:#8C2F1B; --sage:#8A7A4F;
-    --line:#DCCDB8; --badge-perp-bg:#E9DFC9; --badge-exp-bg:#F0D4C4;
-    --globe-ocean:#E3D7C6; --globe-land:#FAF4EA; --globe-coast:#B9A489;
-    --shadow:0 1px 3px rgba(58,42,30,.10), 0 4px 14px rgba(58,42,30,.06);
-    --shadow-lift:0 3px 8px rgba(58,42,30,.14), 0 8px 22px rgba(58,42,30,.10);
-  }
-  [data-theme="nightflow"]{
-    --paper:#12222C; --card:#1B303C; --ink:#E4EEF0; --ink-soft:#9EB6BF;
-    --river:#5BB8D4; --river-deep:#8FD4E8; --canyon:#E08B5A; --sage:#93B08A;
-    --line:#31495590; --badge-perp-bg:#24424C; --badge-exp-bg:#4A3226;
-    --globe-ocean:#162A35; --globe-land:#2C4653; --globe-coast:#4C6B77;
+  [data-theme="survey-night"]{
+    --paper:#0F1B24; --card:#182733; --ink:#E1E6E3; --ink-soft:#9AABB2;
+    --river:#8EC3DD; --river-deep:#B4DAEB; --canyon:#E8A04A; --sage:#A3B78B;
+    --line:#2E4553; --badge-perp-bg:#1F3A48; --badge-exp-bg:#4A3522;
+    --globe-ocean:#0C161D; --globe-land:#223644; --globe-coast:#4A6878;
     --shadow:0 1px 3px rgba(0,0,0,.35), 0 4px 14px rgba(0,0,0,.25);
     --shadow-lift:0 3px 8px rgba(0,0,0,.45), 0 8px 22px rgba(0,0,0,.35);
+    --font-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+    --font-body:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+    --font-label:"IBM Plex Mono",ui-monospace,Consolas,monospace;
   }
-  [data-theme="survey"]{
-    --paper:#EFE9DA; --card:#F7F2E6; --ink:#2E2A20; --ink-soft:#5C5644;
-    --river:#4A6B52; --river-deep:#33513C; --canyon:#9E4B24; --sage:#7B7248;
-    --line:#D5CBB2; --badge-perp-bg:#E2DCC6; --badge-exp-bg:#EED8C4;
-    --globe-ocean:#DFD7C2; --globe-land:#F6F1E4; --globe-coast:#AEA486;
-    --shadow:0 1px 3px rgba(46,42,32,.10), 0 4px 14px rgba(46,42,32,.06);
-    --shadow-lift:0 3px 8px rgba(46,42,32,.14), 0 8px 22px rgba(46,42,32,.10);
+  [data-theme="docket-light"]{
+    --paper:#EDE3C8; --card:#FAF3E0; --ink:#1E1B16; --ink-soft:#5E5340;
+    --river:#1E1B16; --river-deep:#000000; --canyon:#A4262C; --sage:#5A5A2E;
+    --line:#CFC3A3; --badge-perp-bg:#E3DABF; --badge-exp-bg:#EDD3C4;
+    --globe-ocean:#DCD2B6; --globe-land:#F7F0DD; --globe-coast:#A09878;
+    --shadow:0 1px 3px rgba(30,27,22,.10), 0 4px 14px rgba(30,27,22,.06);
+    --shadow-lift:0 3px 8px rgba(30,27,22,.14), 0 8px 22px rgba(30,27,22,.10);
+    --font-display:"Special Elite","Courier New",monospace;
+    --font-body:"Libre Caslon Text",Georgia,serif;
+    --font-label:"Cutive Mono","Courier New",monospace;
+  }
+  [data-theme="docket-night"]{
+    --paper:#1B1915; --card:#26231D; --ink:#E6DCC2; --ink-soft:#A39880;
+    --river:#E6DCC2; --river-deep:#F6EEDB; --canyon:#E8737A; --sage:#B5B97E;
+    --line:#3A362D; --badge-perp-bg:#34312A; --badge-exp-bg:#4A2B2C;
+    --globe-ocean:#14120F; --globe-land:#2D2A23; --globe-coast:#5A5547;
+    --shadow:0 1px 3px rgba(0,0,0,.40), 0 4px 14px rgba(0,0,0,.28);
+    --shadow-lift:0 3px 8px rgba(0,0,0,.50), 0 8px 22px rgba(0,0,0,.38);
+    --font-display:"Special Elite","Courier New",monospace;
+    --font-body:"Libre Caslon Text",Georgia,serif;
+    --font-label:"Cutive Mono","Courier New",monospace;
+  }
+  [data-theme="poster-light"]{
+    --paper:#F1E5C6; --card:#FAF2DC; --ink:#1F3D36; --ink-soft:#566259;
+    --river:#1F3D36; --river-deep:#102A24; --canyon:#A8420E; --sage:#4F6A3A;
+    --line:#D2C5A1; --badge-perp-bg:#DDE2C6; --badge-exp-bg:#F0D2B8;
+    --globe-ocean:#D5D8C0; --globe-land:#F8EFD6; --globe-coast:#98A08A;
+    --shadow:0 1px 3px rgba(31,61,54,.10), 0 4px 14px rgba(31,61,54,.06);
+    --shadow-lift:0 3px 8px rgba(31,61,54,.14), 0 8px 22px rgba(31,61,54,.10);
+    --font-display:"Alfa Slab One",Rockwell,"Arial Black",serif;
+    --font-body:"Zilla Slab",Rockwell,Georgia,serif;
+    --font-label:"Zilla Slab",Rockwell,Georgia,serif;
+  }
+  [data-theme="poster-night"]{
+    --paper:#13241E; --card:#1C3129; --ink:#EADFC0; --ink-soft:#A5B5A9;
+    --river:#EADFC0; --river-deep:#FBF3DC; --canyon:#F08A3C; --sage:#A8C48B;
+    --line:#2F4A40; --badge-perp-bg:#263F35; --badge-exp-bg:#4B3220;
+    --globe-ocean:#0F1D18; --globe-land:#263E34; --globe-coast:#4E6C5F;
+    --shadow:0 1px 3px rgba(0,0,0,.40), 0 4px 14px rgba(0,0,0,.28);
+    --shadow-lift:0 3px 8px rgba(0,0,0,.50), 0 8px 22px rgba(0,0,0,.38);
+    --font-display:"Alfa Slab One",Rockwell,"Arial Black",serif;
+    --font-body:"Zilla Slab",Rockwell,Georgia,serif;
+    --font-label:"Zilla Slab",Rockwell,Georgia,serif;
   }
   /* ==== BASIN COLORS — meaning-carrying, and therefore FIXED across all four themes. ====
      Mirrors the BASINS registry in the script (see its comment for why these four hexes and
@@ -190,7 +221,7 @@
     --basin-pacific:#0a8fd1; --basin-arctic:#9e4aa4; --basin-atlantic:#269e5f;
     --basin-gulfcal:#be5a0a; --basin-home:#55707e;   --basin-none:#7d8a91;
   }
-  [data-theme="nightflow"]{
+  [data-theme$="-night"]{
     --basin-arctic:#b066b4; --basin-gulfcal:#c7692c; --basin-home:#8fa8b4; --basin-none:#9fb0b8;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -210,7 +241,7 @@
   .eyebrow{
     font-family:var(--font-mono-ext); font-size:var(--fs-min);
     letter-spacing:var(--track-lg); text-transform:uppercase; color:var(--ink-soft);
-    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:4px 10px;
     border-bottom:2px solid var(--ink); padding-bottom:8px; margin-bottom:14px;
   }
   .theme-picker{display:flex;gap:0}
@@ -493,7 +524,7 @@
   .badge.perp{background:var(--badge-perp-bg);color:var(--river-deep)}
   .badge.exp{background:var(--badge-exp-bg);color:var(--canyon)}
   .badge.none{background:var(--paper);border:1px dashed var(--ink-soft);color:var(--ink-soft)}
-  [data-theme="nightflow"] .badge.perp{color:var(--river)}
+  [data-theme$="-night"] .badge.perp{color:var(--river)}
 
   /* CRISIS / STAKES */
   .count-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:20px}
@@ -770,6 +801,7 @@
     width:100%;min-height:48px;padding:12px 14px;font-family:inherit;font-size:var(--fs-base);
     background:var(--card);color:var(--ink);border:1.5px solid var(--line);border-radius:var(--r-md);
   }
+  .search-box::placeholder{color:var(--ink-soft);opacity:1}
   .search-box::placeholder{color:var(--ink-soft);opacity:.85}
   .search-box:focus-visible{outline:3px solid var(--river);outline-offset:2px;border-color:var(--river)}
   .search-results{margin-top:8px;display:flex;flex-direction:column;gap:6px}
@@ -1011,7 +1043,7 @@
      (the picker dot, its swatch color, its label, persistence, the mobile browser
      chrome color, the native control color scheme) derives from this array.
 
-     THE SPECIFICITY TRAP: :root and [data-theme="canyon"] have IDENTICAL specificity
+     THE SPECIFICITY TRAP: :root and [data-theme="docket-light"] have IDENTICAL specificity
      (0,1,0), so whichever is declared LAST wins. The DEFAULT theme's block therefore
      uses the bare :root selector and sits FIRST in the stylesheet \u2014 it has to style
      first paint before this script runs. Changing the default means four edits: move
@@ -1035,12 +1067,14 @@
      dark theme looks wrong rather than breaking \u2014 no error, just a pale globe.
      ============================================================================= */
   var THEMES = [
-    {id:'snowmelt',  label:'Snowmelt', swatch:'#23708A', paper:'#EDF2EF', scheme:'light'},
-    {id:'canyon',    label:'Canyon',   swatch:'#A8562E', paper:'#F3EBE0', scheme:'light'},
-    {id:'nightflow', label:'Nightflow',swatch:'#12222C', paper:'#12222C', scheme:'dark'},
-    {id:'survey',    label:'Survey',   swatch:'#7B7248', paper:'#EFE9DA', scheme:'light'}
+    {id:'survey-light', label:'Survey Light', swatch:'#1F3A4D', paper:'#E8E2CC', scheme:'light'},
+    {id:'survey-night', label:'Survey Night', swatch:'#0F1B24', paper:'#0F1B24', scheme:'dark'},
+    {id:'docket-light', label:'Docket Light', swatch:'#A4262C', paper:'#EDE3C8', scheme:'light'},
+    {id:'docket-night', label:'Docket Night', swatch:'#1B1915', paper:'#1B1915', scheme:'dark'},
+    {id:'poster-light', label:'Poster Light', swatch:'#A8420E', paper:'#F1E5C6', scheme:'light'},
+    {id:'poster-night', label:'Poster Night', swatch:'#13241E', paper:'#13241E', scheme:'dark'}
   ];
-  var DEFAULT_THEME = 'snowmelt';
+  var DEFAULT_THEME = 'survey-light';
 
   /* =============== STATE DATA =============== */
   /* Schema for each region object below \u2014 use this as the checklist when adding a 7th region:
