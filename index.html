@@ -263,8 +263,9 @@
 
   h1{font-size:clamp(1.6rem,5.5vw,2.5rem);line-height:1.08;letter-spacing:-.01em;font-weight:700}
   h1 .flow{color:var(--river)}
-  .thesis{margin-top:10px;font-size:clamp(.98rem,2.8vw,1.13rem);color:var(--ink-soft);font-style:italic;max-width:660px}
+  .thesis{margin-top:0;font-size:clamp(.98rem,2.8vw,1.13rem);color:var(--ink-soft);font-style:italic;max-width:660px}
   .thesis b{color:var(--ink);font-style:normal}
+  .lead-block{margin:20px 0 6px}
   /* HOME LEAD-IN — the finding, above the map. Two figures sit side by side even at phone width
      (each is short), set in the headline serif so they read as the page's own voice rather than
      a dashboard tile. Quiet frame on purpose: the map below stays the loudest object. */
@@ -970,6 +971,16 @@
   [data-theme^="poster"] .ls-n,[data-theme^="poster"] .ls-l{color:inherit}
   [data-theme^="poster"] .ls-l{margin-inline:auto}
   [data-theme^="poster"] .ls-jump{justify-self:center;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
+
+  /* Intro paragraph: upright and full-strength ink (it was gray italic, a stock editorial tell). The bold
+     call to action gets a different emphasis per direction. Also applies to the per-region page intros,
+     which share the .thesis class. */
+  .thesis{font-style:normal;color:var(--ink)}
+  .thesis b{font-weight:700}
+  [data-theme^="survey"] .thesis{font-size:clamp(1.05rem,3.2vw,1.2rem);line-height:1.4}
+  [data-theme^="survey"] .thesis b{background:color-mix(in srgb,var(--canyon) 24%,transparent);padding:0 3px}
+  [data-theme^="docket"] .thesis b{border-bottom:1.5px solid var(--canyon)}
+  [data-theme^="poster"] .thesis b{color:var(--canyon)}
 </style>
 </head>
 <body>
@@ -3608,11 +3619,9 @@
     app.innerHTML =
       '<p class="deco deco-cap" aria-hidden="true">In re: Water Series</p>' +
       '<h1>The Headwaters <span class="flow">Ledger</span></h1>' +
-      '<p class="thesis">Six regions own the roof of the continent. The snow that lands on them becomes the Columbia, the Missouri, the Colorado, the Rio Grande, the Saskatchewan, and the Mackenzie \u2014 and a tangle of compacts, treaties, and Supreme Court decrees decides who drinks it. <b>Tap a region to open its ledger</b>, or search for a river.</p>' +
       /* Search sits above the map deliberately. The map is the better browse; typing is the
          better answer to "does anything here touch me?", which is the question a reader
          arriving from an article actually has \u2014 and on a phone it beats hunting for a shape. */
-      homeLeadHtml() +
       '<div class="search-wrap">' +
         '<label class="sr-only" for="siteSearch">Search rivers, agreements, reservoirs and terms</label>' +
         /* Deliberately NOT a combobox/listbox. A real combobox owes assistive tech active
@@ -3647,6 +3656,13 @@
       '<div class="map-hint" id="mapHint" aria-live="polite">' +
         '<div class="meta">The headwaters club</div>' +
         '<p>Between them these six regions are party to 20+ compacts and agreements, three treaties spanning Canada and Mexico, several Supreme Court decrees, and the two largest tribal water settlements in U.S. history. Hover a region for its one-line r\u00e9sum\u00e9, or pick one from the list.</p>' +
+      '</div>' +
+      /* Intro and headline stats sit BELOW the map: search and map are the page's main
+         interaction, and on a phone the paragraph used to push both off the first screen.
+         They stay directly above the continental chart because that is where the jump link goes. */
+      '<div class="lead-block">' +
+      '<p class="thesis">Six regions own the roof of the continent. The snow that lands on them becomes the Columbia, the Missouri, the Colorado, the Rio Grande, the Saskatchewan, and the Mackenzie \u2014 and a tangle of compacts, treaties, and Supreme Court decrees decides who drinks it. <b>Tap a region to open its ledger</b>, or search for a river.</p>' +
+      homeLeadHtml() +
       '</div>' +
       continentalCardHtml() +
       globeCardHtml() +
