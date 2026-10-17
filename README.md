@@ -16,7 +16,7 @@ Everything — every state, every river, every reservoir, every quiz question �
 
 **A clickable map** of six regions: Colorado, Wyoming, Montana, Idaho, British Columbia, and Alberta — the "headwaters club," the places where the continent's water is actually born. Click a region, get its own page. A small key at the bottom-left explains the dashed Continental Divide line and points north.
 
-**A two-figure lead-in under the title** — "85% of the water goes to just two places" and "2.1% is carried by the Colorado" — so the page's finding is the first thing read, with a link that scrolls to the chart behind it. Both figures are computed from the same data as the continental flow chart (one shared function), so they cannot disagree with it.
+**A two-figure lead-in below the map** — "85% of the water goes to just two places" and "2.1% is carried by the Colorado" — sits with the intro paragraph directly above the continental chart, with a link that scrolls to it. Search and the map come first, directly under the title.
 
 **Fewer labels, shorter page.** A small colored tag now appears on a home-page card only where it names a kind of content ("Data note", "Essay"); the repeated "Water Series ·" tags are gone. The two long lists that restate a chart — the continental destinations beyond the top two, and the globe's region-by-region breakdown — sit behind native collapsible sections (`foldHtml()`), closed by default. The numbers stay in the page for screen readers, find-in-page and the chart-highlight wiring.
 
@@ -69,6 +69,12 @@ It exists because the ribbon chart above it has no geography in it at all, and t
 **A link back to your homepage**, top right, under the theme dots.
 
 **On a phone**, five things change shape rather than just shrinking. The ribbon charts become full-width proportional bars carrying the same numbers, the same basin colors and the same tap-to-highlight — the Sankey's geometry is its whole value and it does not survive being squeezed to 330px. The map gains a tappable list of the six regions underneath it, each with the one-line résumé that desktop readers only get by hovering. And each region's river diagram is replaced by a stacked list of the same rivers at readable size — the diagram itself is drawn at a fixed width, so at phone scale its labels came out around four pixels tall. The reservoir strip plot gets its own narrower frame rather than being scaled down, for the same reason. And the globe drops its ocean labels rather than shrinking them — its type is a fixed 11px at every canvas size, so the only thing a narrower frame can give up is how many strings compete for the margin; the list under it names every destination in full either way. Everything else (back button, browser back gesture, quiz retry, tapping a ribbon and tapping it again to clear) is sized and wired for thumbs.
+
+## Themes and fonts
+
+Six themes, picked with the dots at the top: **Survey** (map sheet), **Docket** (court record) and **Poster** (trailhead sign), each in a light and a night version. Survey Light is the default; any saved choice that is not one of the six (including the four earlier themes) falls back to it. Each theme sets its own display, body and label fonts, colors and decoration; the map and chart text keeps the system monospace because its label fitting depends on it.
+
+The fonts (8 families, 12 faces, Latin subset) are embedded in `index.html`, so the file works offline and inside any frame with no outside requests ([ADR-001](docs/adr/001-embed-theme-fonts.md)). That adds about 320 KB; the file is about 862 KB. `python3 tools/build-fonts.py` regenerates the block (needs `pip install fonttools brotli`). Checks for the identity work live in `tools/verify-identity/`. Spec: `docs/specs/001-ledger-visual-identity/`.
 
 ## How to update it (no coding required, but here's the shape of it)
 
