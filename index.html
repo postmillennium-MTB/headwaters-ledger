@@ -972,6 +972,12 @@
   [data-theme^="poster"] .ls-l{margin-inline:auto}
   [data-theme^="poster"] .ls-jump{justify-self:center;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
 
+  /* Phone flow diagram replaces the plain stacked bar on narrow screens (the desktop Sankey takes over at 700px). */
+  .sankey-phone{display:block}
+  .sankey-phone .stack-note{margin-top:6px}
+  .stackbar,.stack-note.bar-note{display:none}
+  @media(min-width:700px){.sankey-phone{display:none}}
+
   /* Intro paragraph: upright and full-strength ink (it was gray italic, a stock editorial tell). The bold
      call to action gets a different emphasis per direction. Also applies to the per-region page intros,
      which share the .thesis class. */
@@ -2332,8 +2338,11 @@
           aria: 'Ribbons from each of the six headwaters regions to each final destination, sized by annual flow in millions of acre-feet'
         }) +
       '</div>' +
+      '<div class="sankey-phone">' + sankeyPhoneSvg(c) +
+        '<div class="stack-note">Pacific and Arctic carry the story; every other destination is gathered into Other (see the list below).</div>' +
+      '</div>' +
       stackedBarHtml(segs) +
-      '<div class="stack-note">All six regions combined, by final destination.</div>' +
+      '<div class="stack-note bar-note">All six regions combined, by final destination.</div>' +
       basinKeyHtml(basinsUsed(c.dests)) +
       /* The first CONT_LEGEND_SHOWN rows carry the story (the top two destinations are 85% of the
          water); the long tail of small ones is one tap away rather than 340px of scrolling. */
@@ -4040,6 +4049,92 @@
     s += bars(S, xS, true) + bars(D, xD, false);
     s += '</svg>';
     return s;
+  }
+
+  /* PHONE FLOW DIAGRAM. The full Sankey above needs ~900 units of width for its labels and does not
+     survive being squeezed, so below the breakpoint it is replaced by this narrower one: the same six
+     regions on the left (two-letter codes instead of names), the two destinations that carry the
+     story on the right (Pacific, Arctic), and everything else gathered into one "Other" node. The
+     ribbons into "Other" keep their true basin colors and their own data-k keys, so tapping a
+     legend row still lights the right ribbon. Built on sankeyBand() and deCollide(), and on the
+     same continentalChart() numbers as the desktop diagram, so the two can never disagree. */
+  var SANKEY_PHONE_W = 360, SANKEY_PHONE_PLOT = 330, SANKEY_PHONE_LEFT = 40, SANKEY_PHONE_RIGHT = 74;
+  function sankeyPhoneSvg(c){
+    var W = SANKEY_PHONE_W, NODE = SANKEY_NODE_W, PLOT = SANKEY_PHONE_PLOT, top = 14, H = PLOT + top * 2;
+    var xS = SANKEY_PHONE_LEFT, xD = W - SANKEY_PHONE_RIGHT - NODE;
+    var ranked = c.dests.slice().sort(function(a, b){ return b.value - a.value; });
+    var total = ranked.reduce(function(a, d){ return a + d.value; }, 0) || 1;
+    var big = ranked.slice(0, 2), bigIds = {};
+    big.forEach(function(d){ bigIds[d.id] = true; });
+    var otherVal = total - big.reduce(function(a, d){ return a + d.value; }, 0);
+    function pct(v){ return Math.round(v / total * 100) + '%'; }
+    var dests = big.map(function(d){ return {id:d.id, label:String(d.label).replace(/\s*Ocean$/, ''), sub:pct(d.value), value:d.value, basin:d.basin}; });
+    if (otherVal > 0.0001) dests.push({id:'other', label:'Other', sub:pct(otherVal), value:otherVal, basin:null});
+    var destRank = {}; dests.forEach(function(d, i){ destRank[d.id] = i; });
+    var srcRank = {}; c.sources.forEach(function(n, i){ srcRank[n.id] = i; });
+    var links = c.links.map(function(k){
+      return {s:k.s, d:bigIds[k.d] ? k.d : 'other', value:k.value, basin:k.basin, key:'d-' + k.d, title:k.title};
+    }).sort(function(a, b){
+      return (srcRank[a.s] - srcRank[b.s]) || (destRank[a.d] - destRank[b.d]) || (b.value - a.value);
+    });
+    var totalV = c.sources.reduce(function(a, n){ return a + n.value; }, 0) || 1;
+    function stack(nodes){
+      var avail = PLOT - SANKEY_GAP * Math.max(0, nodes.length - 1), y = top, out = {};
+      nodes.forEach(function(n){
+        var h = Math.max(SANKEY_MIN_BAND, n.value / totalV * avail);
+        out[n.id] = {y:y, h:h, cursor:y, node:n};
+        y += h + SANKEY_GAP;
+      });
+      return out;
+    }
+    var S = stack(c.sources), D = stack(dests);
+    var sv = '<svg class="sankey-svg" viewBox="0 0 ' + W + ' ' + H + '" role="group" aria-label="' +
+      escapeHtml('Ribbons from each of the six headwaters regions to the Pacific, the Arctic, and everywhere else, sized by annual flow') + '">';
+    sv += '<defs><pattern id="skHatchP" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
+          '<rect width="7" height="7" fill="var(--basin-none)" opacity="0.30"></rect>' +
+          '<line x1="0" y1="0" x2="0" y2="7" stroke="var(--basin-none)" stroke-width="3.4"></line></pattern></defs>';
+    var srcAvail = PLOT - SANKEY_GAP * Math.max(0, c.sources.length - 1);
+    var dstAvail = PLOT - SANKEY_GAP * Math.max(0, dests.length - 1);
+    links.forEach(function(k){
+      var a = S[k.s], b = D[k.d];
+      if (!a || !b) return;
+      var ha = Math.max(SANKEY_MIN_BAND, k.value / totalV * srcAvail);
+      var hb = Math.max(SANKEY_MIN_BAND, k.value / totalV * dstAvail);
+      var basin = BASINS[k.basin] || BASINS.home;
+      sv += '<path class="sk-band" data-k="' + k.key + '" tabindex="0" role="button" aria-label="' + escapeHtml(k.title) + '"' +
+            ' d="' + sankeyBand(xS + NODE, a.cursor, xD, b.cursor, ha, hb) + '"' +
+            ' style="fill:' + (basin.hatch ? 'url(#skHatchP)' : 'var(' + basin.v + ')') + '"><title>' + escapeHtml(k.title) + '</title></path>';
+      a.cursor += ha; b.cursor += hb;
+    });
+    /* Left: node bars plus a two-letter code, spread apart where the small regions crowd together. */
+    var items = [];
+    c.sources.forEach(function(n){
+      var e = S[n.id];
+      sv += '<rect class="sk-node" x="' + xS + '" y="' + e.y.toFixed(1) + '" width="' + NODE + '" height="' + e.h.toFixed(1) +
+            '" rx="3" style="fill:var(--ink)"></rect>';
+      items.push({n:n, e:e, h:SANKEY_LINE_H, want:e.y + e.h / 2 - SANKEY_LINE_H / 2});
+    });
+    deCollide(items, top, top + PLOT);
+    items.forEach(function(it){
+      var nodeMid = it.e.y + it.e.h / 2, labMid = it.y + it.h / 2;
+      var abbr = (STATES[it.n.id] && STATES[it.n.id].abbr) || String(it.n.label).slice(0, 2);
+      if (Math.abs(labMid - nodeMid) > 3){
+        sv += '<path class="sk-leader" d="M' + (xS - 3) + ',' + nodeMid.toFixed(1) + ' L' + (xS - 7) + ',' + nodeMid.toFixed(1) +
+              ' L' + (xS - 7) + ',' + labMid.toFixed(1) + ' L' + (xS - 9) + ',' + labMid.toFixed(1) + '"></path>';
+      }
+      sv += '<text class="sk-lab" x="' + (xS - 11) + '" y="' + (it.y + 12).toFixed(1) + '" text-anchor="end">' + escapeHtml(abbr) + '</text>';
+    });
+    /* Right: three nodes, each tall enough for a name and a share, so no collision handling is needed. */
+    dests.forEach(function(d){
+      var e = D[d.id], basin = d.basin ? (BASINS[d.basin] || BASINS.home) : null;
+      var fill = basin ? (basin.hatch ? 'url(#skHatchP)' : 'var(' + basin.v + ')') : 'var(--ink-soft)';
+      sv += '<rect class="sk-node" data-n="' + d.id + '" x="' + xD + '" y="' + e.y.toFixed(1) + '" width="' + NODE + '" height="' +
+            e.h.toFixed(1) + '" rx="3" style="fill:' + fill + '"></rect>';
+      var mid = e.y + e.h / 2;
+      sv += '<text class="sk-lab" x="' + (xD + NODE + 8) + '" y="' + (mid - 1).toFixed(1) + '">' + escapeHtml(d.label) + '</text>' +
+            '<text class="sk-sub" x="' + (xD + NODE + 8) + '" y="' + (mid + 13).toFixed(1) + '">' + escapeHtml(d.sub) + '</text>';
+    });
+    return sv + '</svg>';
   }
 
   /* The mobile counterpart: one full-width proportional bar. Same numbers, same basin colors,
