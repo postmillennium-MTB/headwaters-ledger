@@ -971,6 +971,16 @@
   [data-theme^="poster"] .ls-n,[data-theme^="poster"] .ls-l{color:inherit}
   [data-theme^="poster"] .ls-l{margin-inline:auto}
   [data-theme^="poster"] .ls-jump{justify-self:center;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
+
+  /* Intro paragraph: upright and full-strength ink (it was gray italic, a stock editorial tell). The bold
+     call to action gets a different emphasis per direction. Also applies to the per-region page intros,
+     which share the .thesis class. */
+  .thesis{font-style:normal;color:var(--ink)}
+  .thesis b{font-weight:700}
+  [data-theme^="survey"] .thesis{font-size:clamp(1.05rem,3.2vw,1.2rem);line-height:1.4}
+  [data-theme^="survey"] .thesis b{background:color-mix(in srgb,var(--canyon) 24%,transparent);padding:0 3px}
+  [data-theme^="docket"] .thesis b{border-bottom:1.5px solid var(--canyon)}
+  [data-theme^="poster"] .thesis b{color:var(--canyon)}
 </style>
 </head>
 <body>
