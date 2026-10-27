@@ -828,15 +828,20 @@
   table.cmp th{
     font-family:var(--font-label);font-size:var(--fs-min);letter-spacing:var(--track-md);text-transform:uppercase;
     color:var(--ink-soft);background:var(--paper);position:sticky;top:0;
+    /* Headers may wrap (the 7th column's label is long); cells stay on one line so numbers never split. */
+    white-space:normal;vertical-align:bottom;
   }
   table.cmp th button{
     font:inherit;color:inherit;background:none;border:none;cursor:pointer;padding:4px 0;min-height:32px;
-    display:inline-flex;align-items:center;gap:5px;letter-spacing:inherit;text-transform:inherit;
+    display:inline-flex;align-items:center;gap:5px;letter-spacing:inherit;text-transform:inherit;text-align:left;
   }
   table.cmp th button:focus-visible{outline:3px solid var(--river);outline-offset:2px}
   table.cmp th[aria-sort] button{color:var(--ink);font-weight:700}
   table.cmp .num{font-family:var(--font-label)}
   table.cmp tbody tr:hover{background:var(--paper)}
+  /* Second line under a percentage: where most of it goes. Block so it sits under the number on
+     the desktop table and under it again, right-aligned, in the mobile cards. */
+  .cmp-sub{display:block;font-family:var(--font-body);font-weight:400;font-size:var(--fs-min);color:var(--ink-soft)}
   table.cmp .rname{font-weight:700}
   table.cmp .rname a{color:var(--river);text-decoration:none;border-bottom:1px dashed var(--river)}
   table.cmp .rname a:focus-visible{outline:3px solid var(--river);outline-offset:2px}
@@ -2220,6 +2225,9 @@
      "vanishingly little". This is the nominal value that bar is drawn at; the label always
      says "<1%" so the chart never implies a precision the data doesn't have. */
   var SUB_ONE_PERCENT_BAR = 0.6;
+  /* The mirror image, for the compare table's "Heads for ocean, bay or lake" sort: a region whose own
+     use is under 1% sends over 99% onward. Only used to order the column; the cell prints ">99%". */
+  var SUB_ONE_PERCENT_SEA = 99.4;
 
   function retentionCardHtml(){
     /* Reads the home:true flag on each region's pie slices rather than regex-matching the
@@ -4917,6 +4925,20 @@
       var st = STATES[k];
       var homeSlice = st.pie.slices.filter(function(s){ return s.home; })[0];
       var sum = reservoirSummary(st.reservoirs);
+      /* HEADS FOR AN OCEAN, BAY, GULF OR LAKE: every slice that is not "used at home". That
+         includes the Great Salt Lake (a lake that drains to no ocean) and the 'mixed' slice, which
+         splits between the Great Salt Lake and the Missouri \u2014 both ends are open water, so it
+         counts. Derived from the same slices the flow charts draw, so this column and "Stays home"
+         always sum to 100%. A region with no "home" slice (British Columbia) is shown as >99%,
+         matching the "<1%" its Stays home cell already prints. */
+      var seaPct = 0, bySea = {};
+      st.pie.slices.forEach(function(sl){
+        if (sl.home) return;
+        seaPct += sl.p;
+        var id = sl.sea || 'home';
+        if (id !== 'mixed') bySea[id] = (bySea[id] || 0) + sl.p;
+      });
+      var topSea = Object.keys(bySea).sort(function(a, b){ return bySea[b] - bySea[a]; })[0];
       var expiring = st.compacts.filter(function(c){ return c.kind === 'exp'; }).length;
       /* pie.total is authored as display text ("~14", "~200") because the tilde is doing
          honest work — these are rough annual averages. parseFloat gives the sortable number
@@ -4929,6 +4951,9 @@
         flowLabel: st.pie.total + ' MAF†',
         home: homeSlice ? homeSlice.p : SUB_ONE_PERCENT_BAR,
         homeLabel: homeSlice ? homeSlice.p + '%' : '<1%',
+        sea: homeSlice ? seaPct : SUB_ONE_PERCENT_SEA,
+        seaLabel: (homeSlice ? seaPct + '%' : '>99%') +
+                  (topSea ? '<span class="cmp-sub">mostly ' + SEAS[topSea].short + '</span>' : ''),
         rivers: st.rivers.length,
         agreements: st.compacts.length,
         expiring: expiring,
@@ -4945,6 +4970,7 @@
     {id:'name',       label:'Region',        sort:'name',       fmt:function(r){ return r.name; }, isName:true},
     {id:'flow',       label:'Annual flow',   sort:'flow',       fmt:function(r){ return r.flowLabel; }, num:true},
     {id:'home',       label:'Stays home',    sort:'home',       fmt:function(r){ return r.homeLabel; }, num:true},
+    {id:'sea',       label:'Heads for ocean, bay or lake', sort:'sea', fmt:function(r){ return r.seaLabel; }, num:true},
     {id:'rivers',     label:'Rivers tracked',sort:'rivers',     fmt:function(r){ return String(r.rivers); }, num:true},
     {id:'agreements', label:'Agreements',    sort:'agreements', fmt:function(r){ return r.agreementsLabel; }, num:true},
     {id:'res',        label:'Reservoirs',    sort:'resCount',   fmt:function(r){ return r.resLabel; }, num:true}
@@ -5032,7 +5058,7 @@
       '<p class="thesis">The map tells you where the water goes one region at a time. This is the same six regions in one table — sort any column to see who keeps the most, who signed the most paperwork, and whose storage is oldest.</p>' +
       '<div id="cmpHolder">' + compareBody() + '</div>' +
       '<p class="pie-note" style="margin-top:12px">† Annual flow figures are rough averages, not gauge readings, and are not all measured the same way — British Columbia’s ~200 MAF counts the full discharge of rivers that mostly never leave the province, while Colorado’s ~14 MAF is water that is almost entirely spoken for by somebody downstream. Compare the shares with confidence; compare the totals with care.</p>' +
-      '<p class="pie-note">“Stays home” is the share of each region’s own flow used there rather than leaving. “Reservoirs” counts only the major storage entered in the Ledger so far — British Columbia and Alberta are not yet populated, so their row reads <i>not yet added</i> rather than zero.</p>';
+      '<p class="pie-note">“Stays home” is the share of each region’s own flow used there rather than leaving. “Heads for ocean, bay or lake” is everything else — the two columns add to 100% — and counts the Gulf of Mexico, Hudson Bay, the Gulf of California and the Great Salt Lake alongside the open oceans. It is where the water is headed, not proof it arrives: most of Colorado’s Gulf of California share is used up before it reaches the sea. “Reservoirs” counts only the major storage entered in the Ledger so far — British Columbia and Alberta are not yet populated, so their row reads <i>not yet added</i> rather than zero.</p>';
     document.getElementById('backBtn').addEventListener('click', function(){ go('home'); });
     wireCompare();
     window.scrollTo(0, 0);

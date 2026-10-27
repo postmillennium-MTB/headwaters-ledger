@@ -56,7 +56,7 @@ It exists because the ribbon chart above it has no geography in it at all, and t
 
 **Ribbon flow charts** on every region page, replacing the old donut. A donut answers "what share?" and buries the destination in a sub-label; the entire subject of this tool is water *arriving somewhere else*, so the chart now draws share and destination in a single mark. Hover or tap any ribbon, bar segment or legend row and all three light up together.
 
-**A compare view** — all six regions in one sortable table: annual flow, how much stays home, rivers tracked, agreements signed and how many are expiring, reservoir count and average age. On a phone the table becomes stacked cards with their own sort control. Every column is computed from the region data, so nothing here can drift out of step with the individual pages.
+**A compare view** — all six regions in one sortable table: annual flow, how much stays home, how much heads for an ocean, bay, gulf or lake (everything that doesn't stay home, with the biggest destination named underneath), rivers tracked, agreements signed and how many are expiring, reservoir count and average age. On a phone the table becomes stacked cards with their own sort control. Every column is computed from the region data, so nothing here can drift out of step with the individual pages.
 
 **A household calculator** — set your household size and gallons per person per day, pick a region, and see your own water use in acre-feet, how many households share one acre-foot, and how your house compares to the gap between what the 1922 Compact promised and what the river actually carries. It exists because every other number in the tool is in millions of acre-feet, which nobody has an intuition for.
 
